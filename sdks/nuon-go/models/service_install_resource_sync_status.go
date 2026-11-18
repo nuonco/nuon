@@ -15,20 +15,20 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ServiceInstallAlignment service install alignment
+// ServiceInstallResourceSyncStatus service install resource sync status
 //
-// swagger:model service.InstallAlignment
-type ServiceInstallAlignment struct {
+// swagger:model service.InstallResourceSyncStatus
+type ServiceInstallResourceSyncStatus struct {
 
 	// error
 	Error string `json:"error,omitempty"`
 
 	// resources
-	Resources []*ServiceInstallAlignmentResource `json:"resources"`
+	Resources []*ServiceInstallResourceSyncStatusResource `json:"resources"`
 }
 
-// Validate validates this service install alignment
-func (m *ServiceInstallAlignment) Validate(formats strfmt.Registry) error {
+// Validate validates this service install resource sync status
+func (m *ServiceInstallResourceSyncStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateResources(formats); err != nil {
@@ -41,7 +41,7 @@ func (m *ServiceInstallAlignment) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ServiceInstallAlignment) validateResources(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatus) validateResources(formats strfmt.Registry) error {
 	if swag.IsZero(m.Resources) { // not required
 		return nil
 	}
@@ -71,8 +71,8 @@ func (m *ServiceInstallAlignment) validateResources(formats strfmt.Registry) err
 	return nil
 }
 
-// ContextValidate validate this service install alignment based on the context it is used
-func (m *ServiceInstallAlignment) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service install resource sync status based on the context it is used
+func (m *ServiceInstallResourceSyncStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateResources(ctx, formats); err != nil {
@@ -85,7 +85,7 @@ func (m *ServiceInstallAlignment) ContextValidate(ctx context.Context, formats s
 	return nil
 }
 
-func (m *ServiceInstallAlignment) contextValidateResources(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatus) contextValidateResources(ctx context.Context, formats strfmt.Registry) error {
 
 	for i := 0; i < len(m.Resources); i++ {
 
@@ -115,7 +115,7 @@ func (m *ServiceInstallAlignment) contextValidateResources(ctx context.Context, 
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceInstallAlignment) MarshalBinary() ([]byte, error) {
+func (m *ServiceInstallResourceSyncStatus) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -123,8 +123,8 @@ func (m *ServiceInstallAlignment) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceInstallAlignment) UnmarshalBinary(b []byte) error {
-	var res ServiceInstallAlignment
+func (m *ServiceInstallResourceSyncStatus) UnmarshalBinary(b []byte) error {
+	var res ServiceInstallResourceSyncStatus
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

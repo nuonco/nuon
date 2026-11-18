@@ -14,7 +14,7 @@ import {
 import { mixedHelmPlan } from '@/lib/fixtures/plan-diffs/helm'
 import { mockPlan as kubernetesPlan } from '@/lib/fixtures/plan-diffs/kubernetes'
 import { securityGroupUpdatePlan } from '@/lib/fixtures/plan-diffs/terraform'
-import type { TInstallAlignmentResource, TInstallOverview } from '@/types'
+import type { TInstallResourceSyncStatusResource, TInstallOverview } from '@/types'
 import {
   APP_CONFIG_ID,
   pendingReply,
@@ -793,7 +793,6 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       expected_build_id: 'bld-cmp-search',
       expected_config_id: APP_CONFIG_ID,
       applied_build_id: undefined,
-      applied_build: undefined,
       applied_config_id: undefined,
     }),
     alignmentResource({
@@ -902,7 +901,7 @@ export type TResolveDriftScenario =
 
 type TDriftResolution = {
   id: string
-  resource: TInstallAlignmentResource
+  resource: TInstallResourceSyncStatusResource
   requestId: string
   startedAt: number
   approvedAt?: number
@@ -911,7 +910,7 @@ type TDriftResolution = {
 }
 
 const resourcePlanFixture = (
-  resource: TInstallAlignmentResource,
+  resource: TInstallResourceSyncStatusResource,
   changed = false
 ) => {
   if (resource.component_type === 'helm_chart') {
@@ -1142,7 +1141,7 @@ const resolveDriftFixture = (
             !snapshot(entry).workflow.finished)
       )
       if (existing) return ok({ workflow_id: existing.id })
-      const resource = overview.alignment?.resources?.find(
+      const resource = overview.resource_sync_status?.resources?.find(
         (item) => item.id === body.resource_id
       )
       if (!resource)
@@ -1228,7 +1227,7 @@ export const resourcesFixture = (
   const overview = hasDrift
     ? driftedAlignment(alignment === 'input-updates')
     : inSyncAlignment()
-  for (const resource of overview.alignment?.resources ?? []) {
+  for (const resource of overview.resource_sync_status?.resources ?? []) {
     if (resource.plan) {
       const plan = resourcePlanFixture(resource)
       resource.plan.type = plan.type
@@ -1236,7 +1235,7 @@ export const resourcesFixture = (
     }
   }
   if (alignment === 'unavailable') {
-    overview.alignment = {
+    overview.resource_sync_status = {
       error: 'Resource alignment unavailable',
       resources: [],
     }
@@ -1244,7 +1243,7 @@ export const resourcesFixture = (
     overview.branch_tracking!.commits_behind = 2
   }
   if (alignment === 'inputs-unverified') {
-    const component = overview.alignment?.resources?.find(
+    const component = overview.resource_sync_status?.resources?.find(
       (resource) => resource.id === 'ic-cmp-api'
     )
     if (component) {
@@ -1257,7 +1256,7 @@ export const resourcesFixture = (
     }
   }
   if (alignment === 'image-sync-cancelled') {
-    const image = overview.alignment?.resources?.find(
+    const image = overview.resource_sync_status?.resources?.find(
       (resource) => resource.id === 'ic-cmp-api-image'
     )
     if (image) {
@@ -1265,7 +1264,7 @@ export const resourcesFixture = (
     }
   }
   if (alignment === 'ongoing') {
-    for (const resource of overview.alignment?.resources ?? []) {
+    for (const resource of overview.resource_sync_status?.resources ?? []) {
       if (
         ['ic-cmp-scheduler', 'ic-cmp-worker-image'].includes(resource.id ?? '')
       ) {
@@ -1321,8 +1320,8 @@ export const resourcesFixture = (
         expected_config_id: APP_CONFIG_ID,
       }),
     ]
-    overview.alignment!.resources = [
-      ...overview.alignment!.resources!.filter(
+    overview.resource_sync_status!.resources = [
+      ...overview.resource_sync_status!.resources!.filter(
         (resource) => resource.kind !== 'component'
       ),
       ...resources,
@@ -1380,7 +1379,7 @@ export const resourcesFixture = (
       const id = `cmp-service-${String(index + 1).padStart(2, '0')}`
       return [id, `service-${String(index + 1).padStart(2, '0')}`] as const
     })
-    overview.alignment!.resources!.push(
+    overview.resource_sync_status!.resources!.push(
       ...extras.map(([id, name]) =>
         alignmentResource({
           id: `ic-${id}`,
@@ -1410,7 +1409,7 @@ export const resourcesFixture = (
     components.reverse()
   }
   if (alignment === 'torn-down') {
-    for (const resource of overview.alignment?.resources ?? []) {
+    for (const resource of overview.resource_sync_status?.resources ?? []) {
       if (resource.component_id === 'cmp-ledger-image') {
         resource.category = 'torn-down'
         resource.status = 'inactive'
@@ -1530,7 +1529,7 @@ export const resourcesFixture = (
       return ok({ ...deploymentRecord('in-progress'), id: openWorkflowId })
     }
     if (path.includes('/approvals/') && path.endsWith('/contents')) {
-      const resource = overview.alignment?.resources?.find((item) =>
+      const resource = overview.resource_sync_status?.resources?.find((item) =>
         path.includes(`/approvals/${item.plan?.approval_id}/`)
       )
       if (resource)
@@ -1637,7 +1636,7 @@ export const resourcesFixture = (
     if (path === '/v1/builds') {
       const id = url.searchParams.get('component_id')
       if (alignment === 'component-history') {
-        const resource = overview.alignment?.resources?.find(
+        const resource = overview.resource_sync_status?.resources?.find(
           (resource) => resource.component_id === id
         )
         return ok(

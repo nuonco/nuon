@@ -82,11 +82,11 @@ export const InstallComponentsListContainer = () => {
     isLoading: overviewLoading,
     isPlaceholderData,
   } = useInstallOverview()
-  const alignmentAvailable = !!overview?.alignment && !overview.alignment.error
+  const alignmentAvailable = !!overview?.resource_sync_status && !overview.resource_sync_status.error
   const alignmentById = useMemo(
     () =>
       new Map(
-        (overview?.alignment?.resources ?? []).map((resource) => [
+        (overview?.resource_sync_status?.resources ?? []).map((resource) => [
           resource.id,
           resource,
         ])
@@ -105,7 +105,7 @@ export const InstallComponentsListContainer = () => {
     ','
   )
   const listed = alignmentAvailable
-    ? listedResources(overview.alignment.resources, ['component'], {
+    ? listedResources(overview.resource_sync_status.resources, ['component'], {
         enabled: enabledFilter,
         search: q,
         types: selectedTypes,
@@ -285,7 +285,7 @@ export const InstallComponentsListContainer = () => {
   ])
 
   const tornDown: TInstallComponentListItem[] = resourcesOfKinds(
-    overview?.alignment?.resources,
+    overview?.resource_sync_status?.resources,
     ['component']
   )
     .filter(

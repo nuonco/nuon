@@ -16,13 +16,13 @@ import {
   mixedAlignmentResources,
   selectedCommit,
 } from '@/components/__fixtures__/install-alignment'
-import type { TInstallAlignmentResource } from '@/types'
+import type { TInstallResourceSyncStatusResource } from '@/types'
 import { hasOngoingDeployment } from '../alignment-utils'
 import { DriftResourceCard } from '../DriftResourceCard'
 import { DriftedResources, type IDriftedResources } from './DriftedResources'
 
 const card =
-  (view: TCollectionView) => (resource: TInstallAlignmentResource) => (
+  (view: TCollectionView) => (resource: TInstallResourceSyncStatusResource) => (
     <DriftResourceCard
       resource={resource}
       view={view}

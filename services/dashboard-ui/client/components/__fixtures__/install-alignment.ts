@@ -1,6 +1,6 @@
 import type {
-  TInstallAlignmentOrigin,
-  TInstallAlignmentResource,
+  TInstallResourceSyncStatusOrigin,
+  TInstallResourceSyncStatusResource,
   TInstallBranchTracking,
   TInstallOverview,
   TInstallOverviewCommit,
@@ -45,13 +45,13 @@ export const liveCommit = alignmentCommit(1, {
 
 export const runOrigin = (
   commit: TInstallOverviewCommit
-): TInstallAlignmentOrigin => ({
+): TInstallResourceSyncStatusOrigin => ({
   workflow_id: `wf-install-${commit.run_id}`,
   workflow_type: 'app_branch_config_update',
   run: commit,
 })
 
-export const manualOrigin: TInstallAlignmentOrigin = {
+export const manualOrigin: TInstallResourceSyncStatusOrigin = {
   workflow_id: 'wf-manual-deploy',
   workflow_type: 'manual_deploy',
 }
@@ -73,8 +73,8 @@ export const alignmentPlan = (resourceId: string, planOnly = false) => ({
 })
 
 export const alignmentResource = (
-  overrides: Partial<TInstallAlignmentResource> = {}
-): TInstallAlignmentResource => ({
+  overrides: Partial<TInstallResourceSyncStatusResource> = {}
+): TInstallResourceSyncStatusResource => ({
   id: 'ic-api',
   kind: 'component',
   name: 'api',
@@ -87,7 +87,7 @@ export const alignmentResource = (
 
 export const liveFields = (
   componentId: string
-): Partial<TInstallAlignmentResource> => ({
+): Partial<TInstallResourceSyncStatusResource> => ({
   expected_build_id: `bld-${componentId}`,
   applied_build_id: `bld-${componentId}`,
   applied_deploy_id: `dep-live-${componentId}`,
@@ -96,7 +96,7 @@ export const liveFields = (
 })
 
 export const unappliedResource = (
-  overrides: Partial<TInstallAlignmentResource> = {}
+  overrides: Partial<TInstallResourceSyncStatusResource> = {}
 ) =>
   alignmentResource({
     category: 'changes-not-applied',
@@ -111,7 +111,7 @@ export const unappliedResource = (
   })
 
 export const openDeploymentResource = (
-  overrides: Partial<TInstallAlignmentResource> = {}
+  overrides: Partial<TInstallResourceSyncStatusResource> = {}
 ) =>
   unappliedResource({
     status: 'in-progress',
@@ -125,7 +125,7 @@ export const openDeploymentResource = (
   })
 
 export const inputUpdateResource = (
-  overrides: Partial<TInstallAlignmentResource> = {}
+  overrides: Partial<TInstallResourceSyncStatusResource> = {}
 ) =>
   unappliedResource({
     status: 'active',
@@ -139,7 +139,7 @@ export const inputUpdateResource = (
   })
 
 export const stateDriftResource = (
-  overrides: Partial<TInstallAlignmentResource> = {}
+  overrides: Partial<TInstallResourceSyncStatusResource> = {}
 ) =>
   alignmentResource({
     ...liveFields(overrides.component_id ?? 'cmp-api'),
@@ -188,7 +188,7 @@ const openCause = (index: number, status: string) => {
   })
 }
 
-export const causeResources = (): TInstallAlignmentResource[] => [
+export const causeResources = (): TInstallResourceSyncStatusResource[] => [
   unappliedResource({ ...causeBase(0), plan: undefined }),
   openCause(1, 'queued'),
   openCause(2, 'in-progress'),
@@ -217,7 +217,7 @@ export const causeResources = (): TInstallAlignmentResource[] => [
 
 export const mixedAlignmentResources = (
   count = 12
-): TInstallAlignmentResource[] => {
+): TInstallResourceSyncStatusResource[] => {
   const causes = causeResources()
   return Array.from({ length: count }, (_, index) => {
     const resource = causes[index % causes.length]
@@ -227,7 +227,7 @@ export const mixedAlignmentResources = (
   })
 }
 
-export const inSyncResources = (count = 3): TInstallAlignmentResource[] =>
+export const inSyncResources = (count = 3): TInstallResourceSyncStatusResource[] =>
   Array.from({ length: count }, (_, index) =>
     alignmentResource({
       id: `ic-synced-${index}`,
@@ -256,10 +256,10 @@ export const branchTracking = (
 })
 
 export const installOverview = (
-  resources: TInstallAlignmentResource[],
+  resources: TInstallResourceSyncStatusResource[],
   tracking: Partial<TInstallBranchTracking> = {}
 ): TInstallOverview => ({
   branch_tracking: branchTracking(tracking),
   config_drift: { components: [] },
-  alignment: { resources },
+  resource_sync_status: { resources },
 })

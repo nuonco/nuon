@@ -8,8 +8,8 @@ import { useResolveInstallDrift } from '@/hooks/use-resolve-install-drift'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
   TComponentType,
-  TInstallAlignmentResource,
-  TInstallAlignmentResourceKind,
+  TInstallResourceSyncStatusResource,
+  TInstallResourceSyncStatusResourceKind,
 } from '@/types'
 import {
   hasOngoingDeployment,
@@ -36,7 +36,7 @@ export const useDriftCardProps = () => {
         })
       : undefined
 
-  return (resource: TInstallAlignmentResource) => {
+  return (resource: TInstallResourceSyncStatusResource) => {
     const nameHref =
       resource.kind === 'component' || resource.kind === 'image'
         ? installLink({
@@ -82,7 +82,7 @@ export const DriftedResourcesContainer = ({
   enabled,
   view,
 }: {
-  kinds: TInstallAlignmentResourceKind[]
+  kinds: TInstallResourceSyncStatusResourceKind[]
   noun: string
   search?: string
   types?: TComponentType[]
@@ -99,7 +99,7 @@ export const DriftedResourcesContainer = ({
       originHref={originHref}
       repo={data?.branch_tracking?.repo}
       selectedCommit={data?.branch_tracking?.selected_commit}
-      resources={resourcesOfKinds(data?.alignment?.resources, kinds).filter(
+      resources={resourcesOfKinds(data?.resource_sync_status?.resources, kinds).filter(
         (resource) =>
           (resource.category !== 'torn-down' ||
             hasOngoingDeployment(resource)) &&
@@ -110,7 +110,7 @@ export const DriftedResourcesContainer = ({
       )}
       loading={isLoading}
       error={error}
-      unavailable={!!data?.alignment?.error}
+      unavailable={!!data?.resource_sync_status?.error}
       onRetry={() => void refetch()}
       noun={noun}
       search={search ?? searchParams.get('q') ?? undefined}

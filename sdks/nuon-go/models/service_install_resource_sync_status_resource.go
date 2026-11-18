@@ -14,16 +14,16 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ServiceInstallAlignmentResource service install alignment resource
+// ServiceInstallResourceSyncStatusResource service install resource sync status resource
 //
-// swagger:model service.InstallAlignmentResource
-type ServiceInstallAlignmentResource struct {
+// swagger:model service.InstallResourceSyncStatusResource
+type ServiceInstallResourceSyncStatusResource struct {
 
 	// applied build id
 	AppliedBuildID string `json:"applied_build_id,omitempty"`
 
 	// applied by
-	AppliedBy *ServiceInstallAlignmentOrigin `json:"applied_by,omitempty"`
+	AppliedBy *ServiceInstallResourceSyncStatusOrigin `json:"applied_by,omitempty"`
 
 	// applied config id
 	AppliedConfigID string `json:"applied_config_id,omitempty"`
@@ -35,7 +35,7 @@ type ServiceInstallAlignmentResource struct {
 	AppliedDeployID string `json:"applied_deploy_id,omitempty"`
 
 	// category
-	Category ServiceInstallAlignmentCategory `json:"category,omitempty"`
+	Category ServiceInstallResourceSyncStatusCategory `json:"category,omitempty"`
 
 	// component id
 	ComponentID string `json:"component_id,omitempty"`
@@ -49,20 +49,29 @@ type ServiceInstallAlignmentResource struct {
 	// expected config id
 	ExpectedConfigID string `json:"expected_config_id,omitempty"`
 
+	// explanation
+	Explanation *ServiceInstallResourceSyncStatusExplanation `json:"explanation,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
 	// kind
-	Kind ServiceInstallAlignmentResourceKind `json:"kind,omitempty"`
+	Kind ServiceInstallResourceSyncStatusResourceKind `json:"kind,omitempty"`
+
+	// last attempt
+	LastAttempt *ServiceInstallResourceSyncStatusAttempt `json:"last_attempt,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`
 
+	// newer branch runs
+	NewerBranchRuns *int64 `json:"newer_branch_runs,omitempty"`
+
 	// open deployment
-	OpenDeployment *ServiceInstallAlignmentOpenDeployment `json:"open_deployment,omitempty"`
+	OpenDeployment *ServiceInstallResourceSyncStatusOpenDeployment `json:"open_deployment,omitempty"`
 
 	// plan
-	Plan *ServiceInstallAlignmentPlan `json:"plan,omitempty"`
+	Plan *ServiceInstallResourceSyncStatusPlan `json:"plan,omitempty"`
 
 	// reason
 	Reason string `json:"reason,omitempty"`
@@ -71,8 +80,8 @@ type ServiceInstallAlignmentResource struct {
 	Status string `json:"status,omitempty"`
 }
 
-// Validate validates this service install alignment resource
-func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) error {
+// Validate validates this service install resource sync status resource
+func (m *ServiceInstallResourceSyncStatusResource) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAppliedBy(formats); err != nil {
@@ -83,7 +92,15 @@ func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) erro
 		res = append(res, err)
 	}
 
+	if err := m.validateExplanation(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateKind(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastAttempt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -101,7 +118,7 @@ func (m *ServiceInstallAlignmentResource) Validate(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) validateAppliedBy(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) validateAppliedBy(formats strfmt.Registry) error {
 	if swag.IsZero(m.AppliedBy) { // not required
 		return nil
 	}
@@ -124,7 +141,7 @@ func (m *ServiceInstallAlignmentResource) validateAppliedBy(formats strfmt.Regis
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) validateCategory(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) validateCategory(formats strfmt.Registry) error {
 	if swag.IsZero(m.Category) { // not required
 		return nil
 	}
@@ -145,7 +162,30 @@ func (m *ServiceInstallAlignmentResource) validateCategory(formats strfmt.Regist
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) validateKind(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) validateExplanation(formats strfmt.Registry) error {
+	if swag.IsZero(m.Explanation) { // not required
+		return nil
+	}
+
+	if m.Explanation != nil {
+		if err := m.Explanation.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("explanation")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("explanation")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallResourceSyncStatusResource) validateKind(formats strfmt.Registry) error {
 	if swag.IsZero(m.Kind) { // not required
 		return nil
 	}
@@ -166,7 +206,30 @@ func (m *ServiceInstallAlignmentResource) validateKind(formats strfmt.Registry) 
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) validateOpenDeployment(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) validateLastAttempt(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastAttempt) { // not required
+		return nil
+	}
+
+	if m.LastAttempt != nil {
+		if err := m.LastAttempt.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("last_attempt")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("last_attempt")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallResourceSyncStatusResource) validateOpenDeployment(formats strfmt.Registry) error {
 	if swag.IsZero(m.OpenDeployment) { // not required
 		return nil
 	}
@@ -189,7 +252,7 @@ func (m *ServiceInstallAlignmentResource) validateOpenDeployment(formats strfmt.
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) validatePlan(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) validatePlan(formats strfmt.Registry) error {
 	if swag.IsZero(m.Plan) { // not required
 		return nil
 	}
@@ -212,8 +275,8 @@ func (m *ServiceInstallAlignmentResource) validatePlan(formats strfmt.Registry) 
 	return nil
 }
 
-// ContextValidate validate this service install alignment resource based on the context it is used
-func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service install resource sync status resource based on the context it is used
+func (m *ServiceInstallResourceSyncStatusResource) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateAppliedBy(ctx, formats); err != nil {
@@ -224,7 +287,15 @@ func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, f
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateExplanation(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateKind(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLastAttempt(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -242,7 +313,7 @@ func (m *ServiceInstallAlignmentResource) ContextValidate(ctx context.Context, f
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) contextValidateAppliedBy(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) contextValidateAppliedBy(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.AppliedBy != nil {
 
@@ -267,7 +338,7 @@ func (m *ServiceInstallAlignmentResource) contextValidateAppliedBy(ctx context.C
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) contextValidateCategory(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) contextValidateCategory(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Category) { // not required
 		return nil
@@ -289,7 +360,32 @@ func (m *ServiceInstallAlignmentResource) contextValidateCategory(ctx context.Co
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) contextValidateKind(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) contextValidateExplanation(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Explanation != nil {
+
+		if swag.IsZero(m.Explanation) { // not required
+			return nil
+		}
+
+		if err := m.Explanation.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("explanation")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("explanation")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallResourceSyncStatusResource) contextValidateKind(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Kind) { // not required
 		return nil
@@ -311,7 +407,32 @@ func (m *ServiceInstallAlignmentResource) contextValidateKind(ctx context.Contex
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) contextValidateOpenDeployment(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) contextValidateLastAttempt(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LastAttempt != nil {
+
+		if swag.IsZero(m.LastAttempt) { // not required
+			return nil
+		}
+
+		if err := m.LastAttempt.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("last_attempt")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("last_attempt")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallResourceSyncStatusResource) contextValidateOpenDeployment(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.OpenDeployment != nil {
 
@@ -336,7 +457,7 @@ func (m *ServiceInstallAlignmentResource) contextValidateOpenDeployment(ctx cont
 	return nil
 }
 
-func (m *ServiceInstallAlignmentResource) contextValidatePlan(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusResource) contextValidatePlan(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Plan != nil {
 
@@ -362,7 +483,7 @@ func (m *ServiceInstallAlignmentResource) contextValidatePlan(ctx context.Contex
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceInstallAlignmentResource) MarshalBinary() ([]byte, error) {
+func (m *ServiceInstallResourceSyncStatusResource) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -370,8 +491,8 @@ func (m *ServiceInstallAlignmentResource) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceInstallAlignmentResource) UnmarshalBinary(b []byte) error {
-	var res ServiceInstallAlignmentResource
+func (m *ServiceInstallResourceSyncStatusResource) UnmarshalBinary(b []byte) error {
+	var res ServiceInstallResourceSyncStatusResource
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

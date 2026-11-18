@@ -14,35 +14,53 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ServiceInstallAlignmentAttempt service install alignment attempt
+// ServiceInstallResourceSyncStatusPlan service install resource sync status plan
 //
-// swagger:model service.InstallAlignmentAttempt
-type ServiceInstallAlignmentAttempt struct {
+// swagger:model service.InstallResourceSyncStatusPlan
+type ServiceInstallResourceSyncStatusPlan struct {
 
-	// build id
-	BuildID string `json:"build_id,omitempty"`
+	// approval id
+	ApprovalID string `json:"approval_id,omitempty"`
+
+	// changes create
+	ChangesCreate int64 `json:"changes_create,omitempty"`
+
+	// changes delete
+	ChangesDelete int64 `json:"changes_delete,omitempty"`
+
+	// changes noop
+	ChangesNoop int64 `json:"changes_noop,omitempty"`
+
+	// changes replace
+	ChangesReplace int64 `json:"changes_replace,omitempty"`
+
+	// changes update
+	ChangesUpdate int64 `json:"changes_update,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
-	// id
-	ID string `json:"id,omitempty"`
+	// owner id
+	OwnerID string `json:"owner_id,omitempty"`
 
-	// status
-	Status string `json:"status,omitempty"`
+	// owner type
+	OwnerType string `json:"owner_type,omitempty"`
+
+	// plan only
+	PlanOnly bool `json:"plan_only,omitempty"`
 
 	// step id
 	StepID string `json:"step_id,omitempty"`
 
 	// type
-	Type AppWorkflowType `json:"type,omitempty"`
+	Type AppWorkflowStepApprovalType `json:"type,omitempty"`
 
 	// workflow id
 	WorkflowID string `json:"workflow_id,omitempty"`
 }
 
-// Validate validates this service install alignment attempt
-func (m *ServiceInstallAlignmentAttempt) Validate(formats strfmt.Registry) error {
+// Validate validates this service install resource sync status plan
+func (m *ServiceInstallResourceSyncStatusPlan) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateType(formats); err != nil {
@@ -55,7 +73,7 @@ func (m *ServiceInstallAlignmentAttempt) Validate(formats strfmt.Registry) error
 	return nil
 }
 
-func (m *ServiceInstallAlignmentAttempt) validateType(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusPlan) validateType(formats strfmt.Registry) error {
 	if swag.IsZero(m.Type) { // not required
 		return nil
 	}
@@ -76,8 +94,8 @@ func (m *ServiceInstallAlignmentAttempt) validateType(formats strfmt.Registry) e
 	return nil
 }
 
-// ContextValidate validate this service install alignment attempt based on the context it is used
-func (m *ServiceInstallAlignmentAttempt) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service install resource sync status plan based on the context it is used
+func (m *ServiceInstallResourceSyncStatusPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateType(ctx, formats); err != nil {
@@ -90,7 +108,7 @@ func (m *ServiceInstallAlignmentAttempt) ContextValidate(ctx context.Context, fo
 	return nil
 }
 
-func (m *ServiceInstallAlignmentAttempt) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusPlan) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Type) { // not required
 		return nil
@@ -113,7 +131,7 @@ func (m *ServiceInstallAlignmentAttempt) contextValidateType(ctx context.Context
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceInstallAlignmentAttempt) MarshalBinary() ([]byte, error) {
+func (m *ServiceInstallResourceSyncStatusPlan) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -121,8 +139,8 @@ func (m *ServiceInstallAlignmentAttempt) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceInstallAlignmentAttempt) UnmarshalBinary(b []byte) error {
-	var res ServiceInstallAlignmentAttempt
+func (m *ServiceInstallResourceSyncStatusPlan) UnmarshalBinary(b []byte) error {
+	var res ServiceInstallResourceSyncStatusPlan
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -14,10 +14,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ServiceInstallAlignmentOrigin service install alignment origin
+// ServiceInstallResourceSyncStatusOrigin service install resource sync status origin
 //
-// swagger:model service.InstallAlignmentOrigin
-type ServiceInstallAlignmentOrigin struct {
+// swagger:model service.InstallResourceSyncStatusOrigin
+type ServiceInstallResourceSyncStatusOrigin struct {
 
 	// run
 	Run *ServiceInstallOverviewCommit `json:"run,omitempty"`
@@ -29,8 +29,8 @@ type ServiceInstallAlignmentOrigin struct {
 	WorkflowType AppWorkflowType `json:"workflow_type,omitempty"`
 }
 
-// Validate validates this service install alignment origin
-func (m *ServiceInstallAlignmentOrigin) Validate(formats strfmt.Registry) error {
+// Validate validates this service install resource sync status origin
+func (m *ServiceInstallResourceSyncStatusOrigin) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateRun(formats); err != nil {
@@ -47,7 +47,7 @@ func (m *ServiceInstallAlignmentOrigin) Validate(formats strfmt.Registry) error 
 	return nil
 }
 
-func (m *ServiceInstallAlignmentOrigin) validateRun(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusOrigin) validateRun(formats strfmt.Registry) error {
 	if swag.IsZero(m.Run) { // not required
 		return nil
 	}
@@ -70,7 +70,7 @@ func (m *ServiceInstallAlignmentOrigin) validateRun(formats strfmt.Registry) err
 	return nil
 }
 
-func (m *ServiceInstallAlignmentOrigin) validateWorkflowType(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusOrigin) validateWorkflowType(formats strfmt.Registry) error {
 	if swag.IsZero(m.WorkflowType) { // not required
 		return nil
 	}
@@ -91,8 +91,8 @@ func (m *ServiceInstallAlignmentOrigin) validateWorkflowType(formats strfmt.Regi
 	return nil
 }
 
-// ContextValidate validate this service install alignment origin based on the context it is used
-func (m *ServiceInstallAlignmentOrigin) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service install resource sync status origin based on the context it is used
+func (m *ServiceInstallResourceSyncStatusOrigin) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateRun(ctx, formats); err != nil {
@@ -109,7 +109,7 @@ func (m *ServiceInstallAlignmentOrigin) ContextValidate(ctx context.Context, for
 	return nil
 }
 
-func (m *ServiceInstallAlignmentOrigin) contextValidateRun(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusOrigin) contextValidateRun(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Run != nil {
 
@@ -134,7 +134,7 @@ func (m *ServiceInstallAlignmentOrigin) contextValidateRun(ctx context.Context, 
 	return nil
 }
 
-func (m *ServiceInstallAlignmentOrigin) contextValidateWorkflowType(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusOrigin) contextValidateWorkflowType(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.WorkflowType) { // not required
 		return nil
@@ -157,7 +157,7 @@ func (m *ServiceInstallAlignmentOrigin) contextValidateWorkflowType(ctx context.
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceInstallAlignmentOrigin) MarshalBinary() ([]byte, error) {
+func (m *ServiceInstallResourceSyncStatusOrigin) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -165,8 +165,8 @@ func (m *ServiceInstallAlignmentOrigin) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceInstallAlignmentOrigin) UnmarshalBinary(b []byte) error {
-	var res ServiceInstallAlignmentOrigin
+func (m *ServiceInstallResourceSyncStatusOrigin) UnmarshalBinary(b []byte) error {
+	var res ServiceInstallResourceSyncStatusOrigin
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

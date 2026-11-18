@@ -4,7 +4,7 @@ import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TInstallAlignmentOrigin } from '@/types'
+import type { TInstallResourceSyncStatusOrigin } from '@/types'
 import { humanize } from '@/utils/string-utils'
 
 export const RunRef = ({
@@ -13,7 +13,7 @@ export const RunRef = ({
   repo,
 }: {
   href?: string
-  origin: TInstallAlignmentOrigin
+  origin: TInstallResourceSyncStatusOrigin
   repo?: string
 }) => {
   const run = origin.run
@@ -46,7 +46,7 @@ export const RunRef = ({
 export interface ILiveBuild {
   appliedAt?: string
   deployHref?: string
-  origin?: TInstallAlignmentOrigin
+  origin?: TInstallResourceSyncStatusOrigin
   originHref?: string
   variant?: 'deploy' | 'sync'
 }

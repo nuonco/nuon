@@ -15,7 +15,7 @@ import {
   unappliedResource,
   selectedCommit,
 } from '@/components/__fixtures__/install-alignment'
-import type { TAPIError, TInstallAlignmentResource } from '@/types'
+import type { TAPIError, TInstallResourceSyncStatusResource } from '@/types'
 import { DriftResourceCard } from '../DriftResourceCard'
 import { DriftedResources } from './DriftedResources'
 
@@ -46,7 +46,7 @@ const View = ({
   unavailable = false,
   onRetry,
 }: {
-  items?: TInstallAlignmentResource[]
+  items?: TInstallResourceSyncStatusResource[]
   error?: TAPIError
   noun?: string
   search?: string
@@ -261,7 +261,7 @@ test('cached alignment remains visible with a refresh warning in summary, drift,
     user_error: false,
   }
   const renderCached = (
-    resource: TInstallAlignmentResource,
+    resource: TInstallResourceSyncStatusResource,
     search?: string
   ) => <View items={[resource]} error={error} search={search} />
   const { rerender } = render(renderCached(alignmentResource()))

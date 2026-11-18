@@ -1,8 +1,7 @@
 import { ACTIVE_DEPLOYMENT_STATUSES } from '@/components/installs/DeploymentDetail/deployment-progress'
 import type {
-  TInstallAlignmentBuild,
-  TInstallAlignmentResource,
-  TInstallAlignmentResourceKind,
+  TInstallResourceSyncStatusResource,
+  TInstallResourceSyncStatusResourceKind,
   TInstallOverviewCommit,
 } from '@/types'
 
@@ -11,7 +10,7 @@ export type TDriftFilter =
   | 'changes-not-applied'
   | 'state-drift-detected'
 
-export const hasOngoingDeployment = (resource?: TInstallAlignmentResource) =>
+export const hasOngoingDeployment = (resource?: TInstallResourceSyncStatusResource) =>
   !!resource?.open_deployment?.id &&
   ACTIVE_DEPLOYMENT_STATUSES.has(resource.open_deployment.status ?? '') &&
   !(
@@ -19,12 +18,12 @@ export const hasOngoingDeployment = (resource?: TInstallAlignmentResource) =>
     resource.open_deployment.status === 'failed-pending-retry'
   )
 
-export const isDrifted = (resource: TInstallAlignmentResource) =>
+export const isDrifted = (resource: TInstallResourceSyncStatusResource) =>
   resource.category === 'changes-not-applied' ||
   resource.category === 'state-drift-detected'
 
 export const matchesSearch = (
-  resource: TInstallAlignmentResource,
+  resource: TInstallResourceSyncStatusResource,
   search?: string
 ) => {
   const query = search?.trim().toLowerCase()
@@ -35,8 +34,8 @@ export const matchesSearch = (
 }
 
 export const resourcesOfKinds = (
-  resources: TInstallAlignmentResource[] | undefined,
-  kinds: TInstallAlignmentResourceKind[]
+  resources: TInstallResourceSyncStatusResource[] | undefined,
+  kinds: TInstallResourceSyncStatusResourceKind[]
 ) =>
   (resources ?? []).filter(
     (resource) => !!resource.kind && kinds.includes(resource.kind)
@@ -45,8 +44,8 @@ export const resourcesOfKinds = (
 // The list endpoint defaults to selected-config members, newest first;
 // overview resources are oldest first and also include removed components.
 export const listedResources = (
-  resources: TInstallAlignmentResource[] | undefined,
-  kinds: TInstallAlignmentResourceKind[],
+  resources: TInstallResourceSyncStatusResource[] | undefined,
+  kinds: TInstallResourceSyncStatusResourceKind[],
   {
     enabled,
     search,
@@ -69,7 +68,7 @@ export const listedResources = (
     .reverse()
 
 export const resourcePage = (
-  resources: TInstallAlignmentResource[],
+  resources: TInstallResourceSyncStatusResource[],
   offset: number,
   limit: number
 ) => {
@@ -82,14 +81,14 @@ export const resourcePage = (
 }
 
 export const filterDrifted = (
-  drifted: TInstallAlignmentResource[],
+  drifted: TInstallResourceSyncStatusResource[],
   driftFilter: TDriftFilter
 ) =>
   drifted.filter(
     (resource) => driftFilter === 'all' || resource.category === driftFilter
   )
 
-export const driftCounts = (drifted: TInstallAlignmentResource[]) => {
+export const driftCounts = (drifted: TInstallResourceSyncStatusResource[]) => {
   const unapplied = drifted.filter(
     (resource) => resource.category === 'changes-not-applied'
   )
@@ -103,9 +102,6 @@ export const driftCounts = (drifted: TInstallAlignmentResource[]) => {
 }
 
 export const shortSha = (sha?: string) => sha?.slice(0, 7)
-
-export const buildRef = (build?: TInstallAlignmentBuild) =>
-  shortSha(build?.sha) || build?.resolved_tag || build?.id
 
 export const branchRunHref = ({
   appId,

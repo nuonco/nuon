@@ -12,8 +12,8 @@ import { ToggleButton } from '@/components/common/ToggleButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import type {
   TAPIError,
-  TInstallAlignmentOrigin,
-  TInstallAlignmentResource,
+  TInstallResourceSyncStatusOrigin,
+  TInstallResourceSyncStatusResource,
   TInstallOverviewCommit,
 } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -35,18 +35,18 @@ export interface IDriftedResources {
   loading?: boolean
   noun: string
   onRetry?: () => void
-  originHref?: (origin?: TInstallAlignmentOrigin) => string | undefined
+  originHref?: (origin?: TInstallResourceSyncStatusOrigin) => string | undefined
   repo?: string
   selectedCommit?: TInstallOverviewCommit
   pageSize?: number
-  renderCard: (resource: TInstallAlignmentResource) => ReactNode
-  resources: TInstallAlignmentResource[]
+  renderCard: (resource: TInstallResourceSyncStatusResource) => ReactNode
+  resources: TInstallResourceSyncStatusResource[]
   search?: string
   unavailable?: boolean
   view?: TCollectionView
 }
 
-const notComparedSummary = (resources: TInstallAlignmentResource[]) => {
+const notComparedSummary = (resources: TInstallResourceSyncStatusResource[]) => {
   const unknown = resources.filter(
     (resource) => resource.category === 'unknown' || !resource.category
   ).length

@@ -45,9 +45,9 @@ export const InstallImagesListContainer = () => {
     isLoading: overviewLoading,
     isPlaceholderData,
   } = useInstallOverview()
-  const alignmentAvailable = !!overview?.alignment && !overview.alignment.error
+  const alignmentAvailable = !!overview?.resource_sync_status && !overview.resource_sync_status.error
   const ongoingIds = new Set(
-    (overview?.alignment?.resources ?? [])
+    (overview?.resource_sync_status?.resources ?? [])
       .filter(hasOngoingDeployment)
       .map((resource) => resource.id)
   )
@@ -55,7 +55,7 @@ export const InstallImagesListContainer = () => {
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
   const listed = alignmentAvailable
-    ? listedResources(overview.alignment.resources, ['image'], { search: q })
+    ? listedResources(overview.resource_sync_status.resources, ['image'], { search: q })
     : undefined
   const membership = listed?.map((resource) => resource.id).join(',')
   const pagedMembership = useRef(membership)
@@ -123,7 +123,7 @@ export const InstallImagesListContainer = () => {
     )
     const latestDeploy = installComponent.install_deploys?.[0]
     const appliedConfigId = installComponent.app_config_ref?.applied_config_id
-    const alignment = overview?.alignment?.resources?.find(
+    const alignment = overview?.resource_sync_status?.resources?.find(
       (resource) => resource.id === installComponent.id
     )
 

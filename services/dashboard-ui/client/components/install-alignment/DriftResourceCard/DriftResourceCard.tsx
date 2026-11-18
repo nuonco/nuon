@@ -13,9 +13,9 @@ import { ComponentType } from '@/components/components/ComponentType'
 import type {
   TAPIError,
   TComponentType,
-  TInstallAlignmentOrigin,
-  TInstallAlignmentResource,
-  TInstallAlignmentResourceKind,
+  TInstallResourceSyncStatusOrigin,
+  TInstallResourceSyncStatusResource,
+  TInstallResourceSyncStatusResourceKind,
 } from '@/types'
 import { cn } from '@/utils/classnames'
 import { hasOngoingDeployment, isDrifted } from '../alignment-utils'
@@ -29,14 +29,14 @@ export interface IDriftResourceCard {
   nameHref?: string
   onResolve?: () => void
   onViewPlan?: () => void
-  originHref?: (origin?: TInstallAlignmentOrigin) => string | undefined
+  originHref?: (origin?: TInstallResourceSyncStatusOrigin) => string | undefined
   resolveError?: TAPIError | null
   resolving?: boolean
-  resource: TInstallAlignmentResource
+  resource: TInstallResourceSyncStatusResource
   view?: TCollectionView
 }
 
-const KIND_ICONS: Record<TInstallAlignmentResourceKind, TIconVariant> = {
+const KIND_ICONS: Record<TInstallResourceSyncStatusResourceKind, TIconVariant> = {
   component: 'CubeIcon',
   image: 'CubeIcon',
   sandbox: 'ShippingContainerIcon',

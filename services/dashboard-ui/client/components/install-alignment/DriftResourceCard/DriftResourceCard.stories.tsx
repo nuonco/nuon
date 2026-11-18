@@ -9,11 +9,11 @@ import {
   stateDriftResource,
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
-import type { TInstallAlignmentOrigin } from '@/types'
+import type { TInstallResourceSyncStatusOrigin } from '@/types'
 import { DriftResourceCard } from './DriftResourceCard'
 
 const links = {
-  originHref: (origin?: TInstallAlignmentOrigin) =>
+  originHref: (origin?: TInstallResourceSyncStatusOrigin) =>
     origin?.run
       ? `#run-${origin.run.run_id}`
       : `#workflow-${origin?.workflow_id}`,
