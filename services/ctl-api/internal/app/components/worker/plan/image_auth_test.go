@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 )
 
 func TestImageSourcePlanAuthentication(t *testing.T) {
@@ -35,10 +36,8 @@ func TestImageSourcePlanAuthentication(t *testing.T) {
 		"GAR federation": {account: "acme@example.com", provider: "provider"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			repo, err := (&Planner{}).getSourceRepository(&app.ExternalImageComponentConfig{ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", GCPGARImageConfig: &app.GCPGARImageConfig{ID: "saved", GCPRegion: "us-central1", ServiceAccountEmail: tc.account, WorkloadIdentityProvider: tc.provider}}, "component")
-			require.NoError(t, err)
-			require.Equal(t, tc.account, repo.ServiceAccountEmail)
-			require.Equal(t, tc.provider, repo.WorkloadIdentityProvider)
+			_, err := (&Planner{}).getSourceRepository(&app.ExternalImageComponentConfig{ImageURL: "us-central1-docker.pkg.dev/acme/repo/image", GCPGARImageConfig: &app.GCPGARImageConfig{ID: "saved", GCPRegion: "us-central1", ServiceAccountEmail: tc.account, WorkloadIdentityProvider: tc.provider}}, "component")
+			require.ErrorIs(t, err, cloudconnections.ErrLegacyImageAuthDisabled)
 		})
 	}
 }
