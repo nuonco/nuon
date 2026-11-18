@@ -5,8 +5,13 @@ keywords: ["actions", "what are actions", "health checks", "cron schedule", "act
 ---
 
 Actions allow you to create automated workflows that can be run in installs.
-Actions are useful for debugging, running scripts, and implementing health
-checks.
+Actions are useful for debugging, running scripts, and
+[database migrations](/guides/database-migrations).
+
+<Note>
+  Nuon already checks the health of every component and sends alerts to Slack and webhooks. See
+  [Health Checks](/guides/health-checks). Write an action only for a check the built-in ones do not cover.
+</Note>
 
 ## What are Actions?
 
@@ -227,5 +232,6 @@ nuon actions get-run -i <install-id-or-name> -r <run-id>
 
 ## Action Permissions
 
-Actions are run with the same permissions as the [Runner](/concepts/runners) in
-each install.
+The runner assumes an [operation role](/concepts/operation-roles) for each action run. By default that is the
+standard role for the operation. Set `role` on the action to use a narrower role, or a
+[break glass role](/concepts/break-glass) your customer has switched on.
