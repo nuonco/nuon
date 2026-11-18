@@ -1,4 +1,4 @@
-package alignment
+package syncstatus
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-func (s *Helpers) loadOrigins(ctx context.Context, orgID string, alignment *InstallAlignment) error {
+func (s *Helpers) loadOrigins(ctx context.Context, orgID string, syncStatus *InstallResourceSyncStatus) error {
 	runIDs := map[string]struct{}{}
-	for _, res := range alignment.Resources {
+	for _, res := range syncStatus.Resources {
 		if res.appliedRunID != "" {
 			runIDs[res.appliedRunID] = struct{}{}
 		}
@@ -22,17 +22,17 @@ func (s *Helpers) loadOrigins(ctx context.Context, orgID string, alignment *Inst
 			Where(app.AppBranchRun{OrgID: orgID}).
 			Where("id IN ?", generics.MapToKeys(runIDs)).
 			Find(&list).Error; err != nil {
-			return fmt.Errorf("unable to get alignment branch runs: %w", err)
+			return fmt.Errorf("unable to get sync status branch runs: %w", err)
 		}
 		for i := range list {
 			runs[list[i].ID] = CommitFromRun(&list[i])
 		}
 	}
 
-	for i := range alignment.Resources {
-		res := &alignment.Resources[i]
+	for i := range syncStatus.Resources {
+		res := &syncStatus.Resources[i]
 		if res.appliedWorkflowID != "" && res.appliedWorkflow != "" {
-			res.AppliedBy = &InstallAlignmentOrigin{WorkflowID: res.appliedWorkflowID, WorkflowType: res.appliedWorkflow, Run: runs[res.appliedRunID]}
+			res.AppliedBy = &InstallResourceSyncStatusOrigin{WorkflowID: res.appliedWorkflowID, WorkflowType: res.appliedWorkflow, Run: runs[res.appliedRunID]}
 		}
 	}
 	return nil

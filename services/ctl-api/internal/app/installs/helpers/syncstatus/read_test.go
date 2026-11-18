@@ -1,4 +1,4 @@
-package alignment_test
+package syncstatus_test
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/syncstatus"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -161,10 +161,10 @@ func (s *ReadSuite) deploy(f *readFixture, d seededDeploy) *app.InstallDeploy {
 	return deploy
 }
 
-func (s *ReadSuite) read(f *readFixture) alignment.InstallAlignmentResource {
+func (s *ReadSuite) read(f *readFixture) syncstatus.InstallResourceSyncStatusResource {
 	var install app.Install
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).First(&install, "id = ?", f.install.ID).Error)
-	h := alignment.New(s.deps.DB, s.deps.Installs, s.deps.Blob, s.deps.L)
+	h := syncstatus.New(s.deps.DB, s.deps.Installs, s.deps.Blob, s.deps.L)
 	got, err := h.Read(s.ctx, &install)
 	require.NoError(s.T(), err)
 	for _, res := range got.Resources {
@@ -172,8 +172,8 @@ func (s *ReadSuite) read(f *readFixture) alignment.InstallAlignmentResource {
 			return res
 		}
 	}
-	s.T().Fatalf("install component %s missing from alignment", f.ic.ID)
-	return alignment.InstallAlignmentResource{}
+	s.T().Fatalf("install component %s missing from sync status", f.ic.ID)
+	return syncstatus.InstallResourceSyncStatusResource{}
 }
 
 func (s *ReadSuite) TestLiveBuildIsLatestApplied() {
@@ -194,7 +194,7 @@ func (s *ReadSuite) TestLiveBuildIsLatestApplied() {
 
 	s.target(f, "F")
 	res := s.read(f)
-	s.Equal(alignment.InstallAlignmentCategoryInSync, res.Category, res.Reason)
+	s.Equal(syncstatus.InstallResourceSyncStatusCategoryInSync, res.Category, res.Reason)
 	s.Equal(f.builds["F"], res.AppliedBuildID)
 	s.Equal(deployF.ID, res.AppliedDeployID)
 	s.Require().NotNil(res.AppliedDeployAt)
@@ -203,7 +203,7 @@ func (s *ReadSuite) TestLiveBuildIsLatestApplied() {
 	s.target(f, "G")
 	s.deploy(f, seededDeploy{build: "G", minute: 7, status: "error", workflow: s.workflow(f, app.StatusError, false)})
 	res = s.read(f)
-	s.Equal(alignment.InstallAlignmentCategoryChangesNotApplied, res.Category)
+	s.Equal(syncstatus.InstallResourceSyncStatusCategoryChangesNotApplied, res.Category)
 	s.Equal(f.builds["G"], res.ExpectedBuildID)
 	s.Equal(f.builds["F"], res.AppliedBuildID)
 	s.Nil(res.OpenDeployment)
@@ -230,7 +230,7 @@ func (s *ReadSuite) TestOpenDeploymentComesFromLatestDeploy() {
 			s.deploy(f, seededDeploy{build: "G", minute: 2, status: "queued", workflow: wf})
 
 			res := s.read(f)
-			s.Equal(alignment.InstallAlignmentCategoryChangesNotApplied, res.Category)
+			s.Equal(syncstatus.InstallResourceSyncStatusCategoryChangesNotApplied, res.Category)
 			if !tc.open {
 				s.Nil(res.OpenDeployment)
 				return
