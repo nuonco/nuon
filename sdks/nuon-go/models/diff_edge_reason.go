@@ -45,6 +45,9 @@ const (
 	// DiffEdgeReasonOperationRole captures enum value "operation_role"
 	DiffEdgeReasonOperationRole DiffEdgeReason = "operation_role"
 
+	// DiffEdgeReasonPolicy captures enum value "policy"
+	DiffEdgeReasonPolicy DiffEdgeReason = "policy"
+
 	// DiffEdgeReasonSandboxOutput captures enum value "sandbox_output"
 	DiffEdgeReasonSandboxOutput DiffEdgeReason = "sandbox_output"
 
@@ -60,7 +63,7 @@ var diffEdgeReasonEnum []any
 
 func init() {
 	var res []DiffEdgeReason
-	if err := json.Unmarshal([]byte(`["component_dependency","component_reference","input_reference","install_stack_output","operation_role","sandbox_output","secret_reference","stack_render"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["component_dependency","component_reference","input_reference","install_stack_output","operation_role","policy","sandbox_output","secret_reference","stack_render"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
