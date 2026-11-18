@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -62,6 +63,10 @@ func (s *service) CreateAppOperationRoleConfig(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
+	if err := require.AppConfigInApp(ctx, s.db, appID, req.AppConfigID); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	var cfg *app.AppOperationRoleConfig
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
