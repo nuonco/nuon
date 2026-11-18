@@ -4,6 +4,7 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import type { TAppPolicyConfig } from '@/types'
 
 type TPolicyRow = {
@@ -21,7 +22,9 @@ function extractPolicyName(contents: string, engine: string): string {
   if (!contents) return 'Unnamed Policy'
 
   if (engine === 'kyverno') {
-    const match = contents.match(/metadata:\s*\n\s*name:\s*["']?([^"'\n]+)["']?/)
+    const match = contents.match(
+      /metadata:\s*\n\s*name:\s*["']?([^"'\n]+)["']?/
+    )
     if (match) return match[1].trim()
   }
 
@@ -44,7 +47,7 @@ function parsePolicyToTableData(
   policies: TAppPolicyConfig[],
   orgId: string,
   appId: string,
-  branchId?: string,
+  branchId?: string
 ): TPolicyRow[] {
   const basePath = branchId
     ? `/${orgId}/apps/${appId}/branches/${branchId}`
@@ -52,7 +55,8 @@ function parsePolicyToTableData(
   return policies.map((policy) => ({
     id: policy.id || '',
     name:
-      policy.name || extractPolicyName(policy.contents || '', policy.engine || ''),
+      policy.name ||
+      extractPolicyName(policy.contents || '', policy.engine || ''),
     nameHref: `${basePath}/policies/${policy.id}`,
     type: policy.type || '',
     engine: policy.engine || '',
@@ -82,7 +86,9 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
     accessorKey: 'type',
     header: 'Type',
     cell: (info) => (
-      <Text variant="subtext">{formatPolicyType(info.getValue() as string)}</Text>
+      <Text variant="subtext">
+        {formatPolicyType(info.getValue() as string)}
+      </Text>
     ),
   },
   {
@@ -124,6 +130,23 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
     },
   },
   {
+    accessorKey: 'createdAt',
+    header: 'Created',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          variant="subtext"
+          time={info.getValue() as string}
+          format="relative"
+        />
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          —
+        </Text>
+      ),
+  },
+  {
     accessorKey: 'id',
     id: 'actions',
     header: '',
@@ -154,7 +177,10 @@ export const PoliciesTable = ({
         ...col,
         cell: (info) => (
           <Text>
-            <Link href={`${basePath}/policies/${info.row.original.id}`} variant="inline">
+            <Link
+              href={`${basePath}/policies/${info.row.original.id}`}
+              variant="inline"
+            >
               View policy
             </Link>
           </Text>
@@ -166,6 +192,7 @@ export const PoliciesTable = ({
 
   return (
     <Table<TPolicyRow>
+      tableId="policies"
       columns={columns}
       data={data}
       enableSearch={false}

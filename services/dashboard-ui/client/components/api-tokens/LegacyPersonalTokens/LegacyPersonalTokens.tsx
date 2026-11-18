@@ -29,6 +29,14 @@ export const LegacyPersonalTokens = ({
         ),
       },
       {
+        header: 'Role',
+        accessorKey: 'role',
+        meta: { defaultHidden: true },
+        cell: (props) => (
+          <Text variant="body">{props.getValue<string>() || '—'}</Text>
+        ),
+      },
+      {
         header: 'Created',
         accessorKey: 'created_at',
         cell: (props) => (
@@ -69,13 +77,15 @@ export const LegacyPersonalTokens = ({
         description="Personal tokens issued against your own account. Prefer service account tokens above — they keep working if you lose access."
       />
       <Table<TStaticToken>
+        tableId="legacy-personal-tokens"
         columns={columns}
         data={data}
         isLoading={isLoading}
         enableSearch={false}
         emptyStateProps={{
           emptyTitle: 'No legacy personal tokens',
-          emptyMessage: 'Personal tokens created before service account tokens will appear here.',
+          emptyMessage:
+            'Personal tokens created before service account tokens will appear here.',
         }}
       />
     </PageSection>
