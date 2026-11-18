@@ -8,7 +8,12 @@ import {
   HEALTH_UNHEALTHY,
   HEALTH_UNKNOWN,
 } from '@/utils/health-utils'
-import { HEALTH_FILTER_OPTIONS, healthFilterLabel, NO_SIGNAL } from './fleet'
+import {
+  HEALTH_FILTER_OPTIONS,
+  healthFilterLabel,
+  NO_SIGNAL,
+  PENDING_APPROVAL,
+} from './fleet'
 import { FleetFilterDropdown } from './FleetFilterDropdown'
 
 const HEALTH_BORDER_CLASSES: Record<string, string> = {
@@ -18,16 +23,25 @@ const HEALTH_BORDER_CLASSES: Record<string, string> = {
   [HEALTH_HEALTHY]: '!border-l-green-600 dark:!border-l-green-500',
   [HEALTH_UNKNOWN]: '!border-l-cool-grey-600 dark:!border-l-cool-grey-500',
   [NO_SIGNAL]: '!border-l-cool-grey-600 dark:!border-l-cool-grey-500',
+  [PENDING_APPROVAL]: '!border-l-blue-600 dark:!border-l-blue-500',
 }
 
 export interface IHealthFilterDropdown {
   selected: Set<string>
   onChange: (selected: Set<string>) => void
+  id?: string
+  label?: string
+  options?: string[]
+  optionLabel?: (value: string) => string
 }
 
 export const HealthFilterDropdown = ({
   selected,
   onChange,
+  id = 'fleet-filter-health',
+  label = 'Health',
+  options = HEALTH_FILTER_OPTIONS,
+  optionLabel = healthFilterLabel,
 }: IHealthFilterDropdown) => {
   const toggle = (value: string) => {
     const next = new Set(selected)
@@ -43,12 +57,12 @@ export const HealthFilterDropdown = ({
 
   return (
     <FleetFilterDropdown
-      id="fleet-filter-health"
-      label="Health"
+      id={id}
+      label={label}
       count={selected.size}
       onReset={() => onChange(new Set())}
     >
-      {HEALTH_FILTER_OPTIONS.map((value) => {
+      {options.map((value) => {
         const checked = selected.has(value)
         const isOnlySelected = selected.size === 1 && checked
         return (
@@ -58,7 +72,7 @@ export const HealthFilterDropdown = ({
               'w-full border-l-4 pl-2 pr-0',
               HEALTH_BORDER_CLASSES[value]
             )}
-            name={`fleet-health-${value}`}
+            name={`${id}-${value}`}
             value={value}
             checked={checked}
             onChange={() => toggle(value)}
@@ -72,7 +86,7 @@ export const HealthFilterDropdown = ({
               children: (
                 <>
                   <Text variant="body" weight="strong">
-                    {healthFilterLabel(value)}
+                    {optionLabel(value)}
                   </Text>
                   <Text
                     variant="subtext"
