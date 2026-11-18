@@ -8,13 +8,17 @@ import { InstallFleet } from './InstallFleet'
 import { LabelsFilterDropdown } from './LabelsFilterDropdown'
 import {
   largeFleet,
+  largeFleetApprovals,
   largeFleetBranches,
+  largeFleetConfigVersions,
   largeFleetConfigs,
   largeFleetOverviews,
   largeFleetRuns,
   largeFleetStatus,
   mixedFleet,
+  mixedFleetApprovals,
   mixedFleetBranches,
+  mixedFleetConfigVersions,
   mixedFleetConfigs,
   mixedFleetOverviews,
   mixedFleetRuns,
@@ -28,6 +32,8 @@ const mixedProps = {
   branchConfigs: mixedFleetConfigs,
   statusById: mixedFleetStatus,
   overviewById: mixedFleetOverviews,
+  approvals: mixedFleetApprovals,
+  configVersionById: mixedFleetConfigVersions,
 }
 
 const largeProps = {
@@ -37,6 +43,8 @@ const largeProps = {
   branchConfigs: largeFleetConfigs,
   statusById: largeFleetStatus,
   overviewById: largeFleetOverviews,
+  approvals: largeFleetApprovals,
+  configVersionById: largeFleetConfigVersions,
 }
 
 export const MixedFleet = () => <InstallFleet {...mixedProps} />
