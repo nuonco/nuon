@@ -61,10 +61,10 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("configmap").
 		Example("secret").
 		Field("init_script_url").Short("initialization script URL").
-		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh").
+		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh. The control plane operator may restrict this URL to a list of allowed locations; a sync that sets a value outside the list is rejected. Only https URLs are accepted when it is restricted.").
 		Example("https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng-v2.sh").
 		Field("phone_home_script_url").Short("phone-home Lambda source URL").
-		Long("URL to the Python source for the install stack's phone-home Lambda, fetched when the stack template is rendered and embedded inline. Leave unset to use the pinned default. Set this to move a single app onto a different script version without affecting other apps.").
+		Long("URL to the Python source for the install stack's phone-home Lambda, fetched when the stack template is rendered and embedded inline. Leave unset to use the pinned default. Set this to move a single app onto a different script version without affecting other apps. The control plane operator may restrict this URL to a list of allowed locations; a sync that sets a value outside the list is rejected.").
 		Example("https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.4/scripts/aws/phonehome.py").
 		Field("instance_type").Short("machine/instance type for the install runner").
 		Long("Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (an EC2 instance type for aws, a machine type for gcp, a VM size for azure). Defaults to the platform default when unset").
@@ -78,10 +78,10 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Pins the install runner host to a specific image, overriding image_auto_update. Use it to hold runners on a known-good image. For aws this is an AMI ID. Only applies to aws runners whose stack runner template supports it; otherwise it is ignored").
 		Example("ami-0abcdef1234567890").
 		Field("runner_api_url").Short("custom runner API endpoint").
-		Long("Set this to proxy all runner API calls (heartbeats, job polling, logs) through your own domain instead of Nuon's.").
+		Long("Set this to proxy all runner API calls (heartbeats, job polling, logs) through your own domain instead of Nuon's. The control plane operator may restrict this URL to a list of allowed locations; a sync that sets a value outside the list is rejected.").
 		Example("https://runner-api.example.com").
 		Field("public_api_url").Short("custom public API endpoint").
-		Long("Set this to proxy phone-home calls through your own domain instead of Nuon's.").
+		Long("Set this to proxy phone-home calls through your own domain instead of Nuon's. The control plane operator may restrict this URL to a list of allowed locations; a sync that sets a value outside the list is rejected.").
 		Example("https://runner-api.example.com").
 		Field("env_var").Short("deprecated: use env_vars map instead").
 		Long("Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead")

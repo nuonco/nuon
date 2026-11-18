@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	configsync "github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
@@ -43,6 +44,7 @@ type ActivitiesParams struct {
 	TFClient         terraform.Client
 	AccountsHelpers  *accountshelpers.Helpers
 	L                *zap.Logger
+	Cfg              *internal.Config
 	MeterProvider    metric.MeterProvider `optional:"true"`
 }
 
@@ -66,6 +68,7 @@ func NewActivities(params ActivitiesParams) *Activities {
 			TFClient:         params.TFClient,
 			Metrics:          syncer.NewMetrics(params.MeterProvider),
 			Logger:           params.L,
+			URLPolicy:        params.Cfg.URLPolicy,
 		},
 		queueClient:     params.QueueClient,
 		accountsHelpers: params.AccountsHelpers,
