@@ -17,7 +17,7 @@ type OrgRoleClassification struct {
 	Reason      string
 	Permissions permissions.PermissionSet
 	LegacyAPI   *permissions.API
-	Policy      *permissions.Policy
+	Policy      *permissions.LegacyPolicy
 }
 
 func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
@@ -124,7 +124,7 @@ func ClassifyOrgRole(source OrgRoleSnapshot) (OrgRoleClassification, error) {
 	if api != nil {
 		retainedAPI = *api
 	}
-	bundle, err := permissions.RolePolicy(bundleName, retainedAPI)
+	bundle, err := permissions.LegacyRolePolicy(bundleName, retainedAPI)
 	if err != nil {
 		return OrgRoleClassification{}, err
 	}

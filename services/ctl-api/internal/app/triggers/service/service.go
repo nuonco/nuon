@@ -15,6 +15,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -50,30 +52,32 @@ func New(p Params) *service {
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/event-ingress/:ingress_key", s.IngestEvent)
 
-	triggers := api.Group("/v1/triggers")
-	triggers.POST("", s.CreateTrigger)
-	triggers.GET("", s.ListTriggers)
-	triggers.GET("/:trigger_id", s.GetTrigger)
-	triggers.GET("/:trigger_id/events", s.ListTriggerEvents)
-	triggers.GET("/:trigger_id/event-types", s.ListTriggerEventTypes)
-	triggers.GET("/:trigger_id/rules", s.ListTriggerRules)
-	triggers.GET("/:trigger_id/rules/:rule_id", s.GetTriggerRule)
-	triggers.DELETE("/:trigger_id", s.DeleteTrigger)
-	triggers.PATCH("/:trigger_id/ingress-url", s.GetTriggerIngressURL)
-	triggers.POST("/:trigger_id/rotate-secret", s.RotateSecret)
-	triggers.POST("/:trigger_id/rotate-ingress-url", s.RotateIngressURL)
-	triggers.POST("/:trigger_id/enable", s.EnableTrigger)
-	triggers.POST("/:trigger_id/disable", s.DisableTrigger)
-	triggers.POST("/:trigger_id/secrets/:secret_id/revoke", s.RevokeSecret)
-	triggers.PATCH("/:trigger_id/secrets/:secret_id/reveal", s.RevealSecret)
+	triggers := require.Routes(api.Group("/v1/triggers"), permissions.APICtl)
+	read := triggers.For(require.Organization(permissions.TriggerRead))
+	credentials := triggers.For(require.Organization(permissions.TriggerCredentials))
+	update := triggers.For(require.Organization(permissions.TriggerUpdate))
+	triggers.POST("", require.Organization(permissions.TriggerCreate), s.CreateTrigger)
+	read.GET("", s.ListTriggers)
+	read.GET("/:trigger_id", s.GetTrigger)
+	read.GET("/:trigger_id/events", s.ListTriggerEvents)
+	read.GET("/:trigger_id/event-types", s.ListTriggerEventTypes)
+	read.GET("/:trigger_id/rules", s.ListTriggerRules)
+	read.GET("/:trigger_id/rules/:rule_id", s.GetTriggerRule)
+	triggers.DELETE("/:trigger_id", require.Organization(permissions.TriggerDelete), s.DeleteTrigger)
+	credentials.PATCH("/:trigger_id/ingress-url", s.GetTriggerIngressURL)
+	credentials.POST("/:trigger_id/rotate-secret", s.RotateSecret)
+	credentials.POST("/:trigger_id/rotate-ingress-url", s.RotateIngressURL)
+	update.POST("/:trigger_id/enable", s.EnableTrigger)
+	update.POST("/:trigger_id/disable", s.DisableTrigger)
+	credentials.POST("/:trigger_id/secrets/:secret_id/revoke", s.RevokeSecret)
+	credentials.PATCH("/:trigger_id/secrets/:secret_id/reveal", s.RevealSecret)
 
-	triggerRoutes := api.Group("/v1/triggers")
-	triggerRoutes.GET("/events/:event_id", s.GetEvent)
-	triggerRoutes.GET("/events/:event_id/raw", s.GetEventRaw)
-	triggerRoutes.POST("/events/:event_id/replay", s.ReplayEvent)
-	triggerRoutes.GET("/dispatches", s.ListDispatches)
-	triggerRoutes.GET("/dispatches/:dispatch_id", s.GetDispatch)
-	triggerRoutes.POST("/dispatches/:dispatch_id/retry", s.RetryDispatch)
+	read.GET("/events/:event_id", s.GetEvent)
+	read.GET("/events/:event_id/raw", s.GetEventRaw)
+	triggers.POST("/events/:event_id/replay", require.Organization(permissions.TriggerReplay), s.ReplayEvent)
+	read.GET("/dispatches", s.ListDispatches)
+	read.GET("/dispatches/:dispatch_id", s.GetDispatch)
+	triggers.POST("/dispatches/:dispatch_id/retry", require.Point(permissions.TriggerRetry, s.dispatchOrgTarget), s.RetryDispatch)
 	return nil
 }
 

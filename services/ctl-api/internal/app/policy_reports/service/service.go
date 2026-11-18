@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -38,14 +39,16 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	policyReports := ge.Group("/v1/policy-reports")
+	geAccess := require.Routes(ge, permissions.APICtl)
+
+	policyReports := require.Routes(ge.Group("/v1/policy-reports"), permissions.APICtl)
 	{
-		policyReports.GET("", s.GetPolicyReports)
-		policyReports.GET("/:report_id", s.GetPolicyReport)
-		policyReports.GET("/:report_id/export", s.ExportPolicyReport)
+		policyReports.GET("", require.Collection(permissions.PolicyReportInspect, s.reportResources), s.GetPolicyReports)
+		policyReports.GET("/:report_id", require.Point(permissions.PolicyReportInspect, s.reportTarget), s.GetPolicyReport)
+		policyReports.GET("/:report_id/export", require.Point(permissions.PolicyReportInspect, s.reportTarget), s.ExportPolicyReport)
 	}
 
-	analytics := ge.Group("/v1/apps/:app_id/policy-analytics", require.AppInOrg(s.db))
+	analytics := geAccess.For(require.Point(permissions.PolicyAnalyticsRead, s.analyticsTarget)).Group("/v1/apps/:app_id/policy-analytics", require.AppInOrg(s.db))
 	{
 		analytics.GET("/summary", s.GetPolicyAnalyticsSummary)
 		analytics.GET("/timeseries", s.GetPolicyAnalyticsTimeseries)

@@ -13,6 +13,8 @@ import (
 	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
 
@@ -54,18 +56,19 @@ func New(params Params) (*service, error) {
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	routes := api.Group("/v1/cloud-connections")
-	routes.GET("", s.List)
-	routes.POST("", s.Create)
-	routes.GET("/:connection_id", s.Get)
-	routes.DELETE("/:connection_id", s.Delete)
-	routes.POST("/:connection_id/verify", s.Verify)
-	routes.GET("/:connection_id/setup", s.Setup)
-	repositories := api.Group("/v1/image-repositories")
-	repositories.POST("", s.CreateImageRepository)
-	repositories.GET("", s.ListImageRepositories)
-	repositories.GET("/:repository_id", s.GetImageRepository)
-	repositories.DELETE("/:repository_id", s.DeleteImageRepository)
+	routes := require.Routes(api.Group("/v1/cloud-connections"), permissions.APICtl)
+	routes.GET("", require.Organization(permissions.CloudConnectionRead), s.List)
+	routes.POST("", require.Organization(permissions.CloudConnectionCreate), s.Create)
+	routes.GET("/:connection_id", require.Organization(permissions.CloudConnectionRead), s.Get)
+	routes.DELETE("/:connection_id", require.Organization(permissions.CloudConnectionDelete), s.Delete)
+	routes.POST("/:connection_id/verify", require.Organization(permissions.CloudConnectionVerify), s.Verify)
+	routes.GET("/:connection_id/setup", require.Organization(permissions.CloudConnectionRead), s.Setup)
+
+	repositories := require.Routes(api.Group("/v1/image-repositories"), permissions.APICtl)
+	repositories.POST("", require.Organization(permissions.ImageRepositoryCreate), s.CreateImageRepository)
+	repositories.GET("", require.Organization(permissions.ImageRepositoryRead), s.ListImageRepositories)
+	repositories.GET("/:repository_id", require.Organization(permissions.ImageRepositoryRead), s.GetImageRepository)
+	repositories.DELETE("/:repository_id", require.Organization(permissions.ImageRepositoryDelete), s.DeleteImageRepository)
 	return nil
 }
 

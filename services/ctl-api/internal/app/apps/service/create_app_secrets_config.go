@@ -113,7 +113,7 @@ func (s *service) CreateAppSecretsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppSecretsConfigRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.ErrInvalidRequest{
 			Err: err,
 		})

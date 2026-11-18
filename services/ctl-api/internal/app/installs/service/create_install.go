@@ -64,7 +64,7 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 // @Router					/v1/installs [post]
 func (s *service) CreateInstallV2(ctx *gin.Context) {
 	var req CreateInstallV2Request
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}

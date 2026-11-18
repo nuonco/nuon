@@ -65,7 +65,7 @@ func (s *service) CreateAppKubernetesContextsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppKubernetesContextsConfigRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

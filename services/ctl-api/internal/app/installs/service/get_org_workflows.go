@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -108,6 +110,14 @@ func (s *service) getOrgWorkflows(ctx *gin.Context, orgID string, excludePlanOnl
 		Where("(install_workflows.owner_type != 'installs' OR installs.deleted_at = 0)").
 		Where("install_workflows.org_id = ?", orgID).
 		Order("install_workflows.created_at desc")
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		query = query.Where("install_workflows.id IN (?)", ids)
+	}
 
 	if !excludePlanOnly {
 		query = query.Where("plan_only = ?", false)

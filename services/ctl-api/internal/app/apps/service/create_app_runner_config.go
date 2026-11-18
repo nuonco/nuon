@@ -59,7 +59,7 @@ func (s *service) CreateAppRunnerConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppRunnerConfigRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
@@ -101,9 +101,11 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 	}
 
 	// update the runner configs on all installs in the app
-	res = s.db.WithContext(ctx).Model(&app.Install{}).
-		Where("app_id = ?", appID).
-		Update("app_runner_config_id", appRunnerConfig.ID)
+	query := s.db.WithContext(ctx).Model(&app.Install{}).Where(app.Install{AppID: appID})
+	if ids, ok := ctx.Value("nuon.apps.config_install_ids").([]string); ok {
+		query = query.Where("id IN ?", ids)
+	}
+	res = query.Update("app_runner_config_id", appRunnerConfig.ID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app installs to reference new runner config: %w", res.Error)
 	}

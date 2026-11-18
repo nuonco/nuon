@@ -40,7 +40,7 @@ type mcpInstallLatestDeploy struct {
 }
 
 func (s *service) mcpListInstallComponents(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInstallComponentsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -55,6 +55,9 @@ func (s *service) mcpListInstallComponents(ctx context.Context, _ *mcp.CallToolR
 		First(&install).Error
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find install %q: %w", in.Install, err)
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.inspect"); err != nil {
+		return nil, nil, err
 	}
 
 	var components []app.InstallComponent

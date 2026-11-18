@@ -17,12 +17,15 @@ type mcpApproveAllInput struct {
 }
 
 func (s *service) mcpApproveAll(ctx context.Context, _ *mcp.CallToolRequest, in mcpApproveAllInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	if in.WorkflowID == "" {
 		return nil, nil, fmt.Errorf("workflow_id is required")
+	}
+	if err := s.mcpWorkflowContinuation(ctx, orgID, in.WorkflowID, "workflow.approve"); err != nil {
+		return nil, nil, err
 	}
 
 	var workflow app.Workflow

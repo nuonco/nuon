@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 // authenticateToken validates the bearer access token and returns the associated
@@ -55,13 +57,41 @@ func (s *Server) authenticateToken(r *http.Request) (*app.Account, *app.Token, e
 		return nil, nil, fmt.Errorf("unable to fetch account: %w", res.Error)
 	}
 
-	authority, err := authz.New(authz.Params{DB: s.db}).LoadAccountPermissions(r.Context(), &acct)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to load account permissions: %w", err)
-	}
-	acct.Authority = authority
-
 	return &acct, &userToken, nil
+}
+
+func (s *Server) authorizeOrg(ctx context.Context, acct *app.Account, tok *app.Token, orgID string) (context.Context, error) {
+	if tok.OrgID != "" && tok.OrgID != orgID {
+		return ctx, fmt.Errorf("token is not allowed in this org")
+	}
+	if orgID == "" {
+		if tok.PermissionCeiling != nil {
+			return ctx, fmt.Errorf("bounded credentials require an org")
+		}
+		return ctx, nil
+	}
+	client := authz.New(authz.Params{DB: s.db})
+	usesGrants, err := client.AccountUsesGrants(ctx, acct.ID, orgID)
+	if err != nil {
+		return ctx, err
+	}
+	if usesGrants || tok.PermissionCeiling != nil {
+		catalog, err := permissions.DefaultCatalog()
+		if err != nil {
+			return ctx, err
+		}
+		authority, err := client.LoadAuthority(ctx, catalog, authz.AuthorityInput{
+			AccountID: acct.ID, CredentialID: tok.ID, OrgID: orgID, API: permissions.APICtl, Ceiling: tok.PermissionCeiling,
+			CredentialOrgID: tok.OrgID,
+		})
+		if err != nil {
+			return ctx, err
+		}
+		acct.Authority = nil
+		return authz.SetAuthorityContext(ctx, authority), nil
+	}
+	acct.Authority, err = client.LoadAccountLegacyAccess(ctx, acct)
+	return ctx, err
 }
 
 // accountHasOrgAccess reports whether the account can access the given org.

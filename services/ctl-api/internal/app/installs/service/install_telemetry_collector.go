@@ -51,7 +51,7 @@ func (s *service) EnsureInstallTelemetryCollector(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-		return authz.New(authz.Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, binding.AccountID, &app.Role{
+		return authz.New(authz.Params{DB: tx, Cfg: s.cfg}).EnsureManagedServiceAccountRole(ctx, binding.AccountID, &app.Role{
 			OrgID:       generics.NewNullString(orgID),
 			RoleType:    app.RoleTypeTelemetryCollector,
 			Version:     app.RoleVersionV2,

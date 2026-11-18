@@ -6,6 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -53,7 +56,31 @@ func (s *service) CancelWorkflows(ctx *gin.Context) {
 
 	resp := CancelWorkflowsResponse{}
 
+	var allowed map[string]bool
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		var workflowIDs []string
+		if err := s.db.WithContext(ctx.Request.Context()).Model(&app.Workflow{}).
+			Where(&app.Workflow{OrgID: org.ID}).Where("id IN (?)", ids).
+			Where(map[string]any{"id": req.WorkflowIDs}).Pluck("id", &workflowIDs).Error; err != nil {
+			ctx.Error(err)
+			return
+		}
+		allowed = make(map[string]bool, len(workflowIDs))
+		for _, id := range workflowIDs {
+			allowed[id] = true
+		}
+	}
+
 	for _, workflowID := range req.WorkflowIDs {
+		if allowed != nil && !allowed[workflowID] {
+			resp.Errors = append(resp.Errors, CancelWorkflowError{WorkflowID: workflowID, Error: "workflow not found"})
+			continue
+		}
 		if err := s.cancelSingleWorkflow(ctx, org.ID, workflowID); err != nil {
 			resp.Errors = append(resp.Errors, CancelWorkflowError{
 				WorkflowID: workflowID,

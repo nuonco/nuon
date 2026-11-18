@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 )
@@ -46,17 +47,22 @@ func New(params Params) *service {
 		helpers:          params.Helpers,
 	}
 }
+
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// accounts
+	// user journeys
+	// roles
+	geAccess := require.Routes(ge, permissions.APICtl)
 	account := ge.Group("/v1/account")
+	accountAccess := require.Routes(account, permissions.APICtl)
 	{
 		account.GET("", s.GetCurrentAccount)
 
-		s.POST(require.NotFederatedTokenRoute(account, "create API tokens"), "/static-token", s.CreateStaticToken, api.APIContextTypePublic, true)
-		s.GET(account, "/static-tokens", s.ListStaticTokens, api.APIContextTypePublic, true)
-		s.DELETE(account, "/static-tokens/:token_id", s.DeleteStaticToken, api.APIContextTypePublic, true)
+		issue := require.Routes(require.UnboundedCredentialRoute(require.NotFederatedTokenRoute(account, "create API tokens")), permissions.APICtl).For(require.Organization(permissions.TokenCreate))
+		s.POST(issue, "/static-token", s.CreateStaticToken, api.APIContextTypePublic, true)
+		s.GET(accountAccess.For(require.Organization(permissions.TokensRead)), "/static-tokens", s.ListStaticTokens, api.APIContextTypePublic, true)
+		s.DELETE(accountAccess.For(require.Organization(permissions.TokenDelete)), "/static-tokens/:token_id", s.DeleteStaticToken, api.APIContextTypePublic, true)
 
-		// user journeys
 		userJourneys := account.Group("/user-journeys")
 		{
 			userJourneys.GET("", s.GetUserJourneys)
@@ -66,20 +72,23 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			userJourneys.POST("/:journey_name/complete", s.CompleteUserJourney)
 		}
 	}
-
-	// roles
-	ge.GET("/v1/roles", s.ListRoles)
+	geAccess.GET("/v1/roles", require.Organization(permissions.RolesRead), s.ListRoles)
 
 	// service accounts
 	serviceAccounts := ge.Group("/v1/service-accounts")
+	serviceAccountsAccess := require.Routes(serviceAccounts, permissions.APICtl)
 	{
-		serviceAccounts.GET("", s.ListServiceAccounts)
-		serviceAccounts.GET("/purposes", s.ListServiceAccountPurposes)
-		serviceAccounts.POST("", s.CreateServiceAccount)
-		serviceAccounts.PATCH("/:account_id", s.UpdateServiceAccount)
-		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
-		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
-		s.POST(require.NotFederatedTokenRoute(serviceAccounts, "create API tokens"), "/:account_id/tokens", s.CreateServiceAccountToken, api.APIContextTypePublic, true)
+		read := serviceAccountsAccess.For(require.Organization(permissions.ServiceAccountsRead))
+		read.GET("", s.ListServiceAccounts)
+		read.GET("/purposes", s.ListServiceAccountPurposes)
+		delegate := require.UnboundedCredentialRoute(serviceAccounts)
+		delegateAccess := require.Routes(delegate, permissions.APICtl)
+		delegateAccess.POST("", require.Organization(permissions.ServiceAccountCreate), s.CreateServiceAccount)
+		serviceAccountsAccess.PATCH("/:account_id", require.Organization(permissions.ServiceAccountUpdate), s.UpdateServiceAccount)
+		delegateAccess.PATCH("/:account_id/role", require.Organization(permissions.ServiceAccountRoleUpdate), s.UpdateServiceAccountRole)
+		serviceAccountsAccess.DELETE("/:account_id", require.Organization(permissions.ServiceAccountDelete), s.DeleteServiceAccount)
+		issue := require.Routes(require.NotFederatedTokenRoute(delegate, "create API tokens"), permissions.APICtl).For(require.Organization(permissions.TokenCreate))
+		s.POST(issue, "/:account_id/tokens", s.CreateServiceAccountToken, api.APIContextTypePublic, true)
 	}
 
 	// auth/me - registered here instead of authservice so it's available in PublicServicesModule

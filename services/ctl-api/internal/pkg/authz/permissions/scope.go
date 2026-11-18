@@ -16,6 +16,7 @@ const (
 	KindEvent           ResourceKind = "event"
 	KindNotification    ResourceKind = "notification"
 	KindOperation       ResourceKind = "operation"
+	KindWorkflow        ResourceKind = "workflow"
 )
 
 type Scope struct {
@@ -34,19 +35,25 @@ func validScopeID(value string) bool {
 	return value != "" && !strings.ContainsAny(value, "*:/") && strings.IndexFunc(value, unicode.IsSpace) == -1
 }
 
+func (kind ResourceKind) Validate() error {
+	switch kind {
+	case KindOrg, KindApp, KindInstall, KindComponent, KindComponentBuild, KindComponentConfig, KindStack, KindTelemetry, KindPhoneHome, KindRunnerJob,
+		KindRunner, KindLogStream, KindExecutionState, KindEvent, KindNotification, KindOperation, KindWorkflow:
+		return nil
+	default:
+		return fmt.Errorf("invalid scope kind %q", kind)
+	}
+}
+
 func (s Scope) ValidateShape() error {
 	if !validScopeID(s.OrgID) || !validScopeID(s.ID) {
 		return fmt.Errorf("scope requires explicit org and resource IDs")
 	}
-	switch s.Kind {
-	case KindOrg:
-		if s.ID != s.OrgID {
-			return fmt.Errorf("org scope ID must match its org")
-		}
-	case KindApp, KindInstall, KindComponent, KindComponentBuild, KindComponentConfig, KindStack, KindTelemetry, KindPhoneHome, KindRunnerJob,
-		KindRunner, KindLogStream, KindExecutionState, KindEvent, KindNotification, KindOperation:
-	default:
-		return fmt.Errorf("invalid scope kind %q", s.Kind)
+	if err := s.Kind.Validate(); err != nil {
+		return err
+	}
+	if s.Kind == KindOrg && s.ID != s.OrgID {
+		return fmt.Errorf("org scope ID must match its org")
 	}
 	return nil
 }

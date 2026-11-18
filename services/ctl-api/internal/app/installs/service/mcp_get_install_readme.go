@@ -5,8 +5,11 @@ import (
 	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -22,7 +25,7 @@ type mcpGetInstallReadmeResult struct {
 }
 
 func (s *service) mcpGetInstallReadme(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetInstallReadmeInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -34,7 +37,20 @@ func (s *service) mcpGetInstallReadme(ctx context.Context, _ *mcp.CallToolReques
 	if err != nil {
 		return nil, nil, err
 	}
-	readme, err := s.renderInstallReadme(ctx, orgID, install.ID)
+	checked, err := require.MCPPoint(ctx, s.db, access.Installs, permissions.InstallConfigRead, install.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if checked != nil {
+		target, err := checked.Target(permissions.InstallConfigRead)
+		if err != nil {
+			return nil, nil, err
+		}
+		if target.ID != install.ID || target.OrgID != install.OrgID || target.AppID != install.AppID {
+			return nil, nil, gorm.ErrRecordNotFound
+		}
+	}
+	readme, err := s.renderInstallReadme(ctx, install)
 	if err != nil {
 		return nil, nil, err
 	}

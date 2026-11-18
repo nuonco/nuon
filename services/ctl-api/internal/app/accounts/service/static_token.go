@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -106,7 +107,7 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.TokenCreate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -169,7 +170,7 @@ func (s *service) resolveTokenAccount(ctx *gin.Context, orgID string, caller *ap
 // @Deprecated				true
 // @Router					/v1/account/static-tokens [GET]
 func (s *service) ListStaticTokens(ctx *gin.Context) {
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.TokensRead)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -205,7 +206,7 @@ func (s *service) ListStaticTokens(ctx *gin.Context) {
 func (s *service) DeleteStaticToken(ctx *gin.Context) {
 	tokenID := ctx.Param("token_id")
 
-	org, err := s.helpers.RequireOrgAdmin(ctx)
+	org, err := s.helpers.RequireOrgOperation(ctx, permissions.TokenDelete)
 	if err != nil {
 		ctx.Error(err)
 		return

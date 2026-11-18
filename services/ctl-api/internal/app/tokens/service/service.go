@@ -8,6 +8,7 @@ import (
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -37,10 +38,12 @@ func New(params Params) *service {
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	tokens := ge.Group("/v1/tokens")
+	tokensAccess := require.Routes(tokens, permissions.APICtl)
 	{
-		require.NotFederatedTokenRoute(tokens, "create API tokens").POST("", s.CreateToken)
-		tokens.GET("", s.ListTokens)
-		tokens.DELETE("/:token_id", s.DeleteToken)
+		issue := require.Routes(require.UnboundedCredentialRoute(require.NotFederatedTokenRoute(tokens, "create API tokens")), permissions.APICtl).For(require.Organization(permissions.TokenCreate))
+		issue.POST("", s.CreateToken)
+		tokensAccess.GET("", require.Organization(permissions.TokensRead), s.ListTokens)
+		tokensAccess.DELETE("/:token_id", require.Organization(permissions.TokenDelete), s.DeleteToken)
 	}
 
 	return nil

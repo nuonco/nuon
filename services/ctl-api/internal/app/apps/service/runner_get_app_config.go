@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	runneraccess "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/access"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -47,4 +49,17 @@ func (s *service) GetRunnerAppConfig(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, appConfig)
+}
+
+func (s *service) runnerAppConfigTarget(ctx *gin.Context) (permissions.Target, error) {
+	target, err := s.exactAppTarget(ctx)
+	if err != nil {
+		return target, err
+	}
+	config, err := s.getAppConfig(ctx, target.OrgID, target.ID, ctx.Param("app_config_id"))
+	if err != nil {
+		return target, err
+	}
+	target.Kind, target.ID = permissions.KindOperation, config.ID
+	return runneraccess.ExecutionConfigTarget(ctx, s.db, target)
 }

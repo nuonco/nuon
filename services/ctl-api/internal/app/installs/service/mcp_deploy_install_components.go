@@ -18,7 +18,7 @@ type mcpDeployInstallComponentsInput struct {
 }
 
 func (s *service) mcpDeployInstallComponents(ctx context.Context, _ *mcp.CallToolRequest, in mcpDeployInstallComponentsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

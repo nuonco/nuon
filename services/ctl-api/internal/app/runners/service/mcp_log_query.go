@@ -6,6 +6,10 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/access"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 const (
@@ -64,10 +68,19 @@ func (s *service) queryMCPLogs(ctx context.Context, orgID, logStreamID string, f
 
 	var logStream app.LogStream
 	if err := s.db.WithContext(ctx).
-		Select("id", "logs_deleted_at").
+		Select("id", "org_id", "owner_id", "owner_type", "logs_deleted_at").
 		Where(app.LogStream{ID: logStreamID, OrgID: orgID}).
 		First(&logStream).Error; err != nil {
 		return mcpLogPage{}, fmt.Errorf("unable to get log stream: %w", err)
+	}
+	if authz.HasAuthority(ctx) {
+		target, err := access.LogStreamTarget(ctx, s.db, logStream)
+		if err != nil {
+			return mcpLogPage{}, err
+		}
+		if _, err := require.MCPAll(ctx, authz.Requirement{Operation: permissions.LogStreamRead, Target: target}); err != nil {
+			return mcpLogPage{}, err
+		}
 	}
 	if logStream.LogsDeletedAt != nil {
 		return mcpLogPage{LogStreamID: logStreamID, Logs: []mcpLogEntry{}}, nil

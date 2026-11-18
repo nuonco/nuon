@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -10,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -74,12 +75,20 @@ func (s *service) GetInstallsHealth(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, summarizeInstallsHealth(installs))
 }
 
-func (s *service) getInstallsForHealthSummary(ctx context.Context, orgID, appID string, lbls labels.Labels) ([]app.Install, error) {
+func (s *service) getInstallsForHealthSummary(ctx *gin.Context, orgID, appID string, lbls labels.Labels) ([]app.Install, error) {
 	tx := s.db.WithContext(ctx).
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Org").
 		Where(app.Install{OrgID: orgID}).
 		Order("name ASC")
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		tx = tx.Where("id IN (?)", ids)
+	}
 
 	if appID != "" {
 		tx = tx.Where(app.Install{AppID: appID})

@@ -17,7 +17,7 @@ type mcpListAppBranchPreviewSourcesInput struct {
 }
 
 func (s *service) mcpListAppBranchPreviewSources(ctx context.Context, _ *mcp.CallToolRequest, in mcpListAppBranchPreviewSourcesInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -34,6 +34,9 @@ func (s *service) mcpListAppBranchPreviewSources(ctx context.Context, _ *mcp.Cal
 	}
 	branch, err := s.findAppBranch(ctx, orgID, a.ID, in.Branch)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpBranchPoint(ctx, branch.ID); err != nil {
 		return nil, nil, err
 	}
 

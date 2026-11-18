@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -62,6 +63,10 @@ func OrgRoute(router gin.IRouter) *gin.RouterGroup {
 // request (job SA path). Org-wide grants still pass. Denials stay 403.
 func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 	return group(router, func(ctx *gin.Context) {
+		if _, declared := OperationAPI(ctx); declared && authz.HasAuthority(ctx) {
+			ctx.Next()
+			return
+		}
 		verb := permissions.FromRequest(ctx)
 		if verb == permissions.PermissionUnknown {
 			ctx.Error(stderr.ErrSystem{
@@ -118,6 +123,10 @@ func OrgOrInstallRoute(router gin.IRouter) *gin.RouterGroup {
 // named by paramName. A log-stream account holds that grant and no org or install grant.
 func OrgInstallOrLogStreamRoute(router gin.IRouter, paramName string) *gin.RouterGroup {
 	return group(router, func(ctx *gin.Context) {
+		if _, declared := OperationAPI(ctx); declared && authz.HasAuthority(ctx) {
+			ctx.Next()
+			return
+		}
 		verb := permissions.FromRequest(ctx)
 		if verb == permissions.PermissionUnknown {
 			ctx.Error(stderr.ErrSystem{
@@ -186,6 +195,10 @@ func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, 
 	description := noun(kind) + " not found"
 
 	guard := func(ctx *gin.Context) {
+		if _, declared := OperationAPI(ctx); declared && authz.HasAuthority(ctx) {
+			ctx.Next()
+			return
+		}
 		verb := permission(ctx)
 		if verb == permissions.PermissionUnknown {
 			ctx.Error(stderr.ErrSystem{

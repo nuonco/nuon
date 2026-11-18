@@ -11,6 +11,8 @@ import (
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -64,15 +66,17 @@ func New(params Params) *service {
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	onboarding := api.Group("/v1/onboarding")
+	onboardingAccess := require.Routes(onboarding, permissions.APICtl)
 	{
 		onboarding.GET("/example-apps", s.GetExampleApps)
 		onboarding.POST("", s.CreateOnboarding)
 		onboarding.GET("/current", s.GetCurrentOnboarding)
 		onboarding.POST("/current/steps/organization", s.CompleteOrganizationStep)
-		onboarding.POST("/current/steps/your-stack", s.CompleteYourStackStep)
-		onboarding.POST("/current/steps/install", s.CompleteInstallStep)
-		onboarding.POST("/current/steps/deploy", s.CompleteDeployStep)
-		onboarding.POST("/current/steps/get-started", s.CompleteGetStartedStep)
+		steps := onboardingAccess.For(require.Point(permissions.OnboardingManage, s.onboardingTarget))
+		steps.POST("/current/steps/your-stack", s.CompleteYourStackStep)
+		steps.POST("/current/steps/install", s.CompleteInstallStep)
+		steps.POST("/current/steps/deploy", s.CompleteDeployStep)
+		steps.POST("/current/steps/get-started", s.CompleteGetStartedStep)
 		onboarding.DELETE("/current", s.AbandonOnboarding)
 	}
 

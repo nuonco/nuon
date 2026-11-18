@@ -24,7 +24,17 @@ func APIFromRole(role *app.Role) (permissions.API, bool, error) {
 	var ok bool
 	for _, policy := range role.Policies {
 		api, has := permissions.APIFromPermissions(policy.Permissions)
-		if policy.Document != nil {
+		if policy.HasGrantDocument() {
+			catalog, err := permissions.DefaultCatalog()
+			if err != nil {
+				return "", true, err
+			}
+			document, err := policy.DecodeGrants(catalog)
+			if err != nil {
+				return "", true, err
+			}
+			api, has = document.API, document.API != ""
+		} else if policy.Document != nil {
 			document, err := policy.DecodeDocument()
 			if err != nil {
 				return "", true, err

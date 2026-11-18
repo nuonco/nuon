@@ -39,10 +39,14 @@ func (s *service) GetInstall(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	install, err := s.findInstall(ctx, org.ID, installID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
-		return
+	value, _ := ctx.Get(authorizedInstallKey)
+	install, loaded := value.(*app.Install)
+	if !loaded {
+		install, err = s.findInstall(ctx, org.ID, installID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
+			return
+		}
 	}
 
 	includeDriftedObjects := ctx.DefaultQuery("include_drifted_objects", "false")
@@ -61,6 +65,14 @@ func (s *service) GetInstall(ctx *gin.Context) {
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
+	if request, ok := ctx.(*gin.Context); ok && installID == request.Param("install_id") {
+		if value, ok := request.Get(authorizedInstallKey); ok {
+			install := value.(*app.Install)
+			if install.OrgID == orgID {
+				return install, nil
+			}
+		}
+	}
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {

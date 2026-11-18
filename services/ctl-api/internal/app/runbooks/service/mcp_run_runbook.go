@@ -5,9 +5,12 @@ import (
 	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
@@ -41,7 +44,7 @@ type mcpNextAction struct {
 }
 
 func (s *service) mcpRunRunbook(ctx context.Context, _ *mcp.CallToolRequest, in mcpRunRunbookInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -60,11 +63,24 @@ func (s *service) mcpRunRunbook(ctx context.Context, _ *mcp.CallToolRequest, in 
 	if err != nil {
 		return nil, nil, err
 	}
+	checked, err := require.MCPPoint(ctx, s.db, access.Installs, permissions.RunbookExecute, install.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if checked != nil {
+		target, err := checked.Target(permissions.RunbookExecute)
+		if err != nil {
+			return nil, nil, err
+		}
+		if target.ID != install.ID || target.OrgID != install.OrgID || target.AppID != install.AppID {
+			return nil, nil, gorm.ErrRecordNotFound
+		}
+	}
 	if err := s.installHelpers.ValidateInstallRole(ctx, install.ID, in.Role); err != nil {
 		return nil, nil, err
 	}
 
-	triggered, err := s.createRunbookRun(ctx, orgID, accountID, install.ID, in.Runbook, CreateRunbookRunRequest{
+	triggered, err := s.createRunbookRun(ctx, accountID, install, in.Runbook, CreateRunbookRunRequest{
 		Inputs: in.Inputs,
 		Steps:  in.Steps,
 		Role:   in.Role,

@@ -10,6 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -119,6 +121,14 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where(views.TableOrViewName(s.db, &app.Install{}, ".org_id")+" = ?", orgID).
 		Order("name ASC")
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".id")+" IN (?)", ids)
+	}
 
 	if cloudConnectionID != "" {
 		tx = tx.Where(app.Install{CloudConnectionID: &cloudConnectionID})

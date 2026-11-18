@@ -8,8 +8,13 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	actionaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/access"
+	installaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"gorm.io/gorm"
 )
 
 type mcpRunActionInput struct {
@@ -38,7 +43,7 @@ type mcpNextAction struct {
 }
 
 func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in mcpRunActionInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -56,6 +61,9 @@ func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install: %w", err)
 	}
+	if _, err := require.MCPPoint(ctx, s.db, installaccess.Installs, permissions.ActionExecute, install.ID); err != nil {
+		return nil, nil, err
+	}
 
 	if err := s.installHelpers.ValidateInstallRole(ctx, install.ID, in.Role); err != nil {
 		return nil, nil, err
@@ -65,12 +73,31 @@ func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 	if err != nil {
 		return nil, nil, err
 	}
+	var prepared *preparedInstallActionWorkflowRun
+	if authz.HasAuthority(ctx) {
+		resources, err := actionaccess.Configs.In(s.db, orgID)
+		if err != nil {
+			return nil, nil, err
+		}
+		requested, err := resources.Resolve(ctx, configID)
+		if err != nil || requested.AppID != install.AppID {
+			return nil, nil, gorm.ErrRecordNotFound
+		}
+		prepared, err = s.prepareInstallActionWorkflowRun(ctx, install.ID, CreateInstallActionWorkflowRunRequest{ActionWorkFlowConfigID: configID, RunEnvVars: in.RunEnvVars, Role: in.Role})
+		if err != nil {
+			return nil, nil, err
+		}
+		pinned, err := resources.Resolve(ctx, prepared.ActionWorkflowConfigID)
+		if err != nil || pinned.AppID != install.AppID {
+			return nil, nil, gorm.ErrRecordNotFound
+		}
+	}
 
 	result, err := s.createInstallActionWorkflowRun(ctx, install.ID, CreateInstallActionWorkflowRunRequest{
 		ActionWorkFlowConfigID: configID,
 		RunEnvVars:             in.RunEnvVars,
 		Role:                   in.Role,
-	})
+	}, prepared)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -10,6 +10,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -51,16 +53,16 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	{
 		vcs.POST("/connection-callback", s.CreateConnectionCallback)
 
-		connections := vcs.Group("/connections")
+		connections := require.Routes(vcs.Group("/connections"), permissions.APICtl)
 		{
-			connections.GET("", s.GetConnections)
-			connections.GET("/:connection_id", s.GetConnection)
-			connections.GET("/:connection_id/branches", s.GetVCSConnectionRepoBranches)
-			connections.DELETE("/:connection_id", s.DeleteConnection)
-			connections.GET("/:connection_id/check-status", s.CheckConnectionStatus)
-			connections.GET("/:connection_id/repos", s.ListConnectionRepos)
-			connections.GET("/:connection_id/webhook-subscription", s.GetWebhookSubscription)
-			connections.POST("/:connection_id/webhook-subscription", s.CreateWebhookSubscription)
+			connections.GET("", require.Organization(permissions.VCSConnectionRead), s.GetConnections)
+			connections.GET("/:connection_id", require.Organization(permissions.VCSConnectionRead), s.GetConnection)
+			connections.GET("/:connection_id/branches", require.Organization(permissions.VCSConnectionRead), s.GetVCSConnectionRepoBranches)
+			connections.DELETE("/:connection_id", require.Organization(permissions.VCSConnectionDelete), s.DeleteConnection)
+			connections.GET("/:connection_id/check-status", require.Organization(permissions.VCSConnectionRead), s.CheckConnectionStatus)
+			connections.GET("/:connection_id/repos", require.Organization(permissions.VCSConnectionRead), s.ListConnectionRepos)
+			connections.GET("/:connection_id/webhook-subscription", require.Organization(permissions.VCSConnectionRead), s.GetWebhookSubscription)
+			connections.POST("/:connection_id/webhook-subscription", require.Organization(permissions.VCSWebhookSubscribe), s.CreateWebhookSubscription)
 		}
 	}
 	return nil

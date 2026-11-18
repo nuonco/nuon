@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -69,7 +70,7 @@ func (h *Client) EnsureManagedServiceAccountRole(ctx context.Context, accountID 
 			roleID = *binding.PrivateRoleID
 		}
 		want.ID = roleID
-		if err := ensurePrivateRole(tx, accountID, want); err != nil {
+		if err := h.ensurePrivateRole(tx, accountID, want); err != nil {
 			return err
 		}
 		if binding.PrivateRoleID == nil {
@@ -81,9 +82,13 @@ func (h *Client) EnsureManagedServiceAccountRole(ctx context.Context, accountID 
 	})
 }
 
-func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
+func (h *Client) ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 	if !want.RoleType.IsPrivate() {
 		return fmt.Errorf("role type %q is not a private role type", want.RoleType)
+	}
+	var account app.Account
+	if err := tx.Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Account{ID: accountID}).Take(&account).Error; err != nil {
+		return err
 	}
 	if want.ID == "" {
 		want.Policies[0].OrgID = want.OrgID
@@ -96,6 +101,21 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 			document, err := policy.MarshalJSON()
 			if err != nil {
 				return err
+			}
+			grants, err := h.privateGrantIssuance(tx, accountID, want.OrgID.ValueString())
+			if err != nil {
+				return err
+			}
+			if grants {
+				grantPolicy, err := workloadGrantPolicy(want)
+				if err != nil {
+					return err
+				}
+				grantPolicy.API = ""
+				document, err = json.Marshal(grantPolicy)
+				if err != nil {
+					return err
+				}
 			}
 			want.Policies[0].Document, want.Policies[0].Permissions = document, nil
 			want.Version = app.RoleVersionV3
@@ -127,6 +147,10 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 			role.Policies = []app.Policy{policy}
 		} else if len(role.Policies) != 1 {
 			return fmt.Errorf("private service account role has multiple policies")
+		} else if role.Policies[0].HasGrantDocument() {
+			if err := reconcilePrivateGrant(tx, &role, want); err != nil {
+				return fmt.Errorf("reconcile private grant policy: %w", err)
+			}
 		} else {
 			existing := &role.Policies[0]
 			current, err := existing.PermissionProjection()

@@ -12,8 +12,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	notebookaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/access"
 	notebookclient "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/client"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -67,24 +70,24 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	installs := api.Group("/v1/installs/:install_id")
 	{
 		notebooks := installs.Group("/notebooks")
+		notebooksAccess := require.Routes(notebooks, permissions.APICtl)
 		{
-			notebooks.POST("", s.CreateNotebook)
-			notebooks.GET("", s.GetNotebooks)
-			notebooks.GET("/:notebook_id", s.GetNotebook)
-			notebooks.PATCH("/:notebook_id", s.UpdateNotebook)
-			notebooks.DELETE("/:notebook_id", s.DeleteNotebook)
+			notebooksAccess.POST("", require.Point(permissions.NotebookCreate, s.notebookInstallTarget), s.CreateNotebook)
+			notebooksAccess.GET("", s.notebookListRule(notebookaccess.Notebooks), s.GetNotebooks)
+			notebooksAccess.GET("/:notebook_id", require.Point(permissions.NotebookInspect, s.notebookTarget), s.GetNotebook)
+			notebooksAccess.PATCH("/:notebook_id", require.Point(permissions.NotebookUpdate, s.notebookTarget), s.UpdateNotebook)
+			notebooksAccess.DELETE("/:notebook_id", require.Point(permissions.NotebookDelete, s.notebookTarget), s.DeleteNotebook)
 
-			cells := notebooks.Group("/:notebook_id/cells")
+			cells := require.Routes(notebooks.Group("/:notebook_id/cells"), permissions.APICtl)
 			{
-				cells.POST("", s.CreateCell)
-				cells.PATCH("/:cell_id", s.UpdateCell)
-				cells.DELETE("/:cell_id", s.DeleteCell)
-				cells.PUT("/reorder", s.ReorderCells)
-				cells.POST("/:cell_id/runs", s.RunCell)
-				cells.GET("/:cell_id/runs", s.GetCellRuns)
+				cells.POST("", require.Point(permissions.NotebookUpdate, s.notebookTarget), s.CreateCell)
+				cells.PATCH("/:cell_id", require.Point(permissions.NotebookUpdate, s.notebookCellTarget), s.UpdateCell)
+				cells.DELETE("/:cell_id", require.Point(permissions.NotebookDelete, s.notebookCellTarget), s.DeleteCell)
+				cells.PUT("/reorder", require.Point(permissions.NotebookUpdate, s.notebookReorderTarget), s.ReorderCells)
+				cells.POST("/:cell_id/runs", require.Point(permissions.NotebookExecute, s.notebookExecutionTarget), s.RunCell)
+				cells.GET("/:cell_id/runs", s.notebookListRule(notebookaccess.Runs), s.GetCellRuns)
 			}
-
-			notebooks.GET("/:notebook_id/runs/:run_id", s.GetCellRun)
+			notebooksAccess.GET("/:notebook_id/runs/:run_id", require.Point(permissions.NotebookInspect, s.notebookRunTarget), s.GetCellRun)
 		}
 	}
 

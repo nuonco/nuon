@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -97,6 +98,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, q, triggerTypes string, lbls labels.Labels) ([]*app.ActionWorkflow, error) {
 	actionWorkflows := []*app.ActionWorkflow{}
 	tx := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {

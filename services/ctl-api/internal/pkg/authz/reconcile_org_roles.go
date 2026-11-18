@@ -19,6 +19,7 @@ import (
 func ReconcileOrgRoles(ctx context.Context, db *gorm.DB, org app.Org) error {
 	var existingRoles []app.Role
 	if err := db.WithContext(ctx).
+		Preload("Policies").
 		Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
 		Find(&existingRoles).Error; err != nil {
 		return fmt.Errorf("unable to load roles for org %s: %w", org.ID, err)
@@ -32,6 +33,14 @@ func ReconcileOrgRoles(ctx context.Context, db *gorm.DB, org app.Org) error {
 	standardRoles, err := standardOrgRoles(org.ID)
 	if err != nil {
 		return err
+	}
+	for _, role := range existingRoles {
+		if isStandardOrgGrant(role) {
+			if err := useOrgGrantPolicies(standardRoles); err != nil {
+				return err
+			}
+			break
+		}
 	}
 	var toCreate []app.Role
 	var toUpdate []app.Role

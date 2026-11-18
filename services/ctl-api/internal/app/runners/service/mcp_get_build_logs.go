@@ -29,7 +29,7 @@ type mcpBuildLogResult struct {
 }
 
 func (s *service) mcpGetBuildLogs(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetBuildLogsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -79,24 +79,35 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 				if len(role.Policies) != 1 {
 					return fmt.Errorf("legacy stack role has an unexpected policy")
 				}
-				perms, err := role.Policies[0].PermissionProjection()
-				if err != nil {
-					return err
-				}
-				api, hasAPI := perms[permissions.APIPermissionKey]
-				if hasAPI && (api == nil || *api != string(permissions.APIStack)) {
-					return fmt.Errorf("legacy stack role has an unexpected policy")
-				}
-				if (hasAPI && len(perms) != 2) || (!hasAPI && len(perms) != 1) {
-					return fmt.Errorf("legacy stack role has an unexpected policy")
-				}
-				if _, ok := perms[permissions.StackObject(orgID, installID)]; !ok {
-					return fmt.Errorf("legacy stack role targets a different resource")
-				}
-				want.ID = role.ID
-				if hasAPI {
-					want.Version = role.Version
-					want.Policies[0].Permissions[permissions.APIPermissionKey] = api
+				if role.Policies[0].HasGrantDocument() {
+					policy, err := decodeWorkloadGrant(&role)
+					if err != nil {
+						return err
+					}
+					if policy.Grants[0].Scope.IDs[0] != installID || (policy.API != "" && policy.API != permissions.APIStack) {
+						return fmt.Errorf("stack role has a different target or api restriction")
+					}
+					want.ID = role.ID
+				} else {
+					perms, err := role.Policies[0].PermissionProjection()
+					if err != nil {
+						return err
+					}
+					api, hasAPI := perms[permissions.APIPermissionKey]
+					if hasAPI && (api == nil || *api != string(permissions.APIStack)) {
+						return fmt.Errorf("legacy stack role has an unexpected policy")
+					}
+					if (hasAPI && len(perms) != 2) || (!hasAPI && len(perms) != 1) {
+						return fmt.Errorf("legacy stack role has an unexpected policy")
+					}
+					if _, ok := perms[permissions.StackObject(orgID, installID)]; !ok {
+						return fmt.Errorf("legacy stack role targets a different resource")
+					}
+					want.ID = role.ID
+					if hasAPI {
+						want.Version = role.Version
+						want.Policies[0].Permissions[permissions.APIPermissionKey] = api
+					}
 				}
 			}
 		}
@@ -126,8 +137,8 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 			}
 		}
 		if binding.AccountID != "" {
-			return New(Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, accountID, want)
+			return New(Params{DB: tx, Cfg: h.cfg}).EnsureManagedServiceAccountRole(ctx, accountID, want)
 		}
-		return ensurePrivateRole(tx, accountID, want)
+		return h.ensurePrivateRole(tx, accountID, want)
 	})
 }

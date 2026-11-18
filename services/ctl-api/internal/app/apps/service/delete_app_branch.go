@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -54,11 +55,19 @@ func (s *service) DeleteAppBranch(ctx *gin.Context) {
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		now := time.Now()
 
-		if err := tx.Model(&app.InstallAppBranchConnection{}).
+		connections := tx.Model(&app.InstallAppBranchConnection{}).
 			Where(app.InstallAppBranchConnection{
 				AppBranchID: appBranchID,
 				Active:      true,
-			}).
+			})
+		if authz.HasAuthority(ctx) {
+			ids, ok := ctx.Value("nuon.apps.branch_connection_ids").([]string)
+			if !ok {
+				return fmt.Errorf("missing admitted branch connections")
+			}
+			connections = connections.Where(app.InstallAppBranchConnection{OrgID: org.ID}).Where("id IN ?", ids)
+		}
+		if err := connections.
 			Updates(map[string]interface{}{
 				"active":         false,
 				"deactivated_at": now,

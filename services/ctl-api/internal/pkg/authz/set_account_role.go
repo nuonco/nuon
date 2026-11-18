@@ -16,14 +16,34 @@ import (
 // account's OrgInvite records, so it is safe for in-place role changes.
 func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string, roleType app.RoleType) error {
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		usesGrants, err := New(Params{DB: tx}).AccountUsesGrants(ctx, accountID, orgID)
+		if err != nil {
+			return err
+		}
 		var role app.Role
 		if err := tx.
+			Preload("Policies").
 			Where(app.Role{
 				OrgID:    generics.NewNullString(orgID),
 				RoleType: roleType,
 			}).
 			First(&role).Error; err != nil {
 			return fmt.Errorf("unable to find role: %w", err)
+		}
+		if usesGrants {
+			if !isStandardOrgGrant(role) {
+				return fmt.Errorf("cannot replace scoped grants with a legacy or custom org role")
+			}
+			bindings := tx.Model(&app.AccountRole{}).Select("role_id").Where(app.AccountRole{AccountID: accountID, OrgID: generics.NewNullString(orgID)})
+			var current []app.Role
+			if err := tx.Preload("Policies").Where("id IN (?)", bindings).Find(&current).Error; err != nil {
+				return err
+			}
+			for _, existing := range current {
+				if !isStandardOrgGrant(existing) {
+					return fmt.Errorf("cannot replace custom grants through org-role assignment")
+				}
+			}
 		}
 
 		if err := tx.

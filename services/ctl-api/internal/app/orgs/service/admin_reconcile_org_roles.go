@@ -17,16 +17,21 @@ import (
 )
 
 type AdminReconcileOrgRolesRequest struct {
-	OrgIDs []string `json:"org_ids,omitempty"`
+	OrgIDs                []string `json:"org_ids,omitempty"`
+	GrantPolicies         bool     `json:"grant_policies,omitempty"`
+	WorkloadGrantPolicies bool     `json:"workload_grant_policies,omitempty"`
+	Apply                 bool     `json:"apply,omitempty"`
 }
 
 type AdminReconcileOrgRolesResponse struct {
-	Reconciled int `json:"reconciled"`
+	Reconciled    int  `json:"reconciled"`
+	GrantPolicies int  `json:"grant_policies,omitempty"`
+	Applied       bool `json:"applied,omitempty"`
 }
 
 // @ID			AdminReconcileOrgRoles
 // @Summary		reconcile managed roles for orgs
-// @Description	Creates any missing managed roles and updates role metadata (title, description, contexts, managed) to match the standard definitions. Existing role policies are left unchanged. When org_ids is omitted or empty, every org is reconciled. Idempotent.
+// @Description	By default reconciles managed role metadata without changing policies, across all orgs or org_ids. With grant_policies=true previews Admin/Reader and any held-only Support/Installer roles, preserving their non-admin access; workload_grant_policies=true instead previews the managed Runner and live-bound private workload roles. Either conversion requires exactly one org ID. apply=true writes the conversion and requires enable_org_grant_policies. Unsupported or mixed role cohorts are rejected. Idempotent.
 // @Tags			orgs/admin
 // @Security		AdminEmail
 // @Accept			json
@@ -38,6 +43,32 @@ func (s *service) AdminReconcileOrgRoles(ctx *gin.Context) {
 	var req AdminReconcileOrgRolesRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+	if req.GrantPolicies && req.WorkloadGrantPolicies {
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("select one grant conversion cohort")))
+		return
+	}
+	if req.GrantPolicies || req.WorkloadGrantPolicies {
+		if len(req.OrgIDs) != 1 || req.OrgIDs[0] == "" {
+			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("grant conversion requires exactly one org ID")))
+			return
+		}
+		if req.Apply && (s.cfg == nil || !s.cfg.EnableOrgGrantPolicies) {
+			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("grant policy writes are not enabled")))
+			return
+		}
+		convert := s.authzClient.MigrateOrgGrantPolicies
+		if req.WorkloadGrantPolicies {
+			convert = s.authzClient.MigrateWorkloadGrantPolicies
+		}
+		count, err := convert(ctx.Request.Context(), req.OrgIDs[0], req.Apply)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		s.l.Info("org grant conversion", zap.String("org_id", req.OrgIDs[0]), zap.Bool("workload", req.WorkloadGrantPolicies), zap.Bool("applied", req.Apply), zap.Int("policies", count))
+		ctx.JSON(http.StatusOK, AdminReconcileOrgRolesResponse{GrantPolicies: count, Applied: req.Apply})
 		return
 	}
 

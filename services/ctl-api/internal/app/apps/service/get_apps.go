@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -73,6 +75,14 @@ func (s *service) getApps(ctx *gin.Context, orgID, q string) ([]*app.App, error)
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
 		Order("apps.name ASC")
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		tx = tx.Where("apps.id IN (?)", ids)
+	}
 
 	if q != "" {
 		tx = tx.Where("apps.name ILIKE ? OR apps.id = ?", "%"+q+"%", q)

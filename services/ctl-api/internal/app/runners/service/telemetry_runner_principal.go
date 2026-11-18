@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
@@ -24,7 +25,7 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 	if err != nil {
 		return principal, fmt.Errorf("get telemetry runner org: %w", err)
 	}
-	if acct == nil || acct.AccountType != app.AccountTypeService || acct.Subject == "" || !slices.Contains(acct.OrgIDs, orgID) || !hasTelemetryRunnerRole(acct, orgID) {
+	if acct == nil || acct.AccountType != app.AccountTypeService || acct.Subject == "" || !slices.Contains(acct.OrgIDs, orgID) || (!authz.HasAuthority(ctx) && !hasTelemetryRunnerRole(acct, orgID)) {
 		return principal, telemetryRunnerAuthorizationError()
 	}
 

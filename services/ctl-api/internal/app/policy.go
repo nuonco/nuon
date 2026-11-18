@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"time"
@@ -60,18 +61,39 @@ type Policy struct {
 	Document            []byte        `json:"-" gorm:"type:jsonb;check:policies_single_authority,document IS NULL OR permissions IS NULL OR permissions = ''::hstore" temporaljson:"document,omitzero,omitempty"`
 }
 
-func (a *Policy) DecodeDocument() (permissions.Policy, error) {
+func (a *Policy) DecodeDocument() (permissions.LegacyPolicy, error) {
 	if a.Document == nil {
-		return permissions.Policy{}, fmt.Errorf("policy %s has no document", a.ID)
+		return permissions.LegacyPolicy{}, fmt.Errorf("policy %s has no document", a.ID)
 	}
 	if len(a.Permissions) != 0 {
-		return permissions.Policy{}, fmt.Errorf("policy %s has both document and legacy permissions", a.ID)
+		return permissions.LegacyPolicy{}, fmt.Errorf("policy %s has both document and legacy permissions", a.ID)
 	}
-	policy, err := permissions.DecodePolicy(permissions.PolicyFormatV3, a.Document)
+	policy, err := permissions.DecodeLegacyPolicy(permissions.PolicyFormatV3, a.Document)
 	if err != nil {
-		return permissions.Policy{}, fmt.Errorf("policy %s: %w", a.ID, err)
+		return permissions.LegacyPolicy{}, fmt.Errorf("policy %s: %w", a.ID, err)
 	}
 	return policy, nil
+}
+
+func (a *Policy) HasGrantDocument() bool {
+	var header struct {
+		Format int `json:"format"`
+	}
+	return json.Unmarshal(a.Document, &header) == nil && header.Format == permissions.PolicyFormatV4
+}
+
+func (a *Policy) DecodeGrants(catalog *permissions.Catalog) (permissions.Policy, error) {
+	if a.Document == nil || len(a.Permissions) != 0 {
+		return permissions.Policy{}, fmt.Errorf("policy %s requires a grant document as its only authority", a.ID)
+	}
+	document, err := catalog.DecodePolicy(a.Document)
+	if err != nil {
+		return permissions.Policy{}, err
+	}
+	if _, err := catalog.Compile(document, a.OrgID.ValueString()); err != nil {
+		return permissions.Policy{}, err
+	}
+	return document, nil
 }
 
 func (a *Policy) Indexes(db *gorm.DB) []migrations.Index {
@@ -104,6 +126,22 @@ func (a *Policy) AfterQuery(tx *gorm.DB) error {
 }
 
 func (a *Policy) BeforeSave(tx *gorm.DB) error {
+	if a.HasGrantDocument() {
+		catalog, err := permissions.DefaultCatalog()
+		if err != nil {
+			return err
+		}
+		document, err := a.DecodeGrants(catalog)
+		if err != nil {
+			return err
+		}
+		a.Document, err = json.Marshal(document)
+		if err != nil {
+			return err
+		}
+		a.ResponsePermissions = make(pgtype.Hstore)
+		return nil
+	}
 	var err error
 	a.ResponsePermissions, err = a.PermissionProjection()
 	return err
@@ -112,6 +150,16 @@ func (a *Policy) BeforeSave(tx *gorm.DB) error {
 func (a *Policy) PermissionProjection() (pgtype.Hstore, error) {
 	if a.Document == nil {
 		return maps.Clone(a.Permissions), nil
+	}
+	if a.HasGrantDocument() {
+		catalog, err := permissions.DefaultCatalog()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := a.DecodeGrants(catalog); err != nil {
+			return nil, err
+		}
+		return make(pgtype.Hstore), nil
 	}
 	document, err := a.DecodeDocument()
 	if err != nil {

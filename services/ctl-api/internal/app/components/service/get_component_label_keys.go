@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -41,6 +43,19 @@ func (s *service) GetComponentLabelKeys(ctx *gin.Context) {
 			AND app_id = ? AND deleted_at = 0
 			AND EXISTS (SELECT 1 FROM apps WHERE apps.id = components.app_id AND apps.org_id = ?)
 		) AS t ORDER BY key, value`, appID, org.ID)
+
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		query = s.db.WithContext(ctx).Raw(`SELECT DISTINCT key, value FROM (
+			SELECT (jsonb_each_text(labels)).* FROM components
+			WHERE labels IS NOT NULL AND labels != '{}'::jsonb
+			AND app_id = ? AND deleted_at = 0 AND id IN (?)
+		) AS t ORDER BY key, value`, appID, ids)
+	}
 
 	if err := query.Scan(&rows).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get component labels: %w", err))

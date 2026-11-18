@@ -272,8 +272,15 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 
 		orgID := s.resolveOrg(acct, r.Header.Get("X-Nuon-Org-ID"))
 
+		ctx, err = s.authorizeOrg(ctx, acct, tok, orgID)
+		if err != nil {
+			l.Warn("MCP org authorization failed", zap.Error(err))
+			s.writeForbidden(w, "unable to authorize account in this org")
+			return
+		}
 		ctx = cctx.SetAccountContext(ctx, acct)
 		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
+		ctx = context.WithValue(ctx, keys.TokenIDCtxKey, tok.ID)
 		ctx = keys.WithTokenRole(ctx, tok.Role)
 		ctx = cctx.SetTokenTypeContext(ctx, tok.TokenType)
 		ctx = context.WithValue(ctx, mcpHTTPRequestKey{}, mcpHTTPRequest{

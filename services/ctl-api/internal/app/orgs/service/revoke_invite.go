@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/analytics/events"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -41,7 +42,7 @@ func (s *service) RevokeOrgInvite(ctx *gin.Context) {
 		return
 	}
 
-	if !s.isOrgAdmin(acct, org.ID) {
+	if !authz.HasAuthority(ctx) && !s.isOrgAdmin(acct, org.ID) {
 		ctx.Error(stderr.ErrAuthorization{
 			Err:         fmt.Errorf("only org admins can revoke invites"),
 			Description: "only org admins can revoke invites",

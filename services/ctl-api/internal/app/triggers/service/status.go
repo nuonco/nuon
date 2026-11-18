@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -270,6 +271,24 @@ func (s *service) scopedDispatch(ctx *gin.Context, orgID, dispatchID string) (*a
 	var dispatch app.EventDispatch
 	err := s.db.WithContext(ctx).Where(app.EventDispatch{ID: dispatchID, OrgID: orgID}).First(&dispatch).Error
 	return &dispatch, err
+}
+
+func (s *service) dispatchOrgTarget(ctx *gin.Context) (permissions.Target, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	dispatch, err := s.scopedDispatch(ctx, orgID, ctx.Param("dispatch_id"))
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	var owner app.App
+	if err := s.db.WithContext(ctx).Select("id").Where(app.App{ID: dispatch.AppID, OrgID: orgID}).Take(&owner).Error; err != nil {
+		return permissions.Target{}, err
+	}
+	return permissions.Target{ResolvedTarget: permissions.ResolvedTarget{
+		Scope: permissions.Scope{Kind: permissions.KindOrg, OrgID: orgID, ID: orgID},
+	}}, nil
 }
 
 func (s *service) listEvents(ctx *gin.Context, orgID, triggerID string, filters eventListFilters, cursor *eventListCursor, order string) {

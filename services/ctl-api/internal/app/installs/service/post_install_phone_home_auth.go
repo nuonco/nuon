@@ -11,11 +11,15 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
+
+const phoneHomeAPIKey = "nuon.installs.phone_home_api"
 
 // Rejection reasons, used as a metric tag and in the warn log. They are deliberately
 // finer-grained than the HTTP status: a rejection fails open on the customer's side,
@@ -173,8 +177,7 @@ func (s *service) verifyPhoneHomeCredential(
 		return "", fmt.Errorf("unable to resolve token account: %w", err)
 	}
 
-	object := permissions.Object(install.OrgID, permissions.KindPhoneHome, stackVersion.ID)
-	if err := acct.Authority.CanPerform(object, permissions.PermissionCreate, false); err != nil {
+	if err := s.checkPhoneHomePermission(ctx, acct, &token, install, stackVersion); err != nil {
 		return phoneHomeRejectWrongAccount, rejectPhoneHome(phoneHomeRejectWrongAccount, err)
 	}
 
@@ -187,6 +190,49 @@ func (s *service) verifyPhoneHomeCredential(
 	}
 
 	return phoneHomeAuthOK, nil
+}
+
+func (s *service) checkPhoneHomePermission(ctx context.Context, acct *app.Account, token *app.Token, install *app.Install, version *app.InstallStackVersion) error {
+	client := authz.New(authz.Params{DB: s.db})
+	usesGrants, err := client.AccountUsesGrants(ctx, acct.ID, install.OrgID)
+	if err != nil {
+		return err
+	}
+	if !usesGrants && token.PermissionCeiling == nil {
+		object := permissions.Object(install.OrgID, permissions.KindPhoneHome, version.ID)
+		return acct.Authority.CanPerform(object, permissions.PermissionCreate, false)
+	}
+	if token.OrgID != "" && token.OrgID != install.OrgID {
+		return authz.ErrDenied
+	}
+	catalog, err := permissions.DefaultCatalog()
+	if err != nil {
+		return err
+	}
+	api := permissions.APICtl
+	if listener, ok := ctx.Value(phoneHomeAPIKey).(permissions.API); ok {
+		api = listener
+	}
+	authority, err := client.LoadAuthority(ctx, catalog, authz.AuthorityInput{
+		AccountID: acct.ID, CredentialID: token.ID, OrgID: install.OrgID, API: api, Ceiling: token.PermissionCeiling,
+		CredentialOrgID: token.OrgID,
+	})
+	if err != nil {
+		return err
+	}
+	resources, err := installaccess.Installs.In(s.db, install.OrgID)
+	if err != nil {
+		return err
+	}
+	target, err := resources.Resolve(ctx, install.ID)
+	if err != nil {
+		return err
+	}
+	if version.OrgID != install.OrgID || version.InstallID != install.ID {
+		return authz.ErrDenied
+	}
+	target.Kind, target.ID = permissions.KindPhoneHome, version.ID
+	return authority.Require(authz.Requirement{Operation: permissions.StackVersionReport, Target: target})
 }
 
 // bearerToken pulls the credential out of an Authorization header, tolerating case and

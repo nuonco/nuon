@@ -8,13 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
@@ -115,7 +116,7 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.requireOrgOperation(ctx, permissions.TrustPolicyCreate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -187,7 +188,7 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies [GET]
 func (s *service) ListOIDCTrustPolicies(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.requireOrgOperation(ctx, permissions.TrustPoliciesRead)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -219,7 +220,7 @@ func (s *service) ListOIDCTrustPolicies(ctx *gin.Context) {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies/{policy_id} [GET]
 func (s *service) GetOIDCTrustPolicy(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.requireOrgOperation(ctx, permissions.TrustPoliciesRead)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -256,7 +257,7 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.requireOrgOperation(ctx, permissions.TrustPolicyUpdate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -351,7 +352,7 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Router					/v1/oidc/trust-policies/{policy_id} [DELETE]
 func (s *service) DeleteOIDCTrustPolicy(ctx *gin.Context) {
-	org, err := s.requireOrgAdmin(ctx)
+	org, err := s.requireOrgOperation(ctx, permissions.TrustPolicyDelete)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -412,7 +413,7 @@ func (s *service) requireFederationEnabled() error {
 	}
 }
 
-func (s *service) requireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
+func (s *service) requireOrgOperation(ctx *gin.Context, operation permissions.PermissionID) (*app.Org, error) {
 	if err := s.requireFederationEnabled(); err != nil {
 		return nil, err
 	}
@@ -420,6 +421,20 @@ func (s *service) requireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	if authz.HasAuthority(ctx) {
+		authority, err := authz.AuthorityFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		target := permissions.Target{ResolvedTarget: permissions.ResolvedTarget{
+			Scope: permissions.Scope{Kind: permissions.KindOrg, OrgID: org.ID, ID: org.ID},
+		}}
+		if !authority.Check(operation, target).Matched {
+			return nil, stderr.ErrAuthorization{Err: fmt.Errorf("org operation is not allowed"), Description: "org operation is not allowed"}
+		}
+		return org, nil
 	}
 
 	acct, err := cctx.AccountFromGinContext(ctx)
@@ -481,31 +496,6 @@ func (s *service) deletePolicyServiceAccount(tx *gorm.DB, orgID, accountID strin
 	return nil
 }
 
-// setAccountOrgRole replaces the account's roles in the org. It writes through
-// the caller's transaction, unlike authz.Client.SetAccountOrgRole which opens
-// its own.
 func (s *service) setAccountOrgRole(tx *gorm.DB, orgID, accountID string, roleType app.RoleType) error {
-	var role app.Role
-	if err := tx.
-		Where(app.Role{OrgID: generics.NewNullString(orgID), RoleType: roleType}).
-		First(&role).Error; err != nil {
-		return fmt.Errorf("unable to find role: %w", err)
-	}
-
-	if err := tx.Unscoped().
-		Where(app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: accountID}).
-		Delete(&app.AccountRole{}).Error; err != nil {
-		return fmt.Errorf("unable to remove existing roles: %w", err)
-	}
-
-	acctRole := &app.AccountRole{
-		OrgID:     generics.NewNullString(orgID),
-		RoleID:    role.ID,
-		AccountID: accountID,
-	}
-	if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&acctRole).Error; err != nil {
-		return fmt.Errorf("unable to add role: %w", err)
-	}
-
-	return nil
+	return authz.New(authz.Params{DB: tx}).SetAccountOrgRole(tx.Statement.Context, orgID, accountID, roleType)
 }

@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -101,6 +102,7 @@ func (s *service) getInstallActionWorkflows(ctx *gin.Context, installID string, 
 	res := s.db.WithContext(ctx).
 		Preload("InstallActionWorkflows", func(db *gorm.DB) *gorm.DB {
 			return db.
+				Scopes(require.CollectionScope(ctx)).
 				Scopes(scopes.WithOffsetPagination).
 				Where(appConfigActionFilter(syncedOnly)).
 				Order("install_action_workflows.created_at DESC")

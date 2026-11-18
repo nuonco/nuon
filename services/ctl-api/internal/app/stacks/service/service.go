@@ -14,11 +14,13 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	installaccess "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/access"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type Params struct {
@@ -50,16 +52,20 @@ var _ api.Service = (*service)(nil)
 func registerStackRoutes(s *service, ge *gin.Engine) {
 	stacks := ge.Group("/v1/stacks/:install_id")
 	{
-		require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id").GET("/config", s.GetStackConfig)
-		require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id").POST("/phone-home", s.PostStackPhoneHome)
+		config := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id"), permissions.APIStack)
+		config.GET("/config", require.Point(permissions.StackConfigRead, s.installTarget), s.GetStackConfig)
+		phoneHome := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id"), permissions.APIStack)
+		phoneHome.POST("/phone-home", require.Point(permissions.StackReport, s.installTarget), s.PostStackPhoneHome)
 	}
 }
 
 func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
 	stacks := ge.Group("/v1/stacks/:install_id")
-	config := require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id")
+	config := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id"), permissions.APIRunner).
+		For(require.Point(permissions.StackConfigRead, s.installTarget))
 	s.GET(config, "/config", s.GetStackConfigRunner, api.APIContextTypeRunner, true)
-	phoneHome := require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id")
+	phoneHome := require.Routes(require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id"), permissions.APIRunner).
+		For(require.Point(permissions.StackReport, s.installTarget))
 	s.POST(phoneHome, "/phone-home", s.PostStackPhoneHomeRunner, api.APIContextTypeRunner, true)
 	return nil
 }
@@ -72,12 +78,24 @@ func (s *service) RegisterStackRoutes(ge *gin.Engine) error {
 // Public API: the dashboard shows this before the customer has a credential.
 // No create route — tokens come from POST /v1/service-accounts/{id}/tokens.
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	stacks := ge.Group("/v1/stacks/:install_id")
+	stacks := require.Routes(ge.Group("/v1/stacks/:install_id"), permissions.APICtl)
 	{
-		stacks.GET("/service-account", s.GetStackServiceAccount)
+		stacks.GET("/service-account", require.Point(permissions.InstallConfigRead, s.installTarget), s.GetStackServiceAccount)
 	}
 
 	return nil
+}
+
+func (s *service) installTarget(ctx *gin.Context) (permissions.Target, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	resources, err := installaccess.Resources(s.db, orgID)
+	if err != nil {
+		return permissions.Target{}, err
+	}
+	return resources.Resolve(ctx.Request.Context(), ctx.Param("install_id"))
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {

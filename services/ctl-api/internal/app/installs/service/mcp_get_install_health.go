@@ -82,7 +82,7 @@ type mcpGetInstallHealthResult struct {
 }
 
 func (s *service) mcpGetInstallHealth(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetInstallInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -91,6 +91,9 @@ func (s *service) mcpGetInstallHealth(ctx context.Context, _ *mcp.CallToolReques
 	}
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.mcpInstallPoint(ctx, install.ID, "install.state.read"); err != nil {
 		return nil, nil, err
 	}
 

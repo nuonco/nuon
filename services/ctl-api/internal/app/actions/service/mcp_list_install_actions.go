@@ -7,7 +7,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -23,7 +25,7 @@ type mcpInstallActionSummary struct {
 }
 
 func (s *service) mcpListInstallActions(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInstallActionsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -38,6 +40,7 @@ func (s *service) mcpListInstallActions(ctx context.Context, _ *mcp.CallToolRequ
 
 	var actions []app.InstallActionWorkflow
 	err = s.db.WithContext(ctx).
+		Scopes(require.MCPCollection(ctx, s.db, access.InstallActions, permissions.InstallActionInspect)).
 		Where(app.InstallActionWorkflow{OrgID: orgID, InstallID: install.ID}).
 		Preload("ActionWorkflow").
 		Order("created_at DESC").

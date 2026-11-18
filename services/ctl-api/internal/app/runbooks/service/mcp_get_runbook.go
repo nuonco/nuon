@@ -9,7 +9,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -56,7 +58,7 @@ type mcpRunbookStep struct {
 }
 
 func (s *service) mcpGetRunbook(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetRunbookInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -93,6 +95,9 @@ func (s *service) mcpGetRunbook(ctx context.Context, _ *mcp.CallToolRequest, in 
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find runbook %q: %w", ref, err)
 	}
+	if _, err := require.MCPPoint(ctx, s.db, access.Runbooks, permissions.RunbookInspect, runbook.ID); err != nil {
+		return nil, nil, err
+	}
 
 	detail := mcpRunbookDetailFrom(runbook, nil)
 	detail.Message = "Pass install to load the config pinned to an install before running. Step IDs here are from the latest app config."
@@ -120,6 +125,9 @@ func (s *service) getInstallPinnedRunbook(ctx context.Context, orgID, installRef
 		First(&installRunbook).Error
 	if err != nil {
 		return nil, fmt.Errorf("unable to find install runbook %q: %w", runbookRef, err)
+	}
+	if _, err := require.MCPPoint(ctx, s.db, access.InstallRunbooks, permissions.InstallRunbookInspect, installRunbook.ID); err != nil {
+		return nil, err
 	}
 
 	configQuery := s.db.WithContext(ctx).

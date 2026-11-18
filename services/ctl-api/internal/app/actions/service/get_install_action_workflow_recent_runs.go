@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -144,6 +145,7 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		Preload("ActionWorkflow.Configs.Steps.ConnectedGithubVCSConfig").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
 			return db.
+				Scopes(require.CollectionScope(ctx)).
 				Scopes(scopes.WithOffsetPagination).
 				Preload("CreatedBy").
 				Preload("RunnerJob", app.PreloadActionExecutionRunnerJob).

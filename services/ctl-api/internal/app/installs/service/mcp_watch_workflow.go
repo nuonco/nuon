@@ -40,7 +40,7 @@ type mcpWatchWorkflowResult struct {
 }
 
 func (s *service) mcpWatchWorkflow(ctx context.Context, req *mcp.CallToolRequest, in mcpWatchWorkflowInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,6 +88,9 @@ func (s *service) mcpWatchWorkflow(ctx context.Context, req *mcp.CallToolRequest
 }
 
 func (s *service) fetchWorkflowSummary(ctx context.Context, orgID, workflowID string) (*mcpWorkflowSummary, error) {
+	if err := s.mcpWorkflowPoint(ctx, workflowID, "workflow.inspect"); err != nil {
+		return nil, err
+	}
 	var workflow app.Workflow
 	err := s.db.WithContext(ctx).
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {

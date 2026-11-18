@@ -15,6 +15,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/queues/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -55,19 +57,22 @@ func New(params Params) *service {
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// New list and get endpoints
-	queues := api.Group("/v1/queues")
+	// Existing queue detail endpoints
+	apiAccess := require.Routes(api, permissions.APICtl)
+
+	queues := require.Routes(api.Group("/v1/queues"), permissions.APICtl)
 	{
-		queues.GET("", s.ListQueues)
-		queues.GET("/:queue_id", s.GetQueue)
+		queues.GET("", require.Collection(permissions.QueueInspect, s.queueResources), s.ListQueues)
+		queues.GET("/:queue_id", require.Point(permissions.QueueInspect, s.queueTarget), s.GetQueue)
 	}
 
-	// Existing queue detail endpoints
-	queueDetail := api.Group("/v1/queues/:queue_id")
+	queueDetail := apiAccess.For(require.Point(permissions.QueueInspect, s.queueTarget)).Group("/v1/queues/:queue_id")
+	queueDetailAccess := require.Routes(queueDetail, permissions.APICtl)
 	{
 		queueDetail.GET("/status", s.GetQueueStatus)
 		queueDetail.GET("/signals", s.GetQueueSignals)
 		queueDetail.GET("/signals/:signal_id", s.GetQueueSignal)
-		queueDetail.GET("/signals/:signal_id/graph", s.GetQueueSignalGraph)
+		queueDetailAccess.GET("/signals/:signal_id/graph", require.Point(permissions.QueueGraphRead, s.graphTarget), s.GetQueueSignalGraph)
 		queueDetail.GET("/signals/:signal_id/await", s.AwaitQueueSignal)
 	}
 

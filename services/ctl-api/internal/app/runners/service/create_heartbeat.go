@@ -52,7 +52,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	var req CreateRunnerHeartBeatRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}

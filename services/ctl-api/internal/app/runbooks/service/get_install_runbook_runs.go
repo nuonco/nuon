@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -40,6 +41,7 @@ func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
 	}
 
 	query := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("CreatedBy").
 		Preload("InstallRunbook").

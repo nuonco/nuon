@@ -13,6 +13,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
@@ -66,7 +69,30 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
-	triggered, err := s.createRunbookRun(ctx, org.ID, account.ID, ctx.Param("install_id"), ctx.Param("runbook_id"), req)
+	var install *app.Install
+	if authz.HasAuthority(ctx) {
+		access, accessErr := require.Access(ctx)
+		if accessErr != nil {
+			ctx.Error(accessErr)
+			return
+		}
+		target, targetErr := access.Target(permissions.RunbookExecute)
+		if targetErr != nil {
+			ctx.Error(targetErr)
+			return
+		}
+		install = &app.Install{}
+		err = s.db.WithContext(ctx.Request.Context()).
+			Where(app.Install{ID: target.ID, OrgID: target.OrgID, AppID: target.AppID}).Take(install).Error
+	} else {
+		install, err = s.resolveInstallRef(ctx, org.ID, ctx.Param("install_id"))
+	}
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	triggered, err := s.createRunbookRun(ctx, account.ID, install, ctx.Param("runbook_id"), req)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -75,14 +101,10 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, triggered.Run)
 }
 
-func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, installRef, runbookRef string, req CreateRunbookRunRequest) (*runbookshelpers.TriggerRunbookRunResponse, error) {
-	install, err := s.resolveInstallRef(ctx, orgID, installRef)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *service) createRunbookRun(ctx context.Context, accountID string, install *app.Install, runbookRef string, req CreateRunbookRunRequest) (*runbookshelpers.TriggerRunbookRunResponse, error) {
+	orgID := install.OrgID
 	var runbook app.Runbook
-	err = s.db.WithContext(ctx).
+	err := s.db.WithContext(ctx).
 		Where(app.Runbook{OrgID: orgID, AppID: install.AppID}).
 		Where(s.db.Where(app.Runbook{ID: runbookRef}).Or(app.Runbook{Name: runbookRef})).
 		First(&runbook).Error
@@ -151,6 +173,48 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 		}
 	}
 
+	if authz.HasAuthority(ctx) {
+		if runbookConfig.AppID != install.AppID {
+			return nil, gorm.ErrRecordNotFound
+		}
+		if install.AppConfigID != "" {
+			var config app.AppConfig
+			if err := s.db.WithContext(ctx).Where(app.AppConfig{ID: install.AppConfigID, OrgID: orgID, AppID: install.AppID}).First(&config).Error; err != nil {
+				return nil, err
+			}
+		}
+		for _, step := range runbookConfig.Steps {
+			if step.Type == app.RunbookStepTypeWaitForEvent {
+				authority, err := authz.AuthorityFromContext(ctx)
+				if err != nil {
+					return nil, err
+				}
+				target := permissions.Target{ResolvedTarget: permissions.ResolvedTarget{
+					Scope: permissions.Scope{Kind: permissions.KindInstall, OrgID: orgID, ID: install.ID}, AppID: install.AppID, InstallID: install.ID,
+				}}
+				if step.TriggerID == "" || !authority.Check(permissions.AppAutomationManage, target).Matched {
+					return nil, stderr.ErrNotFound{Err: gorm.ErrRecordNotFound, Description: "resource not found"}
+				}
+				var trigger app.Trigger
+				if err := s.db.WithContext(ctx).Where(app.Trigger{ID: step.TriggerID, OrgID: orgID}).First(&trigger).Error; err != nil {
+					return nil, err
+				}
+			}
+			if step.ActionWorkflowID.Valid {
+				var action app.ActionWorkflow
+				if err := s.db.WithContext(ctx).Where(app.ActionWorkflow{ID: step.ActionWorkflowID.String, OrgID: orgID, AppID: install.AppID}).First(&action).Error; err != nil {
+					return nil, err
+				}
+			}
+			if step.ComponentName != "" {
+				var component app.Component
+				if err := s.db.WithContext(ctx).Where(app.Component{OrgID: orgID, AppID: install.AppID, Name: step.ComponentName}).First(&component).Error; err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
 	inputsWithDefaults := runbookshelpers.MergeRunbookInputDefaults(&runbookConfig, req.Inputs)
 	if err := s.helpers.ValidateRunbookInputs(&runbookConfig, inputsWithDefaults); err != nil {
 		return nil, err
@@ -178,7 +242,7 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 func (s *service) resolveInstallRef(ctx context.Context, orgID, installRef string) (*app.Install, error) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).
-		Select("id", "name", "app_id", "app_config_id").
+		Select("id", "org_id", "name", "app_id", "app_config_id").
 		Where(app.Install{OrgID: orgID}).
 		Where(s.db.Where(app.Install{ID: installRef}).Or(app.Install{Name: installRef})).
 		First(&install).Error; err != nil {

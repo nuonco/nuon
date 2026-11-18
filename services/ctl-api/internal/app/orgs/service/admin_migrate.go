@@ -59,7 +59,7 @@ func (s *service) AdminMigrateOrg(ctx *gin.Context) {
 
 func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 	// create runner role
-	policy, err := permissions.RolePolicy(permissions.RoleOrgAdmin, permissions.APIRunner)
+	policy, err := permissions.LegacyRolePolicy(permissions.RoleOrgAdmin, permissions.APIRunner)
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner policy")
 	}

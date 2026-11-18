@@ -52,10 +52,15 @@ func (c *DeleteInstallRequest) Validate(v *validator.Validate) error {
 // @Router					/v1/installs/{install_id} [DELETE]
 func (s *service) DeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	install, err := s.getInstall(ctx, installID)
-	if err != nil {
-		ctx.Error(err)
-		return
+	value, _ := ctx.Get(authorizedInstallKey)
+	install, loaded := value.(*app.Install)
+	if !loaded {
+		var err error
+		install, err = s.getInstall(ctx, installID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
 	}
 
 	var req DeleteInstallRequest

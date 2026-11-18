@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -40,10 +41,13 @@ func (s *service) GetInstallLatestDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	// Validate install belongs to org
-	_, err = s.findInstall(ctx, org.ID, installID)
+	install, err := s.findInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find install %s: %w", installID, err))
 		return
+	}
+	if authz.HasAuthority(ctx) {
+		installID = install.ID
 	}
 
 	installDeploy, err := s.getInstallLatestDeploy(ctx, installID)

@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -93,6 +94,7 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return withoutPreviewBuilds(db).
+				Scopes(require.CollectionScope(ctx, clause.Column{Table: "component_builds", Name: "id"})).
 				Order("component_builds.created_at DESC").
 				Limit(1)
 		}).

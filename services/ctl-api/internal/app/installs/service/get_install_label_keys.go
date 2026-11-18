@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -25,7 +27,18 @@ func (s *service) GetInstallLabelKeys(ctx *gin.Context) {
 		return
 	}
 
-	result, err := s.getDistinctLabels(ctx, "installs", "org_id = ? AND deleted_at = 0", org.ID)
+	where := "org_id = ? AND deleted_at = 0"
+	args := []any{org.ID}
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		where += " AND id IN (?)"
+		args = append(args, ids)
+	}
+	result, err := s.getDistinctLabels(ctx, "installs", where, args...)
 	if err != nil {
 		ctx.Error(err)
 		return

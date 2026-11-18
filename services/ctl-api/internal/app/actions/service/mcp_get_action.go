@@ -6,7 +6,9 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -26,7 +28,7 @@ type mcpActionDetail struct {
 }
 
 func (s *service) mcpGetAction(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetActionInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -42,6 +44,9 @@ func (s *service) mcpGetAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 	iaw, err := s.getInstallActionWorkflow(ctx, install.ID, in.ActionID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install action: %w", err)
+	}
+	if _, err := require.MCPPoint(ctx, s.db, access.InstallActions, permissions.InstallActionInspect, iaw.ID); err != nil {
+		return nil, nil, err
 	}
 
 	detail := mcpActionDetail{

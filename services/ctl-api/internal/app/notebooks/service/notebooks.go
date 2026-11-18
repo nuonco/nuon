@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	notebookstart "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/signals/start"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -135,6 +136,7 @@ func (s *service) GetNotebooks(ctx *gin.Context) {
 	q := ctx.Query("q")
 
 	tx := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Where(app.Notebook{OrgID: org.ID, InstallID: install.ID}).
 		Order("updated_at DESC")

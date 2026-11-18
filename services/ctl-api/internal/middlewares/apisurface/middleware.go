@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -37,6 +38,20 @@ func (m *Middleware) Handler(required permissions.API) gin.HandlerFunc {
 				Description: "token is not allowed on this api",
 			})
 			ctx.Abort()
+			return
+		}
+		if _, operationBased := require.OperationAPI(ctx); operationBased && authz.HasAuthority(ctx) {
+			authority, err := authz.AuthorityFromContext(ctx)
+			orgID, orgErr := cctx.OrgIDFromContext(ctx)
+			if err != nil || orgErr != nil || authority.ValidateIdentity(acct.ID, cctx.TokenIDFromContext(ctx), orgID, required) != nil {
+				ctx.Error(stderr.ErrAuthorization{
+					Err:         fmt.Errorf("token is not allowed on this api"),
+					Description: "token is not allowed on this api",
+				})
+				ctx.Abort()
+				return
+			}
+			ctx.Next()
 			return
 		}
 		api, enforce, err := authz.APIForRoles(acct.Roles)

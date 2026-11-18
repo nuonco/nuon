@@ -52,7 +52,8 @@ func (c *CreateAppOperationRoleConfigRequest) Validate(v *validator.Validate) er
 // @Router					/v1/apps/{app_id}/operation-role-configs [post]
 func (s *service) CreateAppOperationRoleConfig(ctx *gin.Context) {
 	var req CreateAppOperationRoleConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err).SetType(gin.ErrorTypeBind)
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

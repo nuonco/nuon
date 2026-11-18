@@ -11,6 +11,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcverify"
 )
 
@@ -56,12 +58,15 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		oidc.POST("/token", s.ExchangeOIDCToken)
 
 		policies := oidc.Group("/trust-policies")
+		policiesAccess := require.Routes(policies, permissions.APICtl)
 		{
-			policies.POST("", s.CreateOIDCTrustPolicy)
-			policies.GET("", s.ListOIDCTrustPolicies)
-			policies.GET("/:policy_id", s.GetOIDCTrustPolicy)
-			policies.PATCH("/:policy_id", s.UpdateOIDCTrustPolicy)
-			policies.DELETE("/:policy_id", s.DeleteOIDCTrustPolicy)
+			delegate := require.Routes(require.UnboundedCredentialRoute(policies), permissions.APICtl)
+			delegate.POST("", require.Organization(permissions.TrustPolicyCreate), s.CreateOIDCTrustPolicy)
+			read := policiesAccess.For(require.Organization(permissions.TrustPoliciesRead))
+			read.GET("", s.ListOIDCTrustPolicies)
+			read.GET("/:policy_id", s.GetOIDCTrustPolicy)
+			delegate.PATCH("/:policy_id", require.Organization(permissions.TrustPolicyUpdate), s.UpdateOIDCTrustPolicy)
+			policiesAccess.DELETE("/:policy_id", require.Organization(permissions.TrustPolicyDelete), s.DeleteOIDCTrustPolicy)
 		}
 	}
 

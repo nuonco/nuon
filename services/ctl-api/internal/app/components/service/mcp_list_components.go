@@ -7,7 +7,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -35,7 +37,7 @@ type mcpListComponentsResult struct {
 }
 
 func (s *service) mcpListComponents(ctx context.Context, _ *mcp.CallToolRequest, in mcpListComponentsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,6 +49,7 @@ func (s *service) mcpListComponents(ctx context.Context, _ *mcp.CallToolRequest,
 
 	var components []app.Component
 	tx := s.db.WithContext(ctx).
+		Scopes(require.MCPCollection(ctx, s.db, access.Components, permissions.ComponentInspect)).
 		Where(app.Component{OrgID: orgID}).
 		Order("name ASC").
 		Limit(limit + 1).

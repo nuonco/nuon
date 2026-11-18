@@ -15,6 +15,8 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -50,6 +52,27 @@ func (h *Helpers) RequireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
 		}
 	}
 
+	return org, nil
+}
+
+func (h *Helpers) RequireOrgOperation(ctx *gin.Context, operation permissions.PermissionID) (*app.Org, error) {
+	if !authz.HasAuthority(ctx) {
+		return h.RequireOrgAdmin(ctx)
+	}
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	authority, err := authz.AuthorityFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	target := permissions.Target{ResolvedTarget: permissions.ResolvedTarget{
+		Scope: permissions.Scope{Kind: permissions.KindOrg, OrgID: org.ID, ID: org.ID},
+	}}
+	if !authority.Check(operation, target).Matched {
+		return nil, stderr.ErrAuthorization{Err: fmt.Errorf("org operation is not allowed"), Description: "org operation is not allowed"}
+	}
 	return org, nil
 }
 

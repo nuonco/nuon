@@ -59,6 +59,11 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 }
 
 func (s *service) getInstall(ctx context.Context, installID string) (*app.Install, error) {
+	if request, ok := ctx.(*gin.Context); ok && installID == request.Param("install_id") {
+		if value, ok := request.Get(authorizedLifecycleInstallKey); ok {
+			return value.(*app.Install), nil
+		}
+	}
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)

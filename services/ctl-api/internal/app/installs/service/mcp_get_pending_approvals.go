@@ -37,7 +37,7 @@ type mcpGetPendingApprovalsResult struct {
 }
 
 func (s *service) mcpGetPendingApprovals(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetPendingApprovalsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -49,6 +49,7 @@ func (s *service) mcpGetPendingApprovals(ctx context.Context, _ *mcp.CallToolReq
 
 	var approvals []app.WorkflowStepApproval
 	err = s.db.WithContext(ctx).
+		Scopes(s.mcpApprovalCollection(ctx, orgID)).
 		Select("id", "org_id", "type", "install_workflow_step_id", "created_at", "changes_state", "changes_create", "changes_update", "changes_delete", "changes_replace", "changes_noop").
 		Omit("contents").
 		Preload("InstallWorkflowStep", func(db *gorm.DB) *gorm.DB {

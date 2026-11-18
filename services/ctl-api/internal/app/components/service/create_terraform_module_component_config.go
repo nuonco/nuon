@@ -212,7 +212,7 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
 	var req CreateTerraformModuleComponentConfigRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}

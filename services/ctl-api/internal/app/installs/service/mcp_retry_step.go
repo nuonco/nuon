@@ -18,7 +18,7 @@ type mcpRetryStepInput struct {
 }
 
 func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpRetryStepInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -27,6 +27,9 @@ func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in m
 	}
 	if in.StepID == "" {
 		return nil, nil, fmt.Errorf("step_id is required")
+	}
+	if err := s.mcpWorkflowContinuation(ctx, orgID, in.WorkflowID, "workflow.retry"); err != nil {
+		return nil, nil, err
 	}
 
 	var workflow app.Workflow

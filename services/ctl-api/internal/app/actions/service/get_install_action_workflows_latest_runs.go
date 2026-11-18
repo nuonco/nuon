@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -103,6 +104,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 	}
 
 	tx := s.db.WithContext(ctx).
+		Scopes(require.CollectionScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ActionWorkflow").
 		// No LIMIT: it would cap the whole preload rather than each row, and the unique

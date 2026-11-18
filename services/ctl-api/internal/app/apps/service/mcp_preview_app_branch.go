@@ -8,8 +8,11 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/access"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -53,7 +56,7 @@ type mcpNextAction struct {
 }
 
 func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolRequest, in mcpPreviewAppBranchInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Write(ctx)
+	orgID, err := require.MCPWrite(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -102,6 +105,15 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 	if err != nil {
 		return nil, nil, err
 	}
+	if _, err := require.MCPPoint(ctx, s.db, access.Branches, permissions.AppAutomationManage, branch.ID); err != nil {
+		return nil, nil, err
+	}
+	if authz.HasAuthority(ctx) && in.AppConfigID != "" {
+		var config app.AppConfig
+		if err := s.db.WithContext(ctx).Where(app.AppConfig{ID: in.AppConfigID, AppID: a.ID, OrgID: orgID}).Take(&config).Error; err != nil {
+			return nil, nil, err
+		}
+	}
 
 	var queued app.AppBranch
 	res := s.db.WithContext(ctx).
@@ -127,6 +139,9 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 			return nil, nil, fmt.Errorf("unable to find branch config %q: %w", in.ConfigID, res.Error)
 		}
 		return nil, nil, fmt.Errorf("unable to find latest branch config: %w", res.Error)
+	}
+	if _, err := require.MCPPoint(ctx, s.db, access.BranchConfigs, permissions.AppAutomationManage, config.ID); err != nil {
+		return nil, nil, err
 	}
 
 	if mode == "" {

@@ -7,7 +7,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/access"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
@@ -25,13 +27,14 @@ type mcpBuildSummary struct {
 }
 
 func (s *service) mcpListBuilds(ctx context.Context, _ *mcp.CallToolRequest, in mcpListBuildsInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	var builds []app.ComponentBuild
 	err = s.db.WithContext(ctx).
+		Scopes(require.MCPCollection(ctx, s.db, access.Builds, permissions.ComponentBuildInspect)).
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
 		Where(app.ComponentBuild{OrgID: orgID}).

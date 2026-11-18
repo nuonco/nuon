@@ -60,22 +60,26 @@ func (s *service) BuildAllComponents(ctx *gin.Context) {
 	limit := 10
 	offset := 0
 
-	for {
-		var batch []*app.Component
-		res := s.db.WithContext(ctx).
-			Limit(limit).
-			Offset(offset).
-			Where("app_id = ?", appID).
-			Find(&batch)
-		if res.Error != nil {
-			ctx.Error(fmt.Errorf("unable to list components: %w", res.Error))
-			return
+	if admitted, ok := ctx.Get("nuon.components.build_all"); ok {
+		comp = admitted.([]*app.Component)
+	} else {
+		for {
+			var batch []*app.Component
+			res := s.db.WithContext(ctx).
+				Limit(limit).
+				Offset(offset).
+				Where("app_id = ?", appID).
+				Find(&batch)
+			if res.Error != nil {
+				ctx.Error(fmt.Errorf("unable to list components: %w", res.Error))
+				return
+			}
+			if len(batch) == 0 {
+				break
+			}
+			comp = append(comp, batch...)
+			offset += limit
 		}
-		if len(batch) == 0 {
-			break
-		}
-		comp = append(comp, batch...)
-		offset += limit
 	}
 
 	var blds []*app.ComponentBuild

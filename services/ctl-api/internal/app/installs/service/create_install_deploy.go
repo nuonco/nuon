@@ -91,7 +91,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 	}
 
 	var req CreateInstallDeployRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
@@ -194,7 +194,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	var req CreateInstallDeployRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}

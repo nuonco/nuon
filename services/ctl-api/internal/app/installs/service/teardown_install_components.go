@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -61,6 +62,9 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(err)
 		return
+	}
+	if authz.HasAuthority(ctx) {
+		installID = install.ID
 	}
 
 	installCmps, err := s.helpers.GetInstallComponents(ctx, installID)

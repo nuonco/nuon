@@ -53,7 +53,7 @@ type mcpListDeploysResult struct {
 }
 
 func (s *service) mcpListDeploys(ctx context.Context, _ *mcp.CallToolRequest, in mcpListDeploysInput) (*mcp.CallToolResult, any, error) {
-	orgID, err := require.Read(ctx)
+	orgID, err := require.MCPRead(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -63,6 +63,7 @@ func (s *service) mcpListDeploys(ctx context.Context, _ *mcp.CallToolRequest, in
 
 	var deploys []app.InstallDeploy
 	err = s.db.WithContext(ctx).
+		Scopes(s.mcpDeployCollection(ctx, orgID)).
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").
 		Preload("ComponentBuild").

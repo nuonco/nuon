@@ -49,6 +49,6 @@ func (h *Client) EnsureRunnerInstallRole(ctx context.Context, orgID, installID, 
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("load runner install role: %w", err)
 		}
-		return ensurePrivateRole(tx, accountID, runnerInstallRole(orgID, installID))
+		return h.ensurePrivateRole(tx, accountID, runnerInstallRole(orgID, installID))
 	})
 }

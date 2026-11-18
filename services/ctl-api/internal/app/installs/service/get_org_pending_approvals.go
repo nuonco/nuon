@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	db "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -51,7 +53,18 @@ func (s *service) GetOrgPendingApprovals(ctx *gin.Context) {
 // the plan fast regardless of the planner's choice.
 func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.WorkflowStepApproval, error) {
 	var approvals []app.WorkflowStepApproval
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx)
+	if authz.HasAuthority(ctx) {
+		ids, err := require.CollectionIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		steps := s.db.WithContext(ctx.Request.Context()).Model(&app.WorkflowStep{}).
+			Select("id").Where(&app.WorkflowStep{OrgID: orgID}).Where("install_workflow_id IN (?)", ids)
+		query = query.Where("install_workflow_step_approvals.install_workflow_step_id IN (?)", steps).
+			Where(&app.WorkflowStepApproval{OrgID: orgID})
+	}
+	res := query.
 		Omit("contents").
 		Scopes(scopes.WithOffsetPagination, scopes.ForceReplica).
 		Joins("LEFT JOIN installs ON installs.id = install_workflow_step_approvals.owner_id AND install_workflow_step_approvals.owner_type = 'installs'").

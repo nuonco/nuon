@@ -38,10 +38,14 @@ func (s *service) GetApp(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	a, err := s.findApp(ctx, org.ID, appID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
-		return
+	value, _ := ctx.Get(authorizedAppKey)
+	a, loaded := value.(*app.App)
+	if !loaded {
+		a, err = s.findApp(ctx, org.ID, appID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, a)
