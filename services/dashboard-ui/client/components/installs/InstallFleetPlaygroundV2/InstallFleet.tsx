@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { AgentPromptBanner } from '@/components/common/AgentPromptBanner'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { HealthBars, type IHealthBar } from '@/components/common/HealthBars'
 import { ID } from '@/components/common/ID'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -12,9 +13,11 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { SearchInput } from '@/components/common/SearchInput'
+import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text, type TTextTheme } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Tooltip } from '@/components/common/Tooltip'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { GroupLabels } from '@/components/branches/InstallGroupCards/GroupLabels'
 import { Panel } from '@/components/surfaces/Panel'
@@ -28,10 +31,23 @@ import type {
   TInstall,
   TInstallOverview,
   TInstallStatus,
+  TWorkflowStepApproval,
 } from '@/types'
+import { getApprovalType } from '@/utils/approval-utils'
 import { cn } from '@/utils/classnames'
+import { getApprovalHref, getWorkflowStepTitle } from '@/utils/workflow-utils'
 import {
+  approvalsByInstall,
+  ATTENTION_OPTIONS,
+  attentionItems,
+  attentionLabel,
+  disabledRoles,
+  disabledRolesText,
+  installOverrides,
+  overridesText,
   componentOptions,
+  configVersion,
+  PENDING_APPROVAL,
   countOnRun,
   groupFleet,
   labelOptions,
@@ -40,6 +56,7 @@ import {
   rolloutState,
   runsIndex,
   summarizeFleet,
+  type TAttentionItem,
   type TFleetBranch,
   type TFleetContext,
   type TFleetGroup,
@@ -58,6 +75,8 @@ export interface IInstallFleet {
   branchConfigs?: TAppBranchConfig[]
   statusById?: Record<string, TInstallStatus>
   overviewById?: Record<string, TInstallOverview>
+  approvals?: TWorkflowStepApproval[]
+  configVersionById?: Record<string, number | undefined>
   isLoading?: boolean
   labelColors?: Record<string, string>
   defaultView?: TFleetView
@@ -84,6 +103,19 @@ const rolloutCounts = (installs: TInstall[], context: TFleetContext) => {
     off: states.filter((state) => state === 'behind').length,
   }
 }
+
+const fleetPrompt = (orgId: string, appId: string) =>
+  `Manage the install fleet for app ${appId} in org ${orgId} with the Nuon MCP.
+
+Start with a read of the fleet. Group installs by branch and report:
+- installs not on the latest branch run, and when each install was last upgraded
+- installs that are unhealthy or degraded
+- installs waiting on approval
+- installs whose runner is not active
+- installs with a disabled role
+- installs with component overrides set
+
+Do not change anything in that first pass. After the summary, ask what to do. Confirm with me before approving a plan, deploying, retrying a step, or deprovisioning.`
 
 const plural = (count: number, noun: string) =>
   `${count} ${noun}${count === 1 ? '' : 's'}`
@@ -168,6 +200,114 @@ const InstallStatusAxes = ({
   </div>
 )
 
+const Missing = () => <Icon variant="MinusIcon" />
+
+const UpgradeTime = ({ install }: { install: TInstall }) => {
+  const time = install.app_config_ref?.applied_config_at
+  return time ? (
+    <Time time={time} format="relative" variant="subtext" />
+  ) : (
+    <Missing />
+  )
+}
+
+const ConfigVersion = ({
+  install,
+  context,
+}: {
+  install: TInstall
+  context: TFleetContext
+}) => {
+  const version = configVersion(install, context)
+  return version !== undefined ? (
+    <Text variant="subtext" family="mono">
+      v{version}
+    </Text>
+  ) : (
+    <Missing />
+  )
+}
+
+const RunnerState = ({ install }: { install: TInstall }) => (
+  <Status
+    status={install.runner_status ?? 'unknown'}
+    title={install.runner_status_description}
+  />
+)
+
+const ApprovalState = ({
+  install,
+  context,
+}: {
+  install: TInstall
+  context: TFleetContext
+}) => {
+  const count = context.approvalsById?.[install.id ?? '']?.length ?? 0
+  return count ? (
+    <Status status={PENDING_APPROVAL}>
+      {count === 1 ? 'Needs approval' : `${count} need approval`}
+    </Status>
+  ) : (
+    <Missing />
+  )
+}
+
+const RolesState = ({ install }: { install: TInstall }) => {
+  const text = disabledRolesText(install)
+  return text ? (
+    <Status
+      status="warning"
+      title={disabledRoles(install)
+        .map((role) => role.app_role_config?.display_name ?? role.role_id)
+        .join(', ')}
+    >
+      {text}
+    </Status>
+  ) : (
+    <Missing />
+  )
+}
+
+const OverridesState = ({ install }: { install: TInstall }) => {
+  const text = overridesText(install)
+  return text ? (
+    <Status status="info" title={installOverrides(install).join(', ')}>
+      {text}
+    </Status>
+  ) : (
+    <Missing />
+  )
+}
+
+const InstallFacts = ({
+  install,
+  context,
+}: {
+  install: TInstall
+  context: TFleetContext
+}) => (
+  <div className="flex flex-wrap gap-x-6 gap-y-2">
+    <LabeledValue label="Config">
+      <ConfigVersion install={install} context={context} />
+    </LabeledValue>
+    <LabeledValue label="Upgraded">
+      <UpgradeTime install={install} />
+    </LabeledValue>
+    <LabeledValue label="Runner">
+      <RunnerState install={install} />
+    </LabeledValue>
+    <LabeledValue label="Approval">
+      <ApprovalState install={install} context={context} />
+    </LabeledValue>
+    <LabeledValue label="Roles">
+      <RolesState install={install} />
+    </LabeledValue>
+    <LabeledValue label="Overrides">
+      <OverridesState install={install} />
+    </LabeledValue>
+  </div>
+)
+
 const buildColumns = (
   statusById: Record<string, TInstallStatus>,
   context: TFleetContext,
@@ -188,6 +328,21 @@ const buildColumns = (
     ),
   },
   {
+    id: 'config',
+    header: 'Config',
+    enableSorting: false,
+    cell: (info) => (
+      <ConfigVersion install={info.row.original} context={context} />
+    ),
+  },
+  {
+    id: 'upgraded',
+    header: 'Upgraded',
+    enableSorting: false,
+    meta: { className: 'w-32' },
+    cell: (info) => <UpgradeTime install={info.row.original} />,
+  },
+  {
     id: 'rollout',
     header: 'Run',
     enableSorting: false,
@@ -200,6 +355,32 @@ const buildColumns = (
         <RolloutBadge state={state} />
       )
     },
+  },
+  {
+    id: 'runner',
+    header: 'Runner',
+    enableSorting: false,
+    cell: (info) => <RunnerState install={info.row.original} />,
+  },
+  {
+    id: 'approval',
+    header: 'Approval',
+    enableSorting: false,
+    cell: (info) => (
+      <ApprovalState install={info.row.original} context={context} />
+    ),
+  },
+  {
+    id: 'roles',
+    header: 'Roles',
+    enableSorting: false,
+    cell: (info) => <RolesState install={info.row.original} />,
+  },
+  {
+    id: 'overrides',
+    header: 'Overrides',
+    enableSorting: false,
+    cell: (info) => <OverridesState install={info.row.original} />,
   },
   {
     id: 'labels',
@@ -317,7 +498,6 @@ const useVisibleInstalls = (installs: TInstall[], visibleCount: number) => {
         <div className="flex justify-center">
           <Button
             variant="ghost"
-            size="sm"
             onClick={() => setIsExpanded((expanded) => !expanded)}
           >
             {isExpanded
@@ -355,6 +535,9 @@ const BranchHeading = ({
   const orgId = branch.installs[0]?.org_id
   const branchId = branch.branchId
   const runs = branchId ? controls.runsFor(branchId) : []
+  const activeRun =
+    runs.find((run) => run.value === controls.runByBranch[branchId ?? '']) ??
+    runs[0]
   const { on, off } = rolloutCounts(branch.installs, context)
   const rollout = branchId ? controls.rolloutByBranch[branchId] : undefined
   const toggle = (value: TBranchRollout) => {
@@ -391,8 +574,15 @@ const BranchHeading = ({
             selected={controls.runByBranch[branchId]}
             onChange={(value) => controls.onRunChange(branchId, value)}
           />
+          {activeRun?.createdAt ? (
+            <Time
+              time={activeRun.createdAt}
+              format="relative"
+              variant="subtext"
+              theme="neutral"
+            />
+          ) : null}
           <Button
-            size="sm"
             variant={rollout === 'applied' ? 'secondary' : 'ghost'}
             aria-pressed={rollout === 'applied'}
             onClick={() => toggle('applied')}
@@ -400,7 +590,6 @@ const BranchHeading = ({
             {on} on
           </Button>
           <Button
-            size="sm"
             variant={rollout === 'behind' ? 'secondary' : 'ghost'}
             aria-pressed={rollout === 'behind'}
             onClick={() => toggle('behind')}
@@ -488,6 +677,12 @@ const FleetBranchSection = ({
   </div>
 )
 
+const PROGRESS_ORDER: Record<TRolloutState, number> = {
+  applied: 0,
+  behind: 1,
+  unknown: 2,
+}
+
 const GroupRolloutBars = ({
   installs,
   match,
@@ -497,34 +692,50 @@ const GroupRolloutBars = ({
   match: TFleetMatch
   context: TFleetContext
 }) => {
-  const bars: IHealthBar[] = installs.map((install) => {
-    const state = rolloutState(install, context)
-    return {
-      key: install.id ?? install.name ?? '',
-      colorClass: cn(
-        ROLLOUT_BAR_CLASS[state],
-        match.active && !isMatch(install, match) && 'opacity-25'
-      ),
-      ariaLabel: `${install.name}: ${ROLLOUT_LABEL[state]}`,
-      tooltip: (
-        <div className="flex flex-col gap-0.5 w-44">
-          <Text variant="subtext" weight="strong" family="mono">
-            {install.name}
-          </Text>
-          <Text variant="label" theme="neutral">
-            {ROLLOUT_LABEL[state]}
-          </Text>
-        </div>
-      ),
-    }
-  })
+  const bars = [...installs].sort(
+    (a, b) =>
+      PROGRESS_ORDER[rolloutState(a, context)] -
+      PROGRESS_ORDER[rolloutState(b, context)]
+  )
   return (
-    <HealthBars
-      grow
-      bars={bars}
-      className={installs.length === 1 ? 'w-12' : 'w-full'}
-      barClassName="h-5 rounded-xs"
-    />
+    <div
+      className={cn(
+        'flex h-5 overflow-hidden rounded-sm',
+        installs.length === 1 ? 'w-12' : 'w-full'
+      )}
+    >
+      {bars.map((install) => {
+        const state = rolloutState(install, context)
+        return (
+          <Tooltip
+            key={install.id ?? install.name}
+            position="top"
+            className="flex h-full min-w-0 flex-1"
+            tipContentClassName="!whitespace-normal !w-auto !p-2"
+            tipContent={
+              <div className="flex flex-col gap-0.5 w-44">
+                <Text variant="subtext" weight="strong" family="mono">
+                  {install.name}
+                </Text>
+                <Text variant="label" theme="neutral">
+                  {ROLLOUT_LABEL[state]}
+                </Text>
+              </div>
+            }
+          >
+            <div
+              aria-label={`${install.name}: ${ROLLOUT_LABEL[state]}`}
+              tabIndex={0}
+              className={cn(
+                'h-full w-full focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary-400/80',
+                ROLLOUT_BAR_CLASS[state],
+                match.active && !isMatch(install, match) && 'opacity-25'
+              )}
+            />
+          </Tooltip>
+        )
+      })}
+    </div>
   )
 }
 
@@ -605,12 +816,18 @@ const FleetGroupPanelBody = ({
         {installs.length ? (
           <ul className="flex flex-col gap-2">
             {installs.map((install) => (
-              <li key={install.id} className={INSTALL_CARD_CLASS}>
-                <InstallNameCell install={install} />
-                <span className="flex flex-wrap items-center gap-2">
-                  <RolloutBadge state={rolloutState(install, context)} />
-                  <InstallStatusAxes status={statusById[install.id ?? '']} />
-                </span>
+              <li
+                key={install.id}
+                className={cn(INSTALL_CARD_CLASS, 'flex-col !items-stretch')}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <InstallNameCell install={install} />
+                  <span className="flex flex-wrap items-center gap-2">
+                    <RolloutBadge state={rolloutState(install, context)} />
+                    <InstallStatusAxes status={statusById[install.id ?? '']} />
+                  </span>
+                </div>
+                <InstallFacts install={install} context={context} />
               </li>
             ))}
           </ul>
@@ -661,7 +878,6 @@ const FleetGroupCard = ({
         heading={group.name ?? 'No install group'}
         triggerButton={{
           variant: 'ghost',
-          size: 'sm',
           children: 'View installs',
         }}
       >
@@ -719,6 +935,178 @@ const FleetLanes = ({
   </div>
 )
 
+const attentionSummary = (items: TAttentionItem[]) =>
+  ATTENTION_OPTIONS.map((reason) => ({
+    reason,
+    count: items.filter((item) => item.reasons.includes(reason)).length,
+  }))
+    .filter(({ count }) => count)
+    .map(
+      ({ reason, count }) => `${count} ${attentionLabel(reason).toLowerCase()}`
+    )
+    .join(' · ')
+
+const AttentionRow = ({
+  item,
+  statusById,
+  context,
+}: {
+  item: TAttentionItem
+  statusById: Record<string, TInstallStatus>
+  context: TFleetContext
+}) => {
+  const { install, reasons, approvals } = item
+  const health = install.composite_health_status
+  return (
+    <li className={cn(INSTALL_CARD_CLASS, 'flex-col !items-stretch')}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <InstallNameCell install={install} />
+        <span className="flex flex-wrap items-center gap-2">
+          {reasons.map((reason) => (
+            <Status key={reason} status={reason} variant="badge">
+              {attentionLabel(reason)}
+            </Status>
+          ))}
+        </span>
+      </div>
+      {reasons.some((reason) => reason === health) &&
+      install.composite_health_status_description ? (
+        <Text variant="subtext" theme="neutral">
+          {install.composite_health_status_description}
+        </Text>
+      ) : null}
+      {approvals.map((approval) => {
+        const href = getApprovalHref(install.org_id ?? '', approval)
+        const title = getWorkflowStepTitle(approval.workflow_step)
+        return (
+          <span key={approval.id} className="flex flex-wrap items-center gap-2">
+            {href ? (
+              <Link href={href} variant="inline">
+                {title}
+              </Link>
+            ) : (
+              <Text variant="subtext">{title}</Text>
+            )}
+            {approval.type ? (
+              <Badge size="sm">{getApprovalType(approval.type)}</Badge>
+            ) : null}
+          </span>
+        )
+      })}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="flex flex-wrap items-center gap-2">
+          {install.app_branch?.name ? (
+            <>
+              <Icon variant="GitBranchIcon" size={14} />
+              <Text variant="subtext" family="mono">
+                {install.app_branch.name}
+              </Text>
+            </>
+          ) : null}
+          <RolloutBadge state={rolloutState(install, context)} />
+        </span>
+        <InstallStatusAxes status={statusById[install.id ?? '']} />
+      </div>
+      <InstallFacts install={install} context={context} />
+    </li>
+  )
+}
+
+const NeedsAttentionPanelBody = ({
+  items,
+  statusById,
+  context,
+}: {
+  items: TAttentionItem[]
+  statusById: Record<string, TInstallStatus>
+  context: TFleetContext
+}) => {
+  const [search, setSearch] = useState('')
+  const [reasons, setReasons] = useState<Set<string>>(new Set())
+  const needle = search.trim().toLowerCase()
+  const shown = items.filter(
+    ({ install, reasons: itemReasons }) =>
+      (!needle ||
+        install.name?.toLowerCase().includes(needle) ||
+        install.id?.toLowerCase().includes(needle)) &&
+      (!reasons.size || itemReasons.some((reason) => reasons.has(reason)))
+  )
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <SearchInput
+          labelClassName="flex-1"
+          className="w-full md:min-w-0"
+          placeholder="Search installs"
+          value={search}
+          onChange={setSearch}
+        />
+        <HealthFilterDropdown
+          id="fleet-attention-status"
+          label="Status"
+          options={ATTENTION_OPTIONS}
+          optionLabel={attentionLabel}
+          selected={reasons}
+          onChange={setReasons}
+        />
+      </div>
+      {shown.length ? (
+        <ul className="flex flex-col gap-2">
+          {shown.map((item) => (
+            <AttentionRow
+              key={item.install.id}
+              item={item}
+              statusById={statusById}
+              context={context}
+            />
+          ))}
+        </ul>
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          No installs match.
+        </Text>
+      )}
+    </div>
+  )
+}
+
+const NeedsAttention = ({
+  items,
+  statusById,
+  context,
+}: {
+  items: TAttentionItem[]
+  statusById: Record<string, TInstallStatus>
+  context: TFleetContext
+}) =>
+  items.length ? (
+    <Banner theme="warn">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <Text weight="strong">
+            {plural(items.length, 'install')}{' '}
+            {items.length === 1 ? 'needs' : 'need'} attention
+          </Text>
+          <Text variant="subtext">{attentionSummary(items)}</Text>
+        </div>
+        <Panel
+          panelKey="fleet-needs-attention"
+          size="half"
+          heading="Needs attention"
+          triggerButton={{
+            children: 'Review installs',
+          }}
+        >
+          <NeedsAttentionPanelBody
+            items={items}
+            statusById={statusById}
+            context={context}
+          />
+        </Panel>
+      </div>
+    </Banner>
+  ) : null
+
 export const InstallFleet = ({
   installs,
   branches = [],
@@ -726,6 +1114,8 @@ export const InstallFleet = ({
   branchConfigs = [],
   statusById = {},
   overviewById = {},
+  approvals = [],
+  configVersionById = {},
   isLoading = false,
   labelColors,
   defaultView = 'table',
@@ -749,6 +1139,8 @@ export const InstallFleet = ({
     overviewById,
     runByBranch,
     scope,
+    configVersionById,
+    approvalsById: approvalsByInstall(approvals),
   }
   const columns = buildColumns(statusById, context, labelColors)
   const options = labelOptions(installs)
@@ -804,6 +1196,20 @@ export const InstallFleet = ({
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
+      {!isLoading ? (
+        <NeedsAttention
+          items={attentionItems(installs, context.approvalsById)}
+          statusById={statusById}
+          context={context}
+        />
+      ) : null}
+      {installs[0]?.org_id && installs[0]?.app_id ? (
+        <AgentPromptBanner
+          heading="Manage this fleet"
+          description="Copy this prompt into an agent connected to the Nuon MCP. It reviews the fleet, then waits before changing anything."
+          prompt={fleetPrompt(installs[0].org_id, installs[0].app_id)}
+        />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <FleetSummary
           installs={installs}

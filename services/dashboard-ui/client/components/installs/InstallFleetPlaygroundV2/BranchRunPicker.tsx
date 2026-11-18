@@ -52,7 +52,6 @@ export const BranchRunPicker = ({
     <Dropdown
       id={id}
       variant="ghost"
-      size="sm"
       buttonText={
         <>
           <Icon variant="GitCommitIcon" size={14} />
