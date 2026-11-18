@@ -1,4 +1,4 @@
-package alignment
+package syncstatus
 
 import (
 	"context"
@@ -18,56 +18,56 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-type InstallAlignmentResourceKind string // @name service.InstallAlignmentResourceKind
+type InstallResourceSyncStatusResourceKind string // @name service.InstallResourceSyncStatusResourceKind
 
 const (
-	InstallAlignmentResourceKindComponent InstallAlignmentResourceKind = "component"
-	InstallAlignmentResourceKindImage     InstallAlignmentResourceKind = "image"
-	InstallAlignmentResourceKindSandbox   InstallAlignmentResourceKind = "sandbox"
-	InstallAlignmentResourceKindStack     InstallAlignmentResourceKind = "stack"
+	InstallResourceSyncStatusResourceKindComponent InstallResourceSyncStatusResourceKind = "component"
+	InstallResourceSyncStatusResourceKindImage     InstallResourceSyncStatusResourceKind = "image"
+	InstallResourceSyncStatusResourceKindSandbox   InstallResourceSyncStatusResourceKind = "sandbox"
+	InstallResourceSyncStatusResourceKindStack     InstallResourceSyncStatusResourceKind = "stack"
 )
 
-type InstallAlignmentCategory string // @name service.InstallAlignmentCategory
+type InstallResourceSyncStatusCategory string // @name service.InstallResourceSyncStatusCategory
 
 const (
-	InstallAlignmentCategoryChangesNotApplied  InstallAlignmentCategory = "changes-not-applied"
-	InstallAlignmentCategoryStateDriftDetected InstallAlignmentCategory = "state-drift-detected"
-	InstallAlignmentCategoryInSync             InstallAlignmentCategory = "in-sync"
-	InstallAlignmentCategoryUnknown            InstallAlignmentCategory = "unknown"
-	InstallAlignmentCategoryDisabled           InstallAlignmentCategory = "disabled"
-	InstallAlignmentCategoryTornDown           InstallAlignmentCategory = "torn-down"
+	InstallResourceSyncStatusCategoryChangesNotApplied  InstallResourceSyncStatusCategory = "changes-not-applied"
+	InstallResourceSyncStatusCategoryStateDriftDetected InstallResourceSyncStatusCategory = "state-drift-detected"
+	InstallResourceSyncStatusCategoryInSync             InstallResourceSyncStatusCategory = "in-sync"
+	InstallResourceSyncStatusCategoryUnknown            InstallResourceSyncStatusCategory = "unknown"
+	InstallResourceSyncStatusCategoryDisabled           InstallResourceSyncStatusCategory = "disabled"
+	InstallResourceSyncStatusCategoryTornDown           InstallResourceSyncStatusCategory = "torn-down"
 )
 
-type InstallAlignmentOrigin struct {
+type InstallResourceSyncStatusOrigin struct {
 	WorkflowID   string                 `json:"workflow_id,omitempty"`
 	WorkflowType app.WorkflowType       `json:"workflow_type,omitempty"`
 	Run          *InstallOverviewCommit `json:"run,omitempty"`
-} // @name service.InstallAlignmentOrigin
+} // @name service.InstallResourceSyncStatusOrigin
 
-type InstallAlignmentAttempt struct {
+type InstallResourceSyncStatusAttempt struct {
 	ID         string                 `json:"id"`
 	Status     string                 `json:"status"`
 	CreatedAt  time.Time              `json:"created_at"`
 	WorkflowID string                 `json:"workflow_id,omitempty"`
 	Type       app.WorkflowType       `json:"type,omitempty"`
 	BranchRun  *InstallOverviewCommit `json:"branch_run,omitempty"`
-} // @name service.InstallAlignmentAttempt
+} // @name service.InstallResourceSyncStatusAttempt
 
-type InstallAlignmentExplanation struct {
+type InstallResourceSyncStatusExplanation struct {
 	Summary    string `json:"summary"`
 	Status     string `json:"status,omitempty"`
 	WorkflowID string `json:"workflow_id,omitempty"`
 	StepID     string `json:"step_id,omitempty"`
-} // @name service.InstallAlignmentExplanation
+} // @name service.InstallResourceSyncStatusExplanation
 
-type InstallAlignmentOpenDeployment struct {
+type InstallResourceSyncStatusOpenDeployment struct {
 	ID        string           `json:"id"`
 	Status    string           `json:"status"`
 	CreatedAt time.Time        `json:"created_at"`
 	Type      app.WorkflowType `json:"type,omitempty"`
-} // @name service.InstallAlignmentOpenDeployment
+} // @name service.InstallResourceSyncStatusOpenDeployment
 
-type InstallAlignmentPlan struct {
+type InstallResourceSyncStatusPlan struct {
 	WorkflowID     string                       `json:"workflow_id"`
 	StepID         string                       `json:"step_id"`
 	ApprovalID     string                       `json:"approval_id"`
@@ -81,29 +81,29 @@ type InstallAlignmentPlan struct {
 	ChangesDelete  int                          `json:"changes_delete"`
 	ChangesReplace int                          `json:"changes_replace"`
 	ChangesNoop    int                          `json:"changes_noop"`
-} // @name service.InstallAlignmentPlan
+} // @name service.InstallResourceSyncStatusPlan
 
-type InstallAlignmentResource struct {
-	ID               string                          `json:"id"`
-	Kind             InstallAlignmentResourceKind    `json:"kind"`
-	Name             string                          `json:"name"`
-	ComponentID      string                          `json:"component_id,omitempty"`
-	ComponentType    app.ComponentType               `json:"component_type,omitempty" swaggertype:"string"`
-	Status           string                          `json:"status"`
-	Category         InstallAlignmentCategory        `json:"category"`
-	Reason           string                          `json:"reason,omitempty"`
-	ExpectedBuildID  string                          `json:"expected_build_id,omitempty"`
-	AppliedBuildID   string                          `json:"applied_build_id,omitempty"`
-	AppliedDeployID  string                          `json:"applied_deploy_id,omitempty"`
-	AppliedDeployAt  *time.Time                      `json:"applied_deploy_at,omitempty"`
-	ExpectedConfigID string                          `json:"expected_config_id,omitempty"`
-	AppliedConfigID  string                          `json:"applied_config_id,omitempty"`
-	AppliedBy        *InstallAlignmentOrigin         `json:"applied_by,omitempty"`
-	OpenDeployment   *InstallAlignmentOpenDeployment `json:"open_deployment,omitempty"`
-	Plan             *InstallAlignmentPlan           `json:"plan,omitempty"`
-	LastAttempt      *InstallAlignmentAttempt        `json:"last_attempt,omitempty"`
-	NewerBranchRuns  *int                            `json:"newer_branch_runs,omitempty" extensions:"x-nullable"`
-	Explanation      *InstallAlignmentExplanation    `json:"explanation,omitempty"`
+type InstallResourceSyncStatusResource struct {
+	ID               string                                   `json:"id"`
+	Kind             InstallResourceSyncStatusResourceKind    `json:"kind"`
+	Name             string                                   `json:"name"`
+	ComponentID      string                                   `json:"component_id,omitempty"`
+	ComponentType    app.ComponentType                        `json:"component_type,omitempty" swaggertype:"string"`
+	Status           string                                   `json:"status"`
+	Category         InstallResourceSyncStatusCategory        `json:"category"`
+	Reason           string                                   `json:"reason,omitempty"`
+	ExpectedBuildID  string                                   `json:"expected_build_id,omitempty"`
+	AppliedBuildID   string                                   `json:"applied_build_id,omitempty"`
+	AppliedDeployID  string                                   `json:"applied_deploy_id,omitempty"`
+	AppliedDeployAt  *time.Time                               `json:"applied_deploy_at,omitempty"`
+	ExpectedConfigID string                                   `json:"expected_config_id,omitempty"`
+	AppliedConfigID  string                                   `json:"applied_config_id,omitempty"`
+	AppliedBy        *InstallResourceSyncStatusOrigin         `json:"applied_by,omitempty"`
+	OpenDeployment   *InstallResourceSyncStatusOpenDeployment `json:"open_deployment,omitempty"`
+	Plan             *InstallResourceSyncStatusPlan           `json:"plan,omitempty"`
+	LastAttempt      *InstallResourceSyncStatusAttempt        `json:"last_attempt,omitempty"`
+	NewerBranchRuns  *int                                     `json:"newer_branch_runs,omitempty" extensions:"x-nullable"`
+	Explanation      *InstallResourceSyncStatusExplanation    `json:"explanation,omitempty"`
 
 	appliedAt         *time.Time
 	appliedWorkflowID string
@@ -111,14 +111,14 @@ type InstallAlignmentResource struct {
 	appliedRunID      string
 	inputsDiffer      bool
 	inputsUnknown     bool
-} // @name service.InstallAlignmentResource
+} // @name service.InstallResourceSyncStatusResource
 
-type InstallAlignment struct {
-	Error     string                     `json:"error,omitempty"`
-	Resources []InstallAlignmentResource `json:"resources"`
-} // @name service.InstallAlignment
+type InstallResourceSyncStatus struct {
+	Error     string                              `json:"error,omitempty"`
+	Resources []InstallResourceSyncStatusResource `json:"resources"`
+} // @name service.InstallResourceSyncStatus
 
-type installAlignmentState struct {
+type installResourceSyncStatusState struct {
 	install          *app.Install
 	components       []app.InstallComponent
 	targets          map[string]*installhelpers.ComponentTarget
@@ -147,8 +147,8 @@ type installAlignmentState struct {
 	stackErr              error
 }
 
-func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.Install) (*installAlignmentState, error) {
-	st := &installAlignmentState{install: install}
+func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, install *app.Install) (*installResourceSyncStatusState, error) {
+	st := &installResourceSyncStatusState{install: install}
 
 	if err := s.db.WithContext(ctx).
 		Preload("Component").
@@ -249,7 +249,7 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 	if err := s.db.WithContext(ctx).Scopes(scopes.WithDisableViews).Select("id").
 		Preload("InputConfig.AppInputs").
 		Where("id IN ?", configIDs).Find(&appConfigs).Error; err != nil {
-		return nil, fmt.Errorf("unable to get alignment input defaults: %w", err)
+		return nil, fmt.Errorf("unable to get sync status input defaults: %w", err)
 	}
 	st.appConfigs = make(map[string]*app.AppConfig, len(appConfigs))
 	for i := range appConfigs {
@@ -326,14 +326,14 @@ func (s *Helpers) loadInstallAlignmentState(ctx context.Context, install *app.In
 	return st, nil
 }
 
-func (st *installAlignmentState) componentEnabled(target *installhelpers.ComponentTarget) bool {
+func (st *installResourceSyncStatusState) componentEnabled(target *installhelpers.ComponentTarget) bool {
 	if target == nil || target.Config == nil {
 		return true
 	}
 	return st.enablement.EffectiveEnabled(target.Config.ComponentID)
 }
 
-func (st *installAlignmentState) desiredInputs(buildConfigID string) *state.InputsState {
+func (st *installResourceSyncStatusState) desiredInputs(buildConfigID string) *state.InputsState {
 	current := st.appConfigs[st.install.AppConfigID]
 	if current == nil {
 		return nil
@@ -349,8 +349,8 @@ func (st *installAlignmentState) desiredInputs(buildConfigID string) *state.Inpu
 	return resolved.Inputs
 }
 
-func (res *InstallAlignmentResource) compareInputs(names []string, desired *state.InputsState, appliedDigest string) {
-	if res.Category != InstallAlignmentCategoryInSync {
+func (res *InstallResourceSyncStatusResource) compareInputs(names []string, desired *state.InputsState, appliedDigest string) {
+	if res.Category != InstallResourceSyncStatusCategoryInSync {
 		return
 	}
 	if appliedDigest == "" {
@@ -361,18 +361,18 @@ func (res *InstallAlignmentResource) compareInputs(names []string, desired *stat
 		return
 	}
 	if appliedDigest != installhelpers.InputsDigest(names, desired) {
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.inputsDiffer = true
 		res.Reason = "Saved input changes haven’t taken effect."
 	}
 }
 
-func (st *installAlignmentState) componentResource(ic *app.InstallComponent) InstallAlignmentResource {
-	kind := InstallAlignmentResourceKindComponent
+func (st *installResourceSyncStatusState) componentResource(ic *app.InstallComponent) InstallResourceSyncStatusResource {
+	kind := InstallResourceSyncStatusResourceKindComponent
 	if ic.Component.Type.IsImage() {
-		kind = InstallAlignmentResourceKindImage
+		kind = InstallResourceSyncStatusResourceKindImage
 	}
-	res := InstallAlignmentResource{
+	res := InstallResourceSyncStatusResource{
 		ID:            ic.ID,
 		Kind:          kind,
 		Name:          ic.Component.Name,
@@ -419,48 +419,48 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 
 	switch {
 	case tornDown && (target == nil || st.componentEnabled(target)):
-		res.Category = InstallAlignmentCategoryTornDown
+		res.Category = InstallResourceSyncStatusCategoryTornDown
 		res.Reason = "component was explicitly torn down on this install"
 	case target == nil:
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "component is not part of the install's selected app config"
 	case !st.componentEnabled(target) && !inactive && (applied != nil || ic.EverDeployed()):
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "This component is disabled, but is still deployed."
 	case !st.componentEnabled(target):
-		res.Category = InstallAlignmentCategoryDisabled
+		res.Category = InstallResourceSyncStatusCategoryDisabled
 		res.Reason = "component is disabled on this install"
 	case target.Build == nil:
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "no build is associated with the selected component config"
 	case target.Build.Status != app.ComponentBuildStatusActive:
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = fmt.Sprintf("the selected build is %s and cannot be deployed", target.Build.Status)
 	case inactive:
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "This component is enabled, but hasn’t been deployed."
 	case applied == nil && ic.EverDeployed():
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "the applied deploy for this component could not be determined"
 	case applied == nil:
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "This component hasn’t been deployed yet."
 	case row == nil || row.LiveOutdated:
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "The deployed version doesn’t match this install’s configuration."
 	default:
-		res.Category = InstallAlignmentCategoryInSync
+		res.Category = InstallResourceSyncStatusCategoryInSync
 	}
-	if res.Category == InstallAlignmentCategoryInSync {
+	if res.Category == InstallResourceSyncStatusCategoryInSync {
 		switch changed, verified := st.dependenciesAppliedSince(ic.ComponentID, target.Config, applied); {
 		case changed:
-			res.Category = InstallAlignmentCategoryChangesNotApplied
+			res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 			res.Reason = "Component dependency changes haven’t been applied."
 		case !verified:
 			res.Reason = "Dependencies not verified. Upstream builds weren’t recorded for this deployment."
 		}
 	}
-	if res.Kind == InstallAlignmentResourceKindComponent && target != nil && target.Build != nil && applied != nil {
+	if res.Kind == InstallResourceSyncStatusResourceKindComponent && target != nil && target.Build != nil && applied != nil {
 		cfg := &target.Build.ComponentConfigConnection
 		inputs := st.desiredInputs(cfg.AppConfigID)
 		res.compareInputs(installhelpers.ComponentInputNames(cfg, inputs), inputs, applied.AppliedInputsDigest)
@@ -468,13 +468,13 @@ func (st *installAlignmentState) componentResource(ic *app.InstallComponent) Ins
 	return res
 }
 
-func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
+func (st *installResourceSyncStatusState) sandboxResource() *InstallResourceSyncStatusResource {
 	if st.sandbox == nil {
 		return nil
 	}
-	res := InstallAlignmentResource{
+	res := InstallResourceSyncStatusResource{
 		ID:     st.sandbox.ID,
-		Kind:   InstallAlignmentResourceKindSandbox,
+		Kind:   InstallResourceSyncStatusResourceKindSandbox,
 		Name:   "sandbox",
 		Status: string(st.sandbox.Status),
 	}
@@ -496,22 +496,22 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 
 	switch {
 	case st.expectedSandbox == nil:
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "the selected app config has no sandbox config"
 	case st.appliedSandbox == nil && st.sandbox.AppConfigRef.AppliedConfigByID != "":
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "The sandbox isn’t currently provisioned."
 	case st.appliedSandbox == nil && st.sandbox.Status == app.InstallSandboxStatusActive:
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "the applied sandbox run could not be determined"
 	case st.appliedSandbox == nil:
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "The sandbox hasn’t been set up yet."
 	case st.sandboxChanged:
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "Sandbox configuration changes haven’t been applied."
 	default:
-		res.Category = InstallAlignmentCategoryInSync
+		res.Category = InstallResourceSyncStatusCategoryInSync
 	}
 	if st.expectedSandbox != nil && st.appliedSandbox != nil {
 		res.compareInputs(installhelpers.InputNames(st.expectedSandbox.Refs), st.desiredInputs(""), st.appliedSandbox.AppliedInputsDigest)
@@ -519,13 +519,13 @@ func (st *installAlignmentState) sandboxResource() *InstallAlignmentResource {
 	return &res
 }
 
-func (st *installAlignmentState) stackResource() *InstallAlignmentResource {
+func (st *installResourceSyncStatusState) stackResource() *InstallResourceSyncStatusResource {
 	if st.stack == nil {
 		return nil
 	}
-	res := InstallAlignmentResource{
+	res := InstallResourceSyncStatusResource{
 		ID:               st.stack.ID,
-		Kind:             InstallAlignmentResourceKindStack,
+		Kind:             InstallResourceSyncStatusResourceKindStack,
 		Name:             "stack",
 		ExpectedConfigID: st.install.AppConfigID,
 		AppliedConfigID:  st.stack.AppConfigRef.AppliedConfigID,
@@ -534,45 +534,45 @@ func (st *installAlignmentState) stackResource() *InstallAlignmentResource {
 	applied := st.stack.AppConfigRef.AppliedConfigID
 	switch {
 	case st.install.AppConfigID == "":
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "the install has no selected app config"
 	case applied == "" && st.stackHasVersions:
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "the applied stack version could not be determined"
 	case applied == "":
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "The stack hasn’t been set up yet."
 	case applied == st.install.AppConfigID:
-		res.Category = InstallAlignmentCategoryInSync
+		res.Category = InstallResourceSyncStatusCategoryInSync
 		res.Reason = "stack state drift is not scanned"
 	case st.stackErr != nil:
-		res.Category = InstallAlignmentCategoryUnknown
+		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "unable to compare the applied stack config with the selected config"
 	case st.stackChanged:
-		res.Category = InstallAlignmentCategoryChangesNotApplied
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "Stack configuration changes haven’t been applied."
 	default:
-		res.Category = InstallAlignmentCategoryInSync
+		res.Category = InstallResourceSyncStatusCategoryInSync
 		res.Reason = "stack state drift is not scanned"
 	}
 	return &res
 }
 
-func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlignment, error) {
-	st, err := s.loadInstallAlignmentState(ctx, install)
+func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallResourceSyncStatus, error) {
+	st, err := s.loadInstallResourceSyncStatusState(ctx, install)
 	if err != nil {
 		return nil, err
 	}
 
-	alignment := &InstallAlignment{Resources: []InstallAlignmentResource{}}
+	syncStatus := &InstallResourceSyncStatus{Resources: []InstallResourceSyncStatusResource{}}
 	if r := st.stackResource(); r != nil {
-		alignment.Resources = append(alignment.Resources, *r)
+		syncStatus.Resources = append(syncStatus.Resources, *r)
 	}
 	if r := st.sandboxResource(); r != nil {
-		alignment.Resources = append(alignment.Resources, *r)
+		syncStatus.Resources = append(syncStatus.Resources, *r)
 	}
 	for i := range st.components {
-		alignment.Resources = append(alignment.Resources, st.componentResource(&st.components[i]))
+		syncStatus.Resources = append(syncStatus.Resources, st.componentResource(&st.components[i]))
 	}
 
 	ev, err := s.loadAlignmentEvidence(ctx, st)
@@ -581,49 +581,49 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 	}
 	open := st.openDeployments()
 
-	for i := range alignment.Resources {
-		res := &alignment.Resources[i]
+	for i := range syncStatus.Resources {
+		res := &syncStatus.Resources[i]
 		res.OpenDeployment = open[res.ID]
 		res.applyDriftEvidence(ev)
 		res.Plan = ev.plans[res.ID]
-		if scan := ev.scanPlans[res.ID]; scan != nil && res.Category == InstallAlignmentCategoryStateDriftDetected {
+		if scan := ev.scanPlans[res.ID]; scan != nil && res.Category == InstallResourceSyncStatusCategoryStateDriftDetected {
 			res.Plan = scan
 		}
 		if res.Plan != nil && res.appliedAt != nil && res.Plan.CreatedAt.Before(*res.appliedAt) {
 			res.Plan = nil
 		}
 	}
-	if err := s.loadOrigins(ctx, alignment); err != nil {
+	if err := s.loadOrigins(ctx, syncStatus); err != nil {
 		return nil, err
 	}
-	return alignment, nil
+	return syncStatus, nil
 }
 
-func (res *InstallAlignmentResource) applyDriftEvidence(ev *alignmentEvidence) {
+func (res *InstallResourceSyncStatusResource) applyDriftEvidence(ev *syncStatusEvidence) {
 	if (res.inputsDiffer || res.inputsUnknown) && ev.inputsAligned[res.ID] {
-		res.Category = InstallAlignmentCategoryInSync
+		res.Category = InstallResourceSyncStatusCategoryInSync
 		res.Reason = ""
 	}
-	if res.Category != InstallAlignmentCategoryInSync && !res.inputsUnknown {
+	if res.Category != InstallResourceSyncStatusCategoryInSync && !res.inputsUnknown {
 		return
 	}
 	if ev.drifted[res.ID] {
-		res.Category = InstallAlignmentCategoryStateDriftDetected
+		res.Category = InstallResourceSyncStatusCategoryStateDriftDetected
 		res.Reason = "Live resources differ from what was last applied."
 	}
 }
 
-type alignmentEvidence struct {
-	plans         map[string]*InstallAlignmentPlan
-	scanPlans     map[string]*InstallAlignmentPlan
+type syncStatusEvidence struct {
+	plans         map[string]*InstallResourceSyncStatusPlan
+	scanPlans     map[string]*InstallResourceSyncStatusPlan
 	drifted       map[string]bool
 	inputsAligned map[string]bool
 }
 
-func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmentState) (*alignmentEvidence, error) {
-	ev := &alignmentEvidence{
-		plans:         map[string]*InstallAlignmentPlan{},
-		scanPlans:     map[string]*InstallAlignmentPlan{},
+func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installResourceSyncStatusState) (*syncStatusEvidence, error) {
+	ev := &syncStatusEvidence{
+		plans:         map[string]*InstallResourceSyncStatusPlan{},
+		scanPlans:     map[string]*InstallResourceSyncStatusPlan{},
 		drifted:       map[string]bool{},
 		inputsAligned: map[string]bool{},
 	}
@@ -688,7 +688,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installAlignmen
 	return ev, nil
 }
 
-func sandboxScanMatchesApplied(st *installAlignmentState, scanAppSandboxConfigID string) bool {
+func sandboxScanMatchesApplied(st *installResourceSyncStatusState, scanAppSandboxConfigID string) bool {
 	if scanAppSandboxConfigID == st.appliedSandbox.AppSandboxConfigID {
 		return true
 	}
@@ -701,12 +701,12 @@ func sandboxScanMatchesApplied(st *installAlignmentState, scanAppSandboxConfigID
 	return !st.sandboxChanged
 }
 
-type alignmentApproval struct {
+type syncStatusApproval struct {
 	approval *app.WorkflowStepApproval
 	workflow *app.Workflow
 }
 
-func (s *Helpers) loadAlignmentPlans(ctx context.Context, ownerIDs []string) (map[string]*InstallAlignmentPlan, error) {
+func (s *Helpers) loadAlignmentPlans(ctx context.Context, ownerIDs []string) (map[string]*InstallResourceSyncStatusPlan, error) {
 	ownerIDs = slices.DeleteFunc(ownerIDs, func(id string) bool { return id == "" })
 	if len(ownerIDs) == 0 {
 		return nil, nil
@@ -742,18 +742,18 @@ func (s *Helpers) loadAlignmentPlans(ctx context.Context, ownerIDs []string) (ma
 			workflowsByID[workflows[i].ID] = &workflows[i]
 		}
 	}
-	out := make(map[string]*InstallAlignmentPlan, len(newest))
+	out := make(map[string]*InstallResourceSyncStatusPlan, len(newest))
 	for ownerID, a := range newest {
 		if wf := workflowsByID[a.InstallWorkflowStep.InstallWorkflowID]; wf != nil {
-			out[ownerID] = alignmentPlanFromApproval(&alignmentApproval{approval: a, workflow: wf})
+			out[ownerID] = syncStatusPlanFromApproval(&syncStatusApproval{approval: a, workflow: wf})
 		}
 	}
 	return out, nil
 }
 
-func alignmentPlanFromApproval(aa *alignmentApproval) *InstallAlignmentPlan {
+func syncStatusPlanFromApproval(aa *syncStatusApproval) *InstallResourceSyncStatusPlan {
 	a := aa.approval
-	plan := &InstallAlignmentPlan{
+	plan := &InstallResourceSyncStatusPlan{
 		WorkflowID:     aa.workflow.ID,
 		StepID:         a.InstallWorkflowStepID,
 		ApprovalID:     a.ID,
@@ -807,8 +807,8 @@ func (s *Helpers) latestSandboxRun(ctx context.Context, sandboxID string, planOn
 	return &run, nil
 }
 
-func (st *installAlignmentState) openDeployments() map[string]*InstallAlignmentOpenDeployment {
-	out := map[string]*InstallAlignmentOpenDeployment{}
+func (st *installResourceSyncStatusState) openDeployments() map[string]*InstallResourceSyncStatusOpenDeployment {
+	out := map[string]*InstallResourceSyncStatusOpenDeployment{}
 	add := func(resourceID string, wf *app.Workflow) {
 		if wf == nil {
 			return
@@ -820,7 +820,7 @@ func (st *installAlignmentState) openDeployments() map[string]*InstallAlignmentO
 		if status == "" {
 			status = string(app.StatusPending)
 		}
-		out[resourceID] = &InstallAlignmentOpenDeployment{ID: wf.ID, Status: status, CreatedAt: wf.CreatedAt, Type: wf.Type}
+		out[resourceID] = &InstallResourceSyncStatusOpenDeployment{ID: wf.ID, Status: status, CreatedAt: wf.CreatedAt, Type: wf.Type}
 	}
 	for icID, last := range st.lastDeploys {
 		add(icID, last.InstallWorkflow)
