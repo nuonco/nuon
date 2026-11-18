@@ -85,7 +85,7 @@ func (s *service) findActionWorkflow(ctx context.Context, orgID, awID string) (*
 	aw := app.ActionWorkflow{}
 	res := s.db.WithContext(ctx).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
+			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v2"))
 		}).
 		Preload("Configs.Triggers").
 		Preload("Configs.Triggers.Component").
