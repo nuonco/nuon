@@ -27,6 +27,7 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.RunnerJob{},
 		&app.RunnerProcess{},
 		&app.RunnerOperation{},
+		&app.RunnerCloudIdentity{},
 		&app.Runner{},
 		&app.RunnerGroupSettings{},
 		&app.RunnerGroup{},

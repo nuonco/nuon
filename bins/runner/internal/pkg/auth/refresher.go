@@ -28,6 +28,7 @@ type RefresherParams struct {
 	APIClient nuonrunner.Client
 	L         *zap.Logger `name:"system"`
 	LC        fx.Lifecycle
+	Process   string `name:"process" optional:"true"`
 }
 
 // Refresher re-authenticates with the cloud identity at half of the remaining
@@ -54,10 +55,12 @@ func NewRefresher(params RefresherParams) *Refresher {
 		apiClient: params.APIClient,
 		l:         params.L,
 		expiresAt: params.Token.ExpiresAt,
-		fetch:     fetchRefreshedToken,
-		ctx:       ctx,
-		cancelFn:  cancelFn,
-		wg:        conc.NewWaitGroup(),
+		fetch: func(ctx context.Context, cfg *runnerconfig.Config) (*Token, error) {
+			return fetchRefreshedToken(ctx, cfg, params.Process)
+		},
+		ctx:      ctx,
+		cancelFn: cancelFn,
+		wg:       conc.NewWaitGroup(),
 	}
 
 	if r.expiresAt.IsZero() {
@@ -79,8 +82,8 @@ func NewRefresher(params RefresherParams) *Refresher {
 	return r
 }
 
-func fetchRefreshedToken(ctx context.Context, cfg *runnerconfig.Config) (*Token, error) {
-	result, err := fetch(ctx, cfg)
+func fetchRefreshedToken(ctx context.Context, cfg *runnerconfig.Config, process string) (*Token, error) {
+	result, err := fetch(ctx, cfg, process)
 	if err != nil {
 		return nil, err
 	}

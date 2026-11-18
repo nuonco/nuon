@@ -137,6 +137,9 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		if err := h.CreateRunnerQueues(ctx, runner, &runnerGroup.Settings); err != nil {
 			return nil, fmt.Errorf("unable to create runner queues: %w", err)
 		}
+		if _, err := h.EnsureInstallRunnerCloudIdentity(ctx, install, runner.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	return &runnerGroup, nil

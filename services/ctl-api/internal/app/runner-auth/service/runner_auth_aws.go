@@ -28,6 +28,7 @@ const (
 	runnerIDTagKey                = "runner.nuon.co/id"
 	defaultRunnerTokenTimeout     = time.Hour * 24 * 90
 	refreshableRunnerTokenTimeout = time.Hour * 12
+	awsSTSRunnerTokenTimeout      = time.Hour * 24 * 8
 
 	presignedRequestTimeout  = 10 * time.Second
 	maxPresignedResponseSize = 64 * 1024
@@ -159,12 +160,15 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 	start := time.Now()
 	metricTags := map[string]string{
 		"cloud_provider": "aws",
+		"endpoint":       "aws",
 		"auth_method":    "sts",
 		"status":         "error",
 	}
 	defer func() {
 		if s.mw != nil {
-			s.mw.Timing("runner.auth.latency", time.Since(start), metrics.ToTags(metricTags))
+			tags := metrics.ToTags(metricTags)
+			s.mw.Timing("runner.auth.latency", time.Since(start), tags)
+			s.mw.Incr("runner.auth", tags)
 		}
 	}()
 
@@ -352,14 +356,26 @@ const (
 	presignedRequestTypeEC2
 )
 
+func withoutSignedURL(err error) error {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		return urlErr.Err
+	}
+	return err
+}
+
 func validatePresignedRequest(presignedReq *awstypes.PresignedRequest, reqType presignedRequestType) error {
+	return validatePresignedRequestHeaders(presignedReq, reqType, allowedPresignedHeaders)
+}
+
+func validatePresignedRequestHeaders(presignedReq *awstypes.PresignedRequest, reqType presignedRequestType, allowedHeaders map[string]struct{}) error {
 	if presignedReq.Method != http.MethodGet {
 		return errors.New("only GET methods are allowed")
 	}
 
 	u, err := url.Parse(presignedReq.URL)
 	if err != nil {
-		return fmt.Errorf("invalid URL: %w", err)
+		return fmt.Errorf("invalid URL: %w", withoutSignedURL(err))
 	}
 
 	if u.Scheme != "https" {
@@ -394,7 +410,7 @@ func validatePresignedRequest(presignedReq *awstypes.PresignedRequest, reqType p
 	}
 
 	for key := range presignedReq.Headers {
-		if _, ok := allowedPresignedHeaders[strings.ToLower(key)]; !ok {
+		if _, ok := allowedHeaders[strings.ToLower(key)]; !ok {
 			return fmt.Errorf("header not allowed: %s", key)
 		}
 	}
@@ -426,13 +442,17 @@ func validateEC2Action(query url.Values) error {
 }
 
 func (s *service) executePresignedRequest(ctx context.Context, presignedReq *awstypes.PresignedRequest, reqType presignedRequestType) ([]byte, error) {
-	if err := validatePresignedRequest(presignedReq, reqType); err != nil {
+	return s.executePresignedRequestHeaders(ctx, presignedReq, reqType, allowedPresignedHeaders)
+}
+
+func (s *service) executePresignedRequestHeaders(ctx context.Context, presignedReq *awstypes.PresignedRequest, reqType presignedRequestType, allowedHeaders map[string]struct{}) ([]byte, error) {
+	if err := validatePresignedRequestHeaders(presignedReq, reqType, allowedHeaders); err != nil {
 		return nil, fmt.Errorf("presigned request validation failed: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, presignedReq.Method, presignedReq.URL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", withoutSignedURL(err))
 	}
 
 	for key, value := range presignedReq.Headers {
@@ -441,7 +461,7 @@ func (s *service) executePresignedRequest(ctx context.Context, presignedReq *aws
 
 	resp, err := presignedHTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
+		return nil, fmt.Errorf("failed to execute request: %w", withoutSignedURL(err))
 	}
 	defer resp.Body.Close()
 

@@ -134,6 +134,9 @@ func (s *service) unforgetInstall(ctx context.Context, install *app.Install) err
 			}
 		}
 		if len(runnerIDs) > 0 {
+			if err := restoreForgottenWhere(tx, &app.RunnerCloudIdentity{}, forgottenAt, "runner_id IN ?", runnerIDs); err != nil {
+				return fmt.Errorf("unable to restore runner cloud identities: %w", err)
+			}
 			if err := restoreForgottenWhere(tx, &app.Queue{}, forgottenAt, "owner_id IN ? AND owner_type = ?", runnerIDs, runnerOwnerType); err != nil {
 				return fmt.Errorf("unable to restore runner queues: %w", err)
 			}
