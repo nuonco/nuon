@@ -105,17 +105,30 @@ func New(cfg Config) (*Policy, error) {
 
 		seen := map[string]struct{}{}
 		var entries []Entry
-		for _, raw := range append(append([]string{}, categoryCfg.Builtins...), configured...) {
+		add := func(raw string, opts ParseOptions) error {
 			entry, err := ParseEntry(raw, opts)
 			if err != nil {
-				return nil, fmt.Errorf("%s: %w", category.ConfigKey(), err)
+				return fmt.Errorf("%s: %w", category.ConfigKey(), err)
 			}
 			key := entry.String()
-			if _, ok := seen[key]; ok {
-				continue
+			if _, ok := seen[key]; !ok {
+				seen[key] = struct{}{}
+				entries = append(entries, entry)
 			}
-			seen[key] = struct{}{}
-			entries = append(entries, entry)
+			return nil
+		}
+		// A built-in is the control plane's own origin or a Nuon default, so
+		// an http one is admitted: a control plane that serves its API over
+		// http must still be able to restrict the category.
+		for _, raw := range categoryCfg.Builtins {
+			if err := add(raw, ParseOptions{AllowHTTP: true}); err != nil {
+				return nil, err
+			}
+		}
+		for _, raw := range configured {
+			if err := add(raw, opts); err != nil {
+				return nil, err
+			}
 		}
 		policy.categories[category] = entries
 	}

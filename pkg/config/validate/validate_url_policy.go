@@ -36,19 +36,28 @@ type RunnerURLs struct {
 	EnvVars            map[string]string
 }
 
+// URLRef is one policy-governed URL found in a config: the value, the config
+// path it came from and the category that governs it.
+type URLRef struct {
+	Category urlpolicy.Category
+	Field    string
+	Value    string
+}
+
+// RunnerURLRefs lists the URLs in the runner section of an app config. Unset
+// values are left out.
+func RunnerURLRefs(runner RunnerURLs) []URLRef {
+	return nonEmptyRefs([]URLRef{
+		{urlpolicy.CategoryRunnerAPI, "runner.runner_api_url", runner.RunnerAPIURL},
+		{urlpolicy.CategoryPublicAPI, "runner.public_api_url", runner.PublicAPIURL},
+		{urlpolicy.CategoryRunnerBootstrap, "runner.init_script_url", runner.InitScriptURL},
+		{urlpolicy.CategoryRunnerBootstrap, "runner.phone_home_script_url", runner.PhoneHomeScriptURL},
+	})
+}
+
 // RunnerURLPolicyViolations checks the runner section of an app config.
 func RunnerURLPolicyViolations(policy *urlpolicy.Policy, runner RunnerURLs) urlpolicy.Violations {
-	var out urlpolicy.Violations
-	add := func(v *urlpolicy.Violation) {
-		if v != nil {
-			out = append(out, *v)
-		}
-	}
-
-	add(policy.Check(urlpolicy.CategoryRunnerAPI, "runner.runner_api_url", runner.RunnerAPIURL))
-	add(policy.Check(urlpolicy.CategoryPublicAPI, "runner.public_api_url", runner.PublicAPIURL))
-	add(policy.Check(urlpolicy.CategoryRunnerBootstrap, "runner.init_script_url", runner.InitScriptURL))
-	add(policy.Check(urlpolicy.CategoryRunnerBootstrap, "runner.phone_home_script_url", runner.PhoneHomeScriptURL))
+	out := refViolations(policy, RunnerURLRefs(runner))
 
 	names := make([]string, 0, len(runner.EnvVars))
 	for name := range runner.EnvVars {
@@ -56,7 +65,9 @@ func RunnerURLPolicyViolations(policy *urlpolicy.Policy, runner RunnerURLs) urlp
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		add(policy.CheckRunnerEnvVar("runner.env_vars."+name, name))
+		if v := policy.CheckRunnerEnvVar("runner.env_vars."+name, name); v != nil {
+			out = append(out, *v)
+		}
 	}
 	return out
 }
@@ -73,33 +84,54 @@ type StackURLs struct {
 	CustomNestedStacks      []config.CustomNestedStack
 }
 
+// StackURLRefs lists the remote stack template URLs in a stack section. field
+// is the config path of the section, "stack" for the app stack config. Unset
+// values and files in the config repo are left out.
+func StackURLRefs(field string, stack StackURLs) []URLRef {
+	refs := []URLRef{
+		{urlpolicy.CategoryStackTemplates, field + ".vpc_nested_template_url", stack.VPCNestedTemplateURL},
+		{urlpolicy.CategoryStackTemplates, field + ".runner_nested_template_url", stack.RunnerNestedTemplateURL},
+	}
+	if !isLocalPath(stack.UIDefinition) {
+		refs = append(refs, URLRef{urlpolicy.CategoryStackTemplates, field + ".ui_definition", stack.UIDefinition})
+	}
+	if stack.Type != "gcp-terraform" {
+		for i, nested := range stack.CustomNestedStacks {
+			if isLocalPath(nested.TemplateURL) {
+				continue
+			}
+			refs = append(refs, URLRef{
+				urlpolicy.CategoryStackTemplates,
+				fmt.Sprintf("%s.custom_nested_stacks[%d].template_url", field, i),
+				nested.TemplateURL,
+			})
+		}
+	}
+	return nonEmptyRefs(refs)
+}
+
 // StackURLPolicyViolations checks stack template URLs. field is the config
 // path of the section, "stack" for the app stack config.
 func StackURLPolicyViolations(policy *urlpolicy.Policy, field string, stack StackURLs) urlpolicy.Violations {
+	return refViolations(policy, StackURLRefs(field, stack))
+}
+
+func nonEmptyRefs(refs []URLRef) []URLRef {
+	out := refs[:0]
+	for _, ref := range refs {
+		if strings.TrimSpace(ref.Value) != "" {
+			out = append(out, ref)
+		}
+	}
+	return out
+}
+
+func refViolations(policy *urlpolicy.Policy, refs []URLRef) urlpolicy.Violations {
 	var out urlpolicy.Violations
-	add := func(v *urlpolicy.Violation) {
-		if v != nil {
+	for _, ref := range refs {
+		if v := policy.Check(ref.Category, ref.Field, ref.Value); v != nil {
 			out = append(out, *v)
 		}
-	}
-
-	add(policy.Check(urlpolicy.CategoryStackTemplates, field+".vpc_nested_template_url", stack.VPCNestedTemplateURL))
-	add(policy.Check(urlpolicy.CategoryStackTemplates, field+".runner_nested_template_url", stack.RunnerNestedTemplateURL))
-	if !isLocalPath(stack.UIDefinition) {
-		add(policy.Check(urlpolicy.CategoryStackTemplates, field+".ui_definition", stack.UIDefinition))
-	}
-	if stack.Type == "gcp-terraform" {
-		return out
-	}
-	for i, nested := range stack.CustomNestedStacks {
-		if isLocalPath(nested.TemplateURL) {
-			continue
-		}
-		add(policy.Check(
-			urlpolicy.CategoryStackTemplates,
-			fmt.Sprintf("%s.custom_nested_stacks[%d].template_url", field, i),
-			nested.TemplateURL,
-		))
 	}
 	return out
 }

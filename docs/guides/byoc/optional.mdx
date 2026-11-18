@@ -254,6 +254,15 @@ Configs that were synced before you set a list are not checked again until their
 ### Turn It On
 
 <Steps>
+<Step title="List the URLs your apps use today">
+Run the scan in the control plane API container, with the control plane's environment:
+
+```bash
+ctl-api admin allowed-hosts scan
+```
+
+It prints every distinct URL in the latest config of each app and install, by org and category. The status column is `unrestricted` while the category has no list. Once you set a list, it is `allowed` or `violation`, so you can run the scan again to check your entries. Reserved runner environment variables are listed under `runner_api`. Add `--all-configs` to include older configs. The scan only reads.
+</Step>
 <Step title="Start in warn mode">
 Set your lists and set `ALLOWED_HOSTS_MODE` to `warn`. In this mode a violation does not fail the sync. The control plane logs `app config value is outside the allowed hosts` with the field and the value, and counts it in the `allowed_hosts.violation` metric.
 </Step>

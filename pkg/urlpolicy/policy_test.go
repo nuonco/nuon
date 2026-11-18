@@ -222,3 +222,28 @@ func TestFromEffective(t *testing.T) {
 	_, err = FromEffective("audit", nil)
 	require.Error(t, err)
 }
+
+func TestNew_HTTPBuiltinDoesNotFailARestrictedCategory(t *testing.T) {
+	policy, err := New(Config{Categories: map[Category]CategoryConfig{
+		CategoryRunnerAPI: {
+			Entries:  []string{"https://runner.example.com"},
+			Builtins: []string{"http://ctl-api.internal:8083"},
+		},
+	}})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if v := policy.Check(CategoryRunnerAPI, "runner.runner_api_url", "http://ctl-api.internal:8083"); v != nil {
+		t.Fatalf("built-in origin rejected: %v", v)
+	}
+	if v := policy.Check(CategoryRunnerAPI, "runner.runner_api_url", "http://runner.example.com"); v == nil {
+		t.Fatal("http URL outside the built-in was allowed")
+	}
+
+	_, err = New(Config{Categories: map[Category]CategoryConfig{
+		CategoryRunnerAPI: {Entries: []string{"http://runner.example.com"}},
+	}})
+	if err == nil {
+		t.Fatal("http operator entry was accepted without AllowHTTP")
+	}
+}
