@@ -417,6 +417,14 @@ func NewRunnerGroupSettingsID() string {
 	return shortid.NewNanoID("rgs")
 }
 
+func NewRunnerCloudIdentityID() string {
+	return shortid.NewNanoID("rci")
+}
+
+func NewRunnerAuthUsedSignatureID() string {
+	return shortid.NewNanoID("rus")
+}
+
 func NewVCSConnectionID() string {
 	return shortid.NewNanoID("vcs")
 }
