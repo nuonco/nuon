@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -30,7 +31,7 @@ type UpdateRunnerSettingsRequest struct {
 	K8sServiceAccountName string `json:"org_k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"org_awsiam_role_arn"`
 
-	AWSAuthMethod app.RunnerAWSAuthMethod `json:"aws_auth_method,omitempty" validate:"omitempty,oneof=iid sts" swaggertype:"string" enums:"iid,sts"`
+	AWSAuthMethod app.RunnerAWSAuthMethod `json:"aws_auth_method,omitempty" validate:"omitempty,oneof=iid sts sts-bound sts-vendor" swaggertype:"string" enums:"iid,sts,sts-bound,sts-vendor"`
 
 	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
 	AWSMaxInstanceLifetime *int `json:"aws_max_instance_lifetime,omitempty" validate:"omitempty,min=86400,max=31536000"`
@@ -101,6 +102,16 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 
 	if runner.RunnerGroup.ID == "" {
 		return nil, fmt.Errorf("runner %s does not have a runner group", runnerID)
+	}
+
+	if req.AWSAuthMethod == app.RunnerAWSAuthMethodSTSVendor {
+		enabled, err := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureRunnerVendorSTS)
+		if err != nil {
+			return nil, fmt.Errorf("unable to check org features: %w", err)
+		}
+		if !enabled {
+			return nil, features.ErrFeatureNotEnabled(app.OrgFeatureRunnerVendorSTS)
+		}
 	}
 
 	updates := app.RunnerGroupSettings{

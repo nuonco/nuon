@@ -24,12 +24,14 @@ type Params struct {
 	LC        fx.Lifecycle
 	Settings  *settings.Settings
 	MW        metrics.Writer
+	Process   string `name:"process" optional:"true"`
 }
 
 type Monitor struct {
 	settings  *settings.Settings
 	apiClient nuonrunner.Client
 	l         *zap.Logger
+	process   string
 
 	// internal state
 	ctx      context.Context
@@ -46,6 +48,7 @@ func New(params Params) (*Monitor, error) {
 	hb := &Monitor{
 		settings:  params.Settings,
 		l:         params.L,
+		process:   params.Process,
 		wg:        conc.NewWaitGroup(),
 		startTS:   time.Now(),
 		apiClient: params.APIClient,
