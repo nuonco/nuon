@@ -32,9 +32,16 @@ FROM (
         install_components ic
         JOIN installs i ON i.id = ic.install_id
         JOIN components c ON c.id = ic.component_id
-        LEFT JOIN component_config_connections expected_config ON expected_config.app_config_id = i.app_config_id
-            AND expected_config.component_id = ic.component_id
-            AND expected_config.deleted_at = 0
+        LEFT JOIN LATERAL (
+            SELECT ec.id
+            FROM component_config_connections ec
+            WHERE i.app_config_id <> ''
+                AND ec.app_config_id = i.app_config_id
+                AND ec.component_id = ic.component_id
+                AND ec.deleted_at = 0
+            ORDER BY ec.created_at DESC, ec.id
+            LIMIT 1
+        ) expected_config ON true
         LEFT JOIN component_config_connections_selected_build_view_v1 sel ON sel.component_config_connection_id = expected_config.id
         LEFT JOIN component_builds expected_build ON expected_build.id = sel.selected_build_id
         LEFT JOIN install_deploys_live_view_v1 live ON live.install_id = ic.install_id
