@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
@@ -56,6 +57,7 @@ type syncer struct {
 
 	dispatchBuilds bool
 	syncBranches   bool
+	urlPolicy      *urlpolicy.Policy
 }
 
 // Params defines the dependencies required by the syncer.
@@ -195,7 +197,7 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app-runner",
 			Method: func(ctx context.Context) error {
-				return runner.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID, s.state)
+				return runner.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID, s.state, s.urlPolicy)
 			},
 		},
 		{
@@ -231,7 +233,7 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app-cloudformation-stack",
 			Method: func(ctx context.Context) error {
-				return stack.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID, s.appConfigID)
+				return stack.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID, s.appConfigID, s.urlPolicy)
 			},
 		},
 	}...)

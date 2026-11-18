@@ -125,6 +125,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		}
 
 		app.GET("/labels", s.GetAppLabels)
+		app.GET("/allowed-hosts", s.GetAppAllowedHosts)
 
 		// app secrets configs management
 		secretsConfigs := app.Group("/secrets-configs")

@@ -196,3 +196,71 @@ variable "slack_state_jwt_secret" {
 </Steps>
 
 For detailed instructions on configuring and using the Slack app, see the [Slack integration guide](/guides/slack).
+
+## Restrict Where App Config URLs May Point
+
+An app config can set URLs that the runner and the install stack then trust: the API the runner sends its token to, the script that runs on the runner host, and the templates deployed into the customer's cloud account.
+By default Nuon accepts any value.
+As the operator of a Nuon BYOC control plane, you can restrict each kind of URL to a list of locations you trust. This is called allowed hosts.
+
+Allowed hosts are settings on the control plane API (`ctl-api`), read from environment variables. Each list is comma-separated.
+
+| Environment variable | Restricts | Built-in entries |
+| --- | --- | --- |
+| `ALLOWED_HOSTS_RUNNER_API` | `runner_api_url` in `runner.toml` | The origin of your control plane's runner API |
+| `ALLOWED_HOSTS_PUBLIC_API` | `public_api_url` in `runner.toml` | The origin of your control plane's public API |
+| `ALLOWED_HOSTS_RUNNER_BOOTSTRAP` | `init_script_url` and `phone_home_script_url` in `runner.toml` | `https://raw.githubusercontent.com/nuonco/runner/`, `https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/` |
+| `ALLOWED_HOSTS_STACK_TEMPLATES` | `vpc_nested_template_url`, `runner_nested_template_url`, remote `custom_nested_stacks` templates and a remote `ui_definition` in `stack.toml` | `https://nuon-artifacts.s3.us-west-2.amazonaws.com/`, `https://raw.githubusercontent.com/nuonco/`, the origin of your sandbox artifacts bucket |
+| `ALLOWED_HOSTS_CONFIG_FETCH` | Remote files the control plane fetches while it reads an app config from git, such as a Helm values file given as a URL | None |
+| `ALLOWED_HOSTS_MODE` | `enforce` (the default) or `warn` | |
+
+A list works as follows:
+
+- An empty list leaves that kind of URL unrestricted. This is the default.
+- A list with at least one entry restricts that kind of URL to your entries plus the built-in entries. You do not need to repeat the built-in entries.
+- To allow only the built-in entries, set the list to one of them. For example, set `ALLOWED_HOSTS_RUNNER_API` to your control plane's runner API URL so that runners can only talk to your control plane.
+
+### Entry Format
+
+An entry is a URL prefix, not only a host name. Hosts such as `raw.githubusercontent.com` and `s3.amazonaws.com` serve content from anyone, so include the bucket or the repository owner in the entry.
+
+```
+https://acme-templates.s3.us-west-2.amazonaws.com/        # one bucket
+https://raw.githubusercontent.com/acme/runner-scripts/    # one repository
+https://*.example.com/templates/                          # any subdomain of example.com
+example.com                                               # short for https://example.com/
+```
+
+- Entries must use `https`.
+- The host must match exactly, apart from letter case. `*.example.com` matches any subdomain, but not `example.com` itself.
+- The port must match. Leave it out for port 443.
+- The path must start with the entry's path at a `/` boundary. `https://example.com/runner` allows `/runner/init.sh` and does not allow `/runner-other/init.sh`.
+
+Once a kind of URL is restricted, a value for it must be an absolute `https` URL. Values that contain credentials, `..` path segments or encoded slashes are rejected, and so are `git::`, `file://` and relative values.
+
+The control plane does not start when an entry is malformed.
+
+### Reserved Runner Environment Variables
+
+When `ALLOWED_HOSTS_RUNNER_API` is set, `env_vars` in `runner.toml` may not set variables that redirect the runner's traffic or credentials: variables ending in `_PROXY`, variables starting with `RUNNER_` or `NUON_`, and the AWS credential and endpoint variables such as `AWS_ACCESS_KEY_ID` and `AWS_ENDPOINT_URL`.
+
+### What Is Checked
+
+- The control plane checks every app config when it is synced. A sync that sets a URL outside a restricted list fails with an error that names the field and the setting.
+- `nuon apps validate` fetches the allowed hosts from the control plane and reports the same violations before you push.
+
+Configs that were synced before you set a list are not checked again until their next sync. Per-install stack overrides and the runner settings API are not checked yet.
+
+### Turn It On
+
+<Steps>
+<Step title="Start in warn mode">
+Set your lists and set `ALLOWED_HOSTS_MODE` to `warn`. In this mode a violation does not fail the sync. The control plane logs `app config value is outside the allowed hosts` with the field and the value, and counts it in the `allowed_hosts.violation` metric.
+</Step>
+<Step title="Sync your apps and review the warnings">
+Sync each app, or run `nuon apps validate` in each app config directory. Add an entry for every location you want to keep.
+</Step>
+<Step title="Switch to enforce">
+Set `ALLOWED_HOSTS_MODE` to `enforce`, or remove it.
+</Step>
+</Steps>
