@@ -38,6 +38,10 @@ func NamedPolicyResourceID(name string) diff.NodeID {
 	return diff.NodeID("named_policy." + strings.ReplaceAll(strings.TrimSpace(name), " ", ""))
 }
 
+func PolicyResourceID(name string) diff.NodeID {
+	return diff.NodeID("policy." + name)
+}
+
 func roleNodeID(old, new *AppAWSIAMRole) diff.NodeID {
 	if new != nil && new.Name != "" {
 		return RoleResourceID(new.Name)
@@ -159,6 +163,49 @@ func addAppConfigDependencyEdges(graph *diff.Graph, cfg *AppConfig) {
 	}
 
 	addOperationRoleEdges(graph, cfg)
+	addPolicyEdges(graph, cfg)
+}
+
+func addPolicyEdges(graph *diff.Graph, cfg *AppConfig) {
+	if cfg.Policies == nil {
+		return
+	}
+	for _, policy := range cfg.Policies.Policies {
+		if policy.Name == "" {
+			continue
+		}
+		policyID := PolicyResourceID(policy.Name)
+		switch policy.Type {
+		case AppPolicyTypeSandbox, AppPolicyTypeKubernetesCluster:
+			graph.AddDependency(SandboxResourceID, policyID, diff.EdgeReasonPolicy)
+			continue
+		}
+		for _, component := range cfg.Components {
+			if component == nil || component.Name == "" || policyType(component.Type) != policy.Type {
+				continue
+			}
+			if len(policy.Components) == 0 || AppliesToComponent(policy.Components, component.Name) {
+				graph.AddDependency(ComponentResourceID(component.Name), policyID, diff.EdgeReasonPolicy)
+			}
+		}
+	}
+}
+
+func policyType(componentType ComponentType) AppPolicyType {
+	switch componentType {
+	case TerraformModuleComponentType:
+		return AppPolicyTypeTerraformModule
+	case HelmChartComponentType:
+		return AppPolicyTypeHelmChart
+	case KubernetesManifestComponentType:
+		return AppPolicyTypeKubernetesManifest
+	case ContainerImageComponentType, ExternalImageComponentType:
+		return AppPolicyTypeContainerImage
+	case PulumiComponentType:
+		return AppPolicyTypePulumi
+	default:
+		return ""
+	}
 }
 
 func appConfigRoles(cfg *AppConfig) []*AppAWSIAMRole {
