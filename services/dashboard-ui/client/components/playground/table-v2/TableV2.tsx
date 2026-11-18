@@ -77,6 +77,12 @@ const cardSlot = <TData,>(
   return columnLabel(column) ? 'field' : 'actions'
 }
 
+const isActionsColumn = <TData,>(column: Column<TData, unknown>) => {
+  const meta = columnMeta(column)
+  if (meta.card) return meta.card === 'actions'
+  return !columnLabel(column)
+}
+
 const useContainerWidth = () => {
   const ref = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState<number | null>(null)
@@ -116,7 +122,7 @@ const GridCard = <TData,>({ row }: { row: Row<TData> }) => {
   const actions = slots.get('actions') ?? []
 
   return (
-    <Card className="h-full gap-4 p-4">
+    <Card className="@container h-full gap-4 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
           {title.map((cell) => (
@@ -137,14 +143,14 @@ const GridCard = <TData,>({ row }: { row: Row<TData> }) => {
         ) : null}
       </div>
       {fields.length ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 @xs:grid-cols-2">
           {fields.map((cell) => (
             <LabeledValue
               key={cell.id}
               className="min-w-0"
               label={columnLabel(cell.column) ?? cell.column.id}
             >
-              {renderCell(cell)}
+              <div className="min-w-0 break-words">{renderCell(cell)}</div>
             </LabeledValue>
           ))}
         </div>
@@ -154,13 +160,13 @@ const GridCard = <TData,>({ row }: { row: Row<TData> }) => {
 }
 
 const LoadingCard = ({ fieldLabels }: { fieldLabels: string[] }) => (
-  <Card className="h-full gap-4 p-4">
+  <Card className="@container h-full gap-4 p-4">
     <div className="flex flex-col gap-1">
       <Text loading loadingWidth={18} />
       <Text variant="subtext" loading loadingWidth={12} />
     </div>
     {fieldLabels.length ? (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 @xs:grid-cols-2">
         {fieldLabels.map((label) => (
           <LabeledValue key={label} label={label} loading loadingWidth={10} />
         ))}
@@ -332,6 +338,8 @@ export function TableV2Base<TData extends object>({
                       key={header.id}
                       className={cn(
                         'py-3 px-4 text-left bg-cool-grey-100 dark:bg-dark-grey-700',
+                        isActionsColumn(header.column) &&
+                          'w-px whitespace-nowrap text-right',
                         columnMeta(header.column).className,
                         {
                           'cursor-pointer select-none':
@@ -347,7 +355,11 @@ export function TableV2Base<TData extends object>({
                           : undefined
                       }
                     >
-                      <span className="flex gap-1 items-center">
+                      <span
+                        className={cn('flex gap-1 items-center', {
+                          'justify-end': isActionsColumn(header.column),
+                        })}
+                      >
                         <span className="font-normal font-sans">
                           {flexRender(
                             header.column.columnDef.header,
@@ -374,6 +386,8 @@ export function TableV2Base<TData extends object>({
                         key={column.id}
                         className={cn(
                           'py-3 px-4 border-t',
+                          isActionsColumn(column) &&
+                            'w-px whitespace-nowrap text-right',
                           columnMeta(column).className
                         )}
                       >
@@ -399,6 +413,8 @@ export function TableV2Base<TData extends object>({
                         key={cell.id}
                         className={cn(
                           'py-3 px-4 border-t',
+                          isActionsColumn(cell.column) &&
+                            'w-px whitespace-nowrap text-right',
                           columnMeta(cell.column).className
                         )}
                       >

@@ -1,9 +1,7 @@
 export default {
-  title: 'Playground / Table v2',
+  title: 'Playground / Table v2 / Org installs',
 }
 
-import { useMemo } from 'react'
-import { useSearchParams } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
@@ -13,6 +11,7 @@ import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { StoryFrame, useMockPage } from './story-utils'
 import { TableV2 } from './TableV2'
 
 type TMockInstall = {
@@ -173,47 +172,19 @@ const columns: ColumnDef<TMockInstall>[] = [
 
 const PAGE_SIZE = 10
 
-const useMockPage = () => {
-  const [searchParams] = useSearchParams()
-  const query = searchParams.get('q')?.toLowerCase() ?? ''
-  const offset = Number(searchParams.get('offset') ?? 0)
-
-  return useMemo(() => {
-    const matches = mockInstalls.filter(
-      (install) =>
-        !query ||
-        install.name.includes(query) ||
-        install.id.includes(query) ||
-        install.app.includes(query)
-    )
-    return {
-      data: matches.slice(offset, offset + PAGE_SIZE),
-      pagination: {
-        limit: PAGE_SIZE,
-        offset,
-        hasNext: offset + PAGE_SIZE < matches.length,
-      },
-    }
-  }, [query, offset])
-}
-
-const Note = ({ children }: { children: string }) => (
-  <Text variant="subtext" theme="neutral">
-    {children}
-  </Text>
-)
+const matchesInstall = (install: TMockInstall, query: string) =>
+  install.name.includes(query) ||
+  install.id.includes(query) ||
+  install.app.includes(query)
 
 export const Default = () => {
-  const { data, pagination } = useMockPage()
+  const { data, pagination } = useMockPage(
+    mockInstalls,
+    PAGE_SIZE,
+    matchesInstall
+  )
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <Note>
-        Pick columns from the settings button and switch between table and
-        grid. Both choices are saved to local storage under
-        nuon-table:playground-installs and come back on reload. Narrow the
-        window and the table switches to the grid once the visible columns no
-        longer fit. Hiding columns lets the table fit in less space.
-      </Note>
+    <StoryFrame note="Pick columns from the settings button and switch between table and grid. Both choices are saved to local storage under nuon-table:playground-installs and come back on reload. Narrow the window and the table switches to the grid once the visible columns no longer fit. Hiding columns lets the table fit in less space.">
       <TableV2
         tableId="playground-installs"
         columns={columns}
@@ -225,19 +196,18 @@ export const Default = () => {
           emptyMessage: 'No installs match your search.',
         }}
       />
-    </div>
+    </StoryFrame>
   )
 }
 
 export const NarrowContainer = () => {
-  const { data, pagination } = useMockPage()
+  const { data, pagination } = useMockPage(
+    mockInstalls,
+    PAGE_SIZE,
+    matchesInstall
+  )
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <Note>
-        The same table in a 28rem container. The visible columns do not fit, so
-        it renders as a grid and hides the layout toggle. Column choices still
-        apply.
-      </Note>
+    <StoryFrame note="The same table in a 28rem container. The visible columns do not fit, so it renders as a grid and hides the layout toggle. Column choices still apply.">
       <div className="max-w-md">
         <TableV2
           tableId="playground-installs"
@@ -247,30 +217,26 @@ export const NarrowContainer = () => {
           searchPlaceholder="Search by name, app or ID..."
         />
       </div>
-    </div>
+    </StoryFrame>
   )
 }
 
 export const Loading = () => (
-  <div className="flex flex-col gap-4 p-6">
-    <Note>
-      Loading in whichever layout is active. Uses its own table ID so it does
-      not share settings with the other stories.
-    </Note>
+  <StoryFrame note="Loading in whichever layout is active, with the same saved columns as the default story.">
     <TableV2
-      tableId="playground-installs-loading"
+      tableId="playground-installs"
       columns={columns}
       data={[]}
       isLoading
       loadingRows={6}
     />
-  </div>
+  </StoryFrame>
 )
 
 export const Empty = () => (
-  <div className="flex flex-col gap-4 p-6">
+  <StoryFrame>
     <TableV2
-      tableId="playground-installs-empty"
+      tableId="playground-installs"
       columns={columns}
       data={[]}
       emptyStateProps={{
@@ -279,5 +245,5 @@ export const Empty = () => (
           'An install is an instance of an application running in a customer cloud account.',
       }}
     />
-  </div>
+  </StoryFrame>
 )
