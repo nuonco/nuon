@@ -7,9 +7,9 @@ keywords: ["API", "api", "Nuon API", "REST API", "control plane API", "API refer
 
 Everything the dashboard and CLI do goes through the Nuon API, so you can automate it from your own product:
 
-- **Onboard a customer.** Create an install with `POST /v1/installs`, then send the customer the link to create the
-  stack in their own cloud account. The customer enters any secret values there, so secrets never pass through the
-  API. See [Build a UI integration](/guides/ui-integration).
+- **Onboard a customer.** Create an install with `POST /v1/installs`, then give the customer the stack to create in
+  their own cloud account. The customer enters any secret values there, so secrets never pass through the API. See
+  [Build a UI integration](/guides/ui-integration).
 - **Track progress.** Subscribe to [webhooks](/guides/webhooks) for workflow and health events.
 - **Collect customer approvals and input changes.** See
   [Let customers manage their install](/guides/control-plane-integration).

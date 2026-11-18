@@ -43,7 +43,7 @@ Before components can be deployed to installs, they are built into OCI artifacts
 
 The same Control Plane and Runner handle the work after the first deploy:
 
-- [Health checks](/guides/health-checks) monitor every component and send alerts to Slack and webhooks.
+- [Health checks](/guides/health-checks) monitor the components on each install and send alerts to Slack and webhooks.
 - [Actions](/concepts/actions) and [adhoc actions](/guides/adhoc-actions) run scripts inside the customer account, so
   you can debug without SSH or `kubectl` access.
 - [Database migrations](/guides/database-migrations) run as a Kubernetes Job, an init container, or an action.

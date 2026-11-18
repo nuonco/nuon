@@ -164,14 +164,6 @@ terraform import <resource_address> <resource_id>
 Running `terraform apply` locally will modify the live install infrastructure. Use caution and prefer `terraform plan` for inspection.
 </Warning>
 
-## Importing Existing Resources
-
-To bring a resource that already exists in your customer's account under a component, run `terraform import` against
-that component's workspace. The component's Terraform module must already declare the resource. Use this when you move
-a customer you deployed yourself onto Nuon and want to keep their infrastructure in place.
-
-The customer still creates the install's [stack](/concepts/stacks) first, which sets up the runner and its roles.
-
 ## Unlocking State
 
 If a Terraform operation is interrupted (e.g., a network failure during apply), the workspace state may remain locked. You can unlock it from the dashboard using the **Unlock Terraform state** button on the Sandbox or Component detail page.
