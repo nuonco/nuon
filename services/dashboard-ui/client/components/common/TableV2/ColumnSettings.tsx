@@ -37,7 +37,6 @@ export const ColumnSettings = ({
       closeOnBlur={false}
       id={id}
       hideIcon
-      size="sm"
       aria-label="Table settings"
       tooltipProps={{
         className: 'flex',

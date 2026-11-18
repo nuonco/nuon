@@ -142,6 +142,7 @@ export const AppRolesTable = ({
 
   return (
     <Table
+      tableId="app-roles"
       columns={columns}
       data={roles}
       isLoading={isLoading}

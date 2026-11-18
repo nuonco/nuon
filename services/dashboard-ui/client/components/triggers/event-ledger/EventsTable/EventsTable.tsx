@@ -189,6 +189,7 @@ export const EventsTable = ({
       ) : null}
       {filters}
       <Table
+        tableId="trigger-events"
         columns={columns}
         data={data}
         isLoading={isLoading}

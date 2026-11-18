@@ -55,7 +55,6 @@ const columns: ColumnDef<TVCSConnectionRow>[] = [
     header: 'Account',
     accessorFn: accountName,
     enableHiding: false,
-    size: 280,
     cell: ({ row }) => (
       <span className="flex items-center gap-2">
         <Icon variant="GitHub" size={16} />
@@ -69,7 +68,6 @@ const columns: ColumnDef<TVCSConnectionRow>[] = [
     id: 'status',
     header: 'Status',
     enableSorting: false,
-    size: 180,
     meta: { card: 'status' },
     cell: ({ row }) => {
       const { status, isLoadingStatus } = row.original
@@ -82,7 +80,6 @@ const columns: ColumnDef<TVCSConnectionRow>[] = [
     id: 'checked_at',
     header: 'Last checked',
     enableSorting: false,
-    size: 180,
     cell: ({ row }) =>
       row.original.checkedAt ? (
         <Time time={row.original.checkedAt} format="relative" />

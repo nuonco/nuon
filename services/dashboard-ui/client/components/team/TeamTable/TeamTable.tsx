@@ -133,6 +133,7 @@ export const TeamTable = ({
 
   return (
     <Table<TTeamMemberRow>
+      tableId="team"
       columns={columns}
       data={parseAccountToTableData(data, roleTitles)}
       isLoading={isLoading}

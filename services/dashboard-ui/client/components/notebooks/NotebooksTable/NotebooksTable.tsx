@@ -100,6 +100,7 @@ export const NotebooksTable = ({
   pagination,
 }: INotebooksTable) => (
   <Table<TNotebookRow>
+    tableId="notebooks"
     columns={columns}
     data={data}
     isLoading={isLoading}

@@ -162,7 +162,6 @@ const columns: ColumnDef<TMockBranchInstall>[] = [
     accessorKey: 'name',
     header: 'Install name',
     enableHiding: false,
-    size: 220,
     cell: (info) => (
       <span>
         <Text variant="body">
@@ -182,7 +181,6 @@ const columns: ColumnDef<TMockBranchInstall>[] = [
     accessorFn: (row) => row.status.deployments?.status,
     header: 'Statuses',
     enableSorting: false,
-    size: 190,
     cell: (info) => (
       <div className="flex w-max flex-col items-start gap-1.5">
         {INSTALL_STATUS_AXES.map(({ key, label }) => (
@@ -196,7 +194,6 @@ const columns: ColumnDef<TMockBranchInstall>[] = [
   {
     accessorKey: 'region',
     header: 'Region',
-    size: 190,
     meta: { defaultHidden: true },
     cell: (info) => {
       const { platform, region } = info.row.original
@@ -214,7 +211,6 @@ const columns: ColumnDef<TMockBranchInstall>[] = [
     accessorKey: 'labels',
     header: 'Labels',
     enableSorting: false,
-    size: 200,
     cell: (info) => {
       const labels = info.getValue() as TMockBranchInstall['labels']
       const keys = Object.keys(labels).sort()
@@ -237,7 +233,6 @@ const columns: ColumnDef<TMockBranchInstall>[] = [
     accessorKey: 'group',
     header: 'Group',
     enableSorting: false,
-    size: 130,
     cell: (info) => (
       <Text variant="subtext" theme="neutral" family="mono">
         {(info.getValue() as string | undefined) || '—'}
@@ -248,13 +243,11 @@ const columns: ColumnDef<TMockBranchInstall>[] = [
     id: 'activity',
     accessorKey: 'updatedAt',
     header: 'Activity',
-    size: 140,
     cell: (info) => <ActivityCell install={info.row.original} />,
   },
   {
     id: 'action',
     header: '',
-    size: 56,
     enableSorting: false,
     enableHiding: false,
     cell: () => (

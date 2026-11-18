@@ -105,6 +105,7 @@ export const BranchConfigsTable = ({
 
   return (
     <Table<TAppConfig>
+      tableId="branch-configs"
       columns={columns}
       data={configs ?? []}
       enableSearch={false}

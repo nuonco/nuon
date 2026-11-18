@@ -131,6 +131,7 @@ export const ActionsTable = ({
 }: IActionsTable) => {
   return (
     <Table<TActionRow>
+      tableId="actions"
       columns={columns}
       data={data}
       isLoading={isLoading}

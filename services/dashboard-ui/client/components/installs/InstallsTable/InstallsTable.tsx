@@ -1,3 +1,4 @@
+import { useTableVersion } from '@/hooks/use-table-version'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
@@ -300,6 +301,7 @@ export const InstallsTable = ({
   scope = 'org',
   statusAxes = false,
 }: IInstallsTable) => {
+  const isTableV2 = useTableVersion() === 'v2'
   const hidden = [
     ...HIDDEN_COLUMNS[scope],
     ...(statusAxes ? ['statuses', 'platform'] : ['statusAxes']),
@@ -316,9 +318,12 @@ export const InstallsTable = ({
       if (key === 'region') {
         return {
           ...column,
-          meta: { className: 'hidden @min-[80rem]:table-cell' },
+          meta: isTableV2
+            ? { defaultHidden: true }
+            : { className: 'hidden @min-[80rem]:table-cell' },
         }
       }
+      if (isTableV2) return column
       if (key === 'updatedAt' || key === 'activity') {
         return {
           ...column,
@@ -330,6 +335,7 @@ export const InstallsTable = ({
 
   return (
     <Table<InstallRow>
+      tableId={statusAxes ? `installs-${scope}-status` : `installs-${scope}`}
       columns={scopedColumns}
       data={data}
       isLoading={isLoading}

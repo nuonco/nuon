@@ -114,6 +114,7 @@ export const RunnerProcessesTable = ({
 
   return (
     <Table
+      tableId="runner-processes"
       data={processes}
       columns={columns}
       isLoading={isLoading}

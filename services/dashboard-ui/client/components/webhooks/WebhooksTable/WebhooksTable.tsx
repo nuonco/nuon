@@ -98,6 +98,7 @@ export const WebhooksTable = ({
 
   return (
     <Table<TWebhook>
+      tableId="webhooks"
       columns={columns}
       data={data}
       isLoading={isLoading}

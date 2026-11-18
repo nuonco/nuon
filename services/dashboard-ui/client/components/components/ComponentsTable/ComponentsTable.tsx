@@ -173,6 +173,7 @@ export const ComponentsTable = ({
 }: IComponentsTable) => {
   return (
     <Table<TComponentRow>
+      tableId="components"
       columns={columns}
       data={data}
       isLoading={isLoading}

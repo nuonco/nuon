@@ -125,6 +125,7 @@ export const AppsTable = ({
 }: IAppsTable) => {
   return (
     <Table<TAppRow>
+      tableId="apps"
       data={data}
       columns={columns}
       isLoading={isLoading}

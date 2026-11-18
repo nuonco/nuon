@@ -69,6 +69,7 @@ export const LegacyPersonalTokens = ({
         description="Personal tokens issued against your own account. Prefer service account tokens above — they keep working if you lose access."
       />
       <Table<TStaticToken>
+        tableId="legacy-personal-tokens"
         columns={columns}
         data={data}
         isLoading={isLoading}

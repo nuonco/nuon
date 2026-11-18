@@ -70,6 +70,7 @@ export const VCSConnectionsTable = ({
 
   return (
     <Table<TVCSConnectionRow>
+      tableId="vcs-connections"
       columns={columns}
       data={data}
       isLoading={isLoading}

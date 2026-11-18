@@ -88,6 +88,7 @@ export const InvitedUsers = ({
 
   return (
     <Table<TOrgInvite>
+      tableId="team-invites"
       columns={columns}
       data={pendingInvites}
       enableSearch={false}

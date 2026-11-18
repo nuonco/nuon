@@ -116,6 +116,7 @@ export const ImageRepositories = ({
         fallback="Image repositories failed to load"
       />
       <Table
+        tableId="image-repositories"
         columns={columns}
         data={repositories}
         isLoading={isLoading}

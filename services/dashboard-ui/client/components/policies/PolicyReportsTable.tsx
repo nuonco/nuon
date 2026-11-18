@@ -179,6 +179,7 @@ export const PolicyReportsTable = ({
 
   return (
     <Table<IPolicyReportRow>
+      tableId="policy-reports"
       columns={columns}
       data={rows}
       enableSearch={false}

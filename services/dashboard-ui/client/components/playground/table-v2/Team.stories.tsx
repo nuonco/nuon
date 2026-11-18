@@ -78,7 +78,6 @@ const columns: ColumnDef<TMockMember>[] = [
     accessorKey: 'name',
     header: 'Name',
     enableHiding: false,
-    size: 180,
     cell: (props) => (
       <Text variant="body" weight="strong">
         {props.getValue<string>()}
@@ -88,7 +87,6 @@ const columns: ColumnDef<TMockMember>[] = [
   {
     accessorKey: 'email',
     header: 'Email',
-    size: 260,
     cell: (props) => (
       <Text variant="body" className="text-primary-600 dark:text-primary-400">
         {props.getValue<string>()}
@@ -98,7 +96,6 @@ const columns: ColumnDef<TMockMember>[] = [
   {
     accessorKey: 'role',
     header: 'Role',
-    size: 160,
     cell: (props) => (
       <Text variant="body" className="text-primary-600 dark:text-primary-400">
         {props.getValue<string>()}
@@ -109,7 +106,6 @@ const columns: ColumnDef<TMockMember>[] = [
     id: 'status',
     header: 'Status',
     enableSorting: false,
-    size: 140,
     meta: { card: 'status' },
     cell: () => (
       <Status status="active" variant="badge">
@@ -122,7 +118,6 @@ const columns: ColumnDef<TMockMember>[] = [
     header: 'Action',
     enableSorting: false,
     enableHiding: false,
-    size: 100,
     meta: { card: 'actions' },
     cell: (props) => <ActionCell member={props.row.original} />,
   },

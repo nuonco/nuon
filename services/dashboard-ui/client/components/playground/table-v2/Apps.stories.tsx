@@ -56,7 +56,6 @@ const columns: ColumnDef<TAppRow>[] = [
     accessorKey: 'name',
     header: 'App name',
     enableHiding: false,
-    size: 260,
     cell: (info) => (
       <span>
         <Text variant="body">
@@ -71,7 +70,6 @@ const columns: ColumnDef<TAppRow>[] = [
   {
     accessorKey: 'configVersion',
     header: 'Config version',
-    size: 150,
     cell: (info) => (
       <Text family="mono" theme="neutral">
         {info.getValue<number>() === 0
@@ -83,7 +81,6 @@ const columns: ColumnDef<TAppRow>[] = [
   {
     accessorKey: 'sandboxName',
     header: 'Sandbox',
-    size: 260,
     cell: (info) =>
       info.row.original.sandboxHref ? (
         <Text>
@@ -102,7 +99,6 @@ const columns: ColumnDef<TAppRow>[] = [
   {
     accessorKey: 'platform',
     header: 'Platform',
-    size: 110,
     cell: (info) => (
       <CloudPlatform
         displayVariant="icon-only"
@@ -118,7 +114,6 @@ const columns: ColumnDef<TAppRow>[] = [
     header: '',
     enableSorting: false,
     enableHiding: false,
-    size: 110,
     cell: (info) => (
       <Text>
         <Link

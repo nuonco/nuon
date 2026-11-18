@@ -166,6 +166,7 @@ export const PoliciesTable = ({
 
   return (
     <Table<TPolicyRow>
+      tableId="policies"
       columns={columns}
       data={data}
       enableSearch={false}

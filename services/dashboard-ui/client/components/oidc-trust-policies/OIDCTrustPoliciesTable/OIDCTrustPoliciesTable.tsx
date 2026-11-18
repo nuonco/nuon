@@ -98,6 +98,7 @@ export const OIDCTrustPoliciesTable = ({
 
   return (
     <Table<TOIDCTrustPolicy>
+      tableId="oidc-trust-policies"
       columns={columns}
       data={data}
       isLoading={isLoading}

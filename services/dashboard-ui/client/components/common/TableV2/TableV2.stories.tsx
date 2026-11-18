@@ -62,7 +62,6 @@ const columns: ColumnDef<TComponent>[] = [
     accessorKey: 'name',
     header: 'Component',
     enableHiding: false,
-    size: 200,
     cell: (info) => (
       <Text variant="body">
         <Link href={`/components/${info.row.original.id}`} variant="inline">
@@ -74,33 +73,28 @@ const columns: ColumnDef<TComponent>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
-    size: 130,
     meta: { card: 'status' },
     cell: (info) => <Status status={info.getValue() as string} />,
   },
   {
     accessorKey: 'type',
     header: 'Type',
-    size: 170,
     cell: (info) => <Badge theme="info">{info.getValue() as string}</Badge>,
   },
   {
     accessorKey: 'version',
     header: 'Version',
-    size: 110,
     cell: (info) => <Text family="mono">{info.getValue() as string}</Text>,
   },
   {
     accessorKey: 'owner',
     header: 'Owner',
-    size: 120,
     meta: { defaultHidden: true },
     cell: (info) => <Text>{info.getValue() as string}</Text>,
   },
   {
     accessorKey: 'updatedAt',
     header: 'Updated',
-    size: 130,
     cell: (info) => (
       <Time
         time={info.getValue() as string}
@@ -112,7 +106,6 @@ const columns: ColumnDef<TComponent>[] = [
   {
     id: 'action',
     header: '',
-    size: 56,
     enableSorting: false,
     enableHiding: false,
     cell: () => (

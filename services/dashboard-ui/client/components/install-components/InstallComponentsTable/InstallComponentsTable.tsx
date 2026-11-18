@@ -303,6 +303,7 @@ export const InstallComponentsTable = ({
 }: IInstallComponentsTable) => {
   return (
     <Table<InstallComponentRow>
+      tableId="install-components"
       columns={columns}
       data={data}
       isLoading={isLoading}

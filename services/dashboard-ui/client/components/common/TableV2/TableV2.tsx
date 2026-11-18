@@ -71,6 +71,12 @@ const columnLabel = <TData,>(column: Column<TData, unknown>) => {
   return typeof header === 'string' && header.trim() ? header : undefined
 }
 
+const isActionsColumn = <TData,>(column: Column<TData, unknown>) => {
+  const meta = columnMeta(column)
+  if (meta.card) return meta.card === 'actions'
+  return column.id === 'action' || !columnLabel(column)
+}
+
 const cardSlot = <TData,>(
   column: Column<TData, unknown>,
   index: number
@@ -78,13 +84,7 @@ const cardSlot = <TData,>(
   const meta = columnMeta(column)
   if (meta.card) return meta.card
   if (index === 0) return 'title'
-  return columnLabel(column) ? 'field' : 'actions'
-}
-
-const isActionsColumn = <TData,>(column: Column<TData, unknown>) => {
-  const meta = columnMeta(column)
-  if (meta.card) return meta.card === 'actions'
-  return !columnLabel(column)
+  return isActionsColumn(column) ? 'actions' : 'field'
 }
 
 const useContainerWidth = () => {
@@ -250,20 +250,36 @@ export function TableV2Base<TData extends object>({
     setIsPaginating(false)
   }, [data])
 
-  const requiredWidth = table.getTotalSize()
+  const visibleColumns = table.getVisibleLeafColumns()
+  const visibleKey = visibleColumns.map((column) => column.id).join(',')
+  const tableRef = useRef<HTMLTableElement>(null)
+  const [overflow, setOverflow] = useState<{
+    key: string
+    width: number
+  } | null>(null)
+  const requiredWidth = overflow?.key === visibleKey ? overflow.width : null
   const forcedGrid =
-    containerWidth !== null && containerWidth + 1 < requiredWidth
+    requiredWidth !== null &&
+    containerWidth !== null &&
+    containerWidth + 1 < requiredWidth
   const view: TTableView = forcedGrid ? 'grid' : (settings.view ?? 'table')
   const loading = isLoading || isPaginating
   const rows = table.getRowModel().rows
-  const visibleColumns = table.getVisibleLeafColumns()
+
+  useLayoutEffect(() => {
+    if (view !== 'table' || containerWidth === null) return
+    const naturalWidth = tableRef.current?.scrollWidth ?? 0
+    if (naturalWidth > containerWidth + 1) {
+      setOverflow({ key: visibleKey, width: naturalWidth })
+    }
+  })
   const placeholders = Array.from({ length: pagination?.limit || loadingRows })
 
   const columnOptions = table
     .getAllLeafColumns()
     .map((column) => {
       const label = columnLabel(column)
-      if (!label) return null
+      if (!label || isActionsColumn(column)) return null
       return {
         id: column.id,
         label,
@@ -314,6 +330,7 @@ export function TableV2Base<TData extends object>({
               <ToggleButton
                 label="Layout"
                 options={VIEW_OPTIONS}
+                size="md"
                 value={view}
                 onChange={settings.setView}
               />
@@ -333,7 +350,7 @@ export function TableV2Base<TData extends object>({
 
       {view === 'table' ? (
         <div className={cn('overflow-hidden rounded-lg border', className)}>
-          <table className="w-full text-sm">
+          <table ref={tableRef} className="w-full text-sm">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -341,7 +358,7 @@ export function TableV2Base<TData extends object>({
                     <th
                       key={header.id}
                       className={cn(
-                        'py-3 px-4 text-left bg-cool-grey-100 dark:bg-dark-grey-700',
+                        'py-3 px-4 text-left whitespace-nowrap bg-cool-grey-100 dark:bg-dark-grey-700',
                         isActionsColumn(header.column) &&
                           'w-px whitespace-nowrap text-right',
                         columnMeta(header.column).className,

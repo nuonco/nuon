@@ -155,6 +155,7 @@ export const InstallRolesTable = ({
 
   return (
     <Table
+      tableId="install-roles"
       columns={columns}
       data={roles}
       isLoading={isLoading}

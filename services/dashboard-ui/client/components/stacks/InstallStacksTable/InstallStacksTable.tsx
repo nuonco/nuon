@@ -101,6 +101,7 @@ export const InstallStacksTable = ({
 
   return (
     <Table<TStackVersion>
+      tableId="install-stacks"
       columns={columns}
       data={versions ?? []}
       enableSearch={false}

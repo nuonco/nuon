@@ -91,6 +91,7 @@ export const BranchesTable = ({
 }: IBranchesTable) => {
   return (
     <Table<TBranchRow>
+      tableId="branches"
       columns={columns}
       data={data}
       isLoading={isLoading}

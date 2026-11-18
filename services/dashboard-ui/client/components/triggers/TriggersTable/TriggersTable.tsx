@@ -105,6 +105,7 @@ export const TriggersTable = ({
     )
   return (
     <Table
+      tableId="triggers"
       columns={columns}
       data={data}
       enableSearch={false}

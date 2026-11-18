@@ -64,7 +64,6 @@ const columns: ColumnDef<TMockInstall>[] = [
     accessorKey: 'name',
     header: 'Install name',
     enableHiding: false,
-    size: 220,
     cell: (info) => (
       <span className="flex min-w-0 flex-col">
         <Text variant="body" className="truncate">
@@ -79,14 +78,12 @@ const columns: ColumnDef<TMockInstall>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
-    size: 140,
     meta: { card: 'status' },
     cell: (info) => <Status status={info.getValue() as string} />,
   },
   {
     accessorKey: 'app',
     header: 'App',
-    size: 140,
     cell: (info) => (
       <Link href={`/apps/${info.getValue()}`}>{info.getValue() as string}</Link>
     ),
@@ -94,7 +91,6 @@ const columns: ColumnDef<TMockInstall>[] = [
   {
     accessorKey: 'platform',
     header: 'Platform',
-    size: 110,
     cell: (info) => (
       <Text variant="subtext" className="uppercase">
         {info.getValue() as string}
@@ -104,7 +100,6 @@ const columns: ColumnDef<TMockInstall>[] = [
   {
     accessorKey: 'region',
     header: 'Region',
-    size: 130,
     cell: (info) => (
       <Text variant="subtext" family="mono">
         {info.getValue() as string}
@@ -114,7 +109,6 @@ const columns: ColumnDef<TMockInstall>[] = [
   {
     accessorKey: 'branch',
     header: 'Branch',
-    size: 120,
     enableSorting: false,
     cell: (info) => (
       <span className="flex items-center gap-1.5">
@@ -126,7 +120,6 @@ const columns: ColumnDef<TMockInstall>[] = [
   {
     accessorKey: 'labels',
     header: 'Labels',
-    size: 200,
     enableSorting: false,
     meta: { defaultHidden: true },
     cell: (info) => {
@@ -147,7 +140,6 @@ const columns: ColumnDef<TMockInstall>[] = [
   {
     accessorKey: 'updatedAt',
     header: 'Updated',
-    size: 130,
     cell: (info) => (
       <Time
         time={info.getValue() as string}
@@ -159,7 +151,6 @@ const columns: ColumnDef<TMockInstall>[] = [
   {
     id: 'action',
     header: '',
-    size: 56,
     enableSorting: false,
     enableHiding: false,
     cell: () => (

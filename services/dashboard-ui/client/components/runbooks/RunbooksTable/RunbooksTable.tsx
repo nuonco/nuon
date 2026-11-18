@@ -196,6 +196,7 @@ export const RunbooksTable = ({
 
   return (
     <Table<TRunbookRow>
+      tableId={`runbooks-${scope}`}
       columns={scopedColumns}
       data={data}
       filterActions={filterActions}

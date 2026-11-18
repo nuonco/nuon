@@ -135,6 +135,7 @@ export const ConnectionsList = ({
         fallback="Cloud connections failed to load"
       />
       <Table
+        tableId="cloud-connections"
         columns={columns}
         data={connections}
         isLoading={isLoading}
