@@ -5,10 +5,12 @@ import type {
   TAppBranchRun,
   TInstall,
   TInstallOverview,
+  TWorkflowStepApproval,
 } from '@/types'
 import {
   bearsHealthVerdict,
   compareHealthSeverityDesc,
+  isFailingHealth,
   HEALTH_DEGRADED,
   HEALTH_HEALTHY,
   HEALTH_PROGRESSING,
@@ -16,6 +18,7 @@ import {
   HEALTH_UNKNOWN,
 } from '@/utils/health-utils'
 import { humanize } from '@/utils/string-utils'
+import { parseComponentOverrideInput } from '@/utils/install-utils'
 
 export const NO_SIGNAL = 'no-signal'
 
@@ -42,6 +45,8 @@ export type TFleetContext = {
   overviewById?: Record<string, TInstallOverview>
   runByBranch?: Record<string, string | undefined>
   scope?: string
+  configVersionById?: Record<string, number | undefined>
+  approvalsById?: Record<string, TWorkflowStepApproval[]>
 }
 
 export type TFleetFilters = {
@@ -195,6 +200,94 @@ export const labelOptions = (installs: TInstall[]) =>
 
 export const healthFilterLabel = (value: string) =>
   value === NO_SIGNAL ? 'No health signal' : humanize(value)
+
+export const PENDING_APPROVAL = 'pending-approval'
+
+export const ATTENTION_OPTIONS = [
+  HEALTH_UNHEALTHY,
+  PENDING_APPROVAL,
+  HEALTH_DEGRADED,
+]
+
+export type TAttentionItem = {
+  install: TInstall
+  reasons: string[]
+  approvals: TWorkflowStepApproval[]
+}
+
+const approvalInstallId = (approval: TWorkflowStepApproval) => {
+  const step = approval.workflow_step
+  if (approval.owner_type === 'installs') return approval.owner_id
+  if (step?.owner_type === 'installs') return step.owner_id
+  return undefined
+}
+
+export const approvalsByInstall = (approvals: TWorkflowStepApproval[] = []) => {
+  const byInstall: Record<string, TWorkflowStepApproval[]> = {}
+  for (const approval of approvals) {
+    const id = approvalInstallId(approval)
+    if (id) byInstall[id] = [...(byInstall[id] ?? []), approval]
+  }
+  return byInstall
+}
+
+export const configVersion = (install: TInstall, context: TFleetContext = {}) =>
+  context.configVersionById?.[install.app_config_id ?? '']
+
+export const disabledRoles = (install: TInstall) =>
+  (install.install_roles ?? []).filter((role) => role.enabled === false)
+
+export const disabledRolesText = (install: TInstall) => {
+  const count = disabledRoles(install).length
+  if (!count) return undefined
+  return `${count} ${count === 1 ? 'role' : 'roles'} disabled`
+}
+
+export const installOverrides = (install: TInstall) => {
+  const components = new Set<string>()
+  for (const inputs of install.install_inputs ?? []) {
+    for (const values of [inputs.values, inputs.redacted_values]) {
+      for (const [name, value] of Object.entries(values ?? {})) {
+        if (!value) continue
+        const parsed = parseComponentOverrideInput(name)
+        if (parsed) components.add(parsed.component)
+      }
+    }
+  }
+  return [...components].sort()
+}
+
+export const overridesText = (install: TInstall) => {
+  const count = installOverrides(install).length
+  if (!count) return undefined
+  return `${count} ${count === 1 ? 'override' : 'overrides'}`
+}
+
+export const attentionLabel = (value: string) =>
+  value === PENDING_APPROVAL ? 'Waiting on approval' : humanize(value)
+
+export const attentionItems = (
+  installs: TInstall[],
+  approvals: Record<string, TWorkflowStepApproval[]> = {}
+): TAttentionItem[] =>
+  installs
+    .map((install) => {
+      const pending = approvals[install.id ?? ''] ?? []
+      const health = install.composite_health_status
+      const reasons = ATTENTION_OPTIONS.filter((reason) =>
+        reason === PENDING_APPROVAL
+          ? pending.length > 0
+          : isFailingHealth(health) && health === reason
+      )
+      return { install, reasons, approvals: pending }
+    })
+    .filter((item) => item.reasons.length)
+    .sort(
+      (a, b) =>
+        ATTENTION_OPTIONS.indexOf(a.reasons[0]) -
+          ATTENTION_OPTIONS.indexOf(b.reasons[0]) ||
+        (a.install.name ?? '').localeCompare(b.install.name ?? '')
+    )
 
 export const matchesFilters = (
   install: TInstall,
