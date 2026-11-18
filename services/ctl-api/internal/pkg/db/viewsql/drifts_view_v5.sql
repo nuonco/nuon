@@ -89,18 +89,15 @@ FROM (
                 END AS live_state
         ) st
         CROSS JOIN LATERAL (
-            SELECT st.expected_state = 'ready' AND st.live_state = 'deployed' AND (
-                COALESCE(sel.checksum, '') = ''
-                OR sel.checksum IS DISTINCT FROM live_config.checksum
-                OR NOT COALESCE(
-                    sel.selected_build_id = live.component_build_id
-                    OR (COALESCE(expected_build.source_checksum, '') <> ''
-                        AND expected_build.source_checksum = live_build.source_checksum)
-                    OR (expected_build.source_identity IS NULL
-                        AND live_build.source_identity IS NULL
-                        AND expected_build.source_digest LIKE 'sha256:%'
-                        AND expected_build.source_digest = live_build.source_digest),
-                    false)) AS live_outdated
+            SELECT st.expected_state = 'ready' AND st.live_state = 'deployed' AND NOT COALESCE(
+                sel.selected_build_id = live.component_build_id
+                OR (COALESCE(expected_build.source_checksum, '') <> ''
+                    AND expected_build.source_checksum = live_build.source_checksum)
+                OR (expected_build.source_identity IS NULL
+                    AND live_build.source_identity IS NULL
+                    AND expected_build.source_digest LIKE 'sha256:%'
+                    AND expected_build.source_digest = live_build.source_digest),
+                false) AS live_outdated
         ) cmp
     WHERE
         ic.deleted_at = 0

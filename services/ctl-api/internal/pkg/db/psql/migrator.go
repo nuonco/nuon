@@ -23,12 +23,8 @@ type PSQLParams struct {
 	MetricsWriter metrics.Writer
 }
 
-func MigratorOpts() *migrations.Opts {
-	return migrations.NewOpts()
-}
-
 func NewPSQLMigrator(p PSQLParams, lc fx.Lifecycle) *migrations.Migrator {
-	opts := MigratorOpts()
+	opts := migrations.NewOpts()
 	return migrations.New(migrations.Params{
 		Models:       AllModels(),
 		Migrations:   p.Migrations.All(),
