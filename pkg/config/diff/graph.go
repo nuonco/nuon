@@ -12,6 +12,7 @@ const (
 	EdgeReasonInputReference      EdgeReason = "input_reference"
 	EdgeReasonInstallStackOutput  EdgeReason = "install_stack_output"
 	EdgeReasonOperationRole       EdgeReason = "operation_role"
+	EdgeReasonPolicy              EdgeReason = "policy"
 	EdgeReasonSandboxOutput       EdgeReason = "sandbox_output"
 	EdgeReasonSecretReference     EdgeReason = "secret_reference"
 	EdgeReasonStackRender         EdgeReason = "stack_render"

@@ -7664,7 +7664,7 @@ export interface components {
       unchanged?: number;
     };
     /** @enum {string} */
-    "diff.EdgeReason": "component_dependency" | "component_reference" | "input_reference" | "install_stack_output" | "operation_role" | "sandbox_output" | "secret_reference" | "stack_render";
+    "diff.EdgeReason": "component_dependency" | "component_reference" | "input_reference" | "install_stack_output" | "operation_role" | "policy" | "sandbox_output" | "secret_reference" | "stack_render";
     "diff.ImpactReason": {
       edge?: components["schemas"]["diff.EdgeReason"];
       from?: string;
