@@ -101,7 +101,10 @@ func ConfigForCluster(ctx context.Context, cInfo *kube.ClusterInfo) (*rest.Confi
 			return nil, err
 		}
 
-		tok, err := gen.Get(cInfo.ID)
+		tok, err := gen.GetWithOptions(ctx, &token.GetTokenOptions{
+			ClusterID: cInfo.ID,
+			Region:    env["AWS_REGION"],
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get token")
 		}

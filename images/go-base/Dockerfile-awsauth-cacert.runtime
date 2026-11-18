@@ -1,29 +1,38 @@
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS aws-iam-authenticator
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.24 AS aws-iam-authenticator
 
-RUN apk add --update --no-cache curl ca-certificates
-WORKDIR /bin
-ARG version=0.7.23
-RUN curl \
-        -Lo aws-iam-authenticator \
-        "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+RUN apk add --update --no-cache curl
+WORKDIR /out
+ARG version=0.7.24
+ARG TARGETARCH
+RUN set -o pipefail \
+    && asset="aws-iam-authenticator_${version}_linux_${TARGETARCH:?TARGETARCH is required}" \
+    && base="https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}" \
+    && curl -fsSLO "${base}/${asset}" \
+    && sum="$(curl -fsSL "${base}/authenticator_${version}_checksums.txt" | awk -v a="${asset}" '$2 == a {print $1}')" \
+    && test -n "${sum}" \
+    && echo "${sum}  ${asset}" | sha256sum -c - \
+    && mv "${asset}" aws-iam-authenticator \
     && chmod +x aws-iam-authenticator
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS certs
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.24 AS certs
 
-RUN wget \
-        https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
-    && cat global-bundle.pem >> /global-bundle.pem
+WORKDIR /rds
+RUN wget -qO- https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
+    | awk '/BEGIN CERTIFICATE/ {n++} {print > sprintf("rds-%03d.crt", n)}' \
+    && test "$(ls | wc -l)" -gt 0
 
 # Create the final runtime image with all necessary components
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS final
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.24 AS final
 
 WORKDIR /app
 
-ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 
 # NOTE(JM): this can be removed once `inline: true` is set on all uses of the kube config package
-COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
-COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
+COPY --from=aws-iam-authenticator /out/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
 # Install basic runtime dependencies
 RUN apk add --update --no-cache ca-certificates git
+
+COPY --from=certs /rds/ /usr/local/share/ca-certificates/
+RUN update-ca-certificates

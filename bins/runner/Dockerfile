@@ -2,7 +2,7 @@
 
 ARG BUILD_IMAGE=buildimage
 ARG NUON_CLI_VERSION=0.19.1257
-ARG AWS_IAM_AUTHENTICATOR_VERSION=0.7.23
+ARG AWS_IAM_AUTHENTICATOR_VERSION=0.7.24
 ARG KUBELOGIN_VERSION=0.2.21
 ARG GCLOUD_VERSION=590.0.0
 ARG AZURE_CLI_VERSION=2.91.0
@@ -207,9 +207,14 @@ ARG AWS_IAM_AUTHENTICATOR_VERSION
 
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
-RUN curl \
-    -Lo aws-iam-authenticator \
-    "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${AWS_IAM_AUTHENTICATOR_VERSION}/aws-iam-authenticator_${AWS_IAM_AUTHENTICATOR_VERSION}_linux_amd64" \
+RUN set -o pipefail \
+    && asset="aws-iam-authenticator_${AWS_IAM_AUTHENTICATOR_VERSION}_linux_amd64" \
+    && base="https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${AWS_IAM_AUTHENTICATOR_VERSION}" \
+    && curl -fsSLO "${base}/${asset}" \
+    && sum="$(curl -fsSL "${base}/authenticator_${AWS_IAM_AUTHENTICATOR_VERSION}_checksums.txt" | awk -v a="${asset}" '$2 == a {print $1}')" \
+    && test -n "${sum}" \
+    && echo "${sum}  ${asset}" | sha256sum -c - \
+    && mv "${asset}" aws-iam-authenticator \
     && chmod +x aws-iam-authenticator
 
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS kubelogin
