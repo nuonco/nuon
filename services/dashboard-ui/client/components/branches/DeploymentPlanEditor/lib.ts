@@ -12,6 +12,7 @@ export const newGroup = (
   is_default: isDefault,
   order: existingCount,
   max_parallel: 1,
+  approval_option: 'prompt',
   auto_approve_on_policies_passing: false,
 })
 

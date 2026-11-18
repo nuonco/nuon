@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -47,19 +48,22 @@ func (s *Signal) IsEmptyInstallGroup(ctx workflow.Context) (bool, error) {
 	return len(installIDs) == 0, nil
 }
 
-// AutoApproveOnPoliciesPassing reports whether the group opted into approving
-// its own plan. Synthetic preview groups have no install group row to configure,
-// so they always require a response.
-func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
+// AutoApproveOnPoliciesPassing stays false. A group plan is a config diff and
+// does not run policies, so this flag cannot approve it. approval_option does.
+func (s *Signal) AutoApproveOnPoliciesPassing(workflow.Context) bool {
+	return false
+}
+
+func (s *Signal) StepApprovalOption(ctx workflow.Context) app.InstallApprovalOption {
 	if s.InstallGroupID == "" {
-		return false
+		return app.InstallApprovalOptionPrompt
 	}
 
 	group, err := activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
 	if err != nil || group == nil {
-		return false
+		return app.InstallApprovalOptionPrompt
 	}
-	return group.GetAutoApproveOnPoliciesPassing()
+	return group.ResolvedApprovalOption()
 }
 
 func (s *Signal) Type() signal.SignalType {

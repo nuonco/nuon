@@ -16,6 +16,8 @@ type AppBranchInstallGroupConfig struct {
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
 	Default       bool              `mapstructure:"default,omitempty" toml:"default,omitempty"`
 
+	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty"`
 }
 
@@ -58,7 +60,8 @@ func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema)
 	addDescription(schema, "order", "deployment order (lower runs first)")
 	addDescription(schema, "label_selector", "label key-value pairs to dynamically match installs")
 	addDescription(schema, "default", "whether unmatched installs owned by this branch deploy in this group")
-	addDescription(schema, "auto_approve_on_policies_passing", "Auto-approve this group's plan when all policy checks pass. Defaults to false")
+	addDescription(schema, "approval_option", "prompt or approve-all. approve-all approves this group's config-diff plan. Defaults to prompt. Each install still uses its own approval_option.")
+	addDescription(schema, "auto_approve_on_policies_passing", "Approve this group's plan only after policies run and nothing denies. This plan does not run policies, so the field does not approve it. Defaults to false")
 }
 
 type AppBranchConfig struct {
@@ -161,6 +164,13 @@ func (c *AppBranchConfig) Validate() error {
 		}
 		if g.Default {
 			defaultGroups++
+		}
+		switch g.ApprovalOption {
+		case "", InstallApprovalOptionPrompt, InstallApprovalOptionApproveAll:
+		default:
+			return ErrConfig{
+				Description: fmt.Sprintf("branch %q: install group %q approval_option must be %q or %q", c.Name, g.Name, InstallApprovalOptionPrompt, InstallApprovalOptionApproveAll),
+			}
 		}
 	}
 	if defaultGroups > 1 {
