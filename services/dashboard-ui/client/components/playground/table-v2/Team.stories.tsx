@@ -10,7 +10,7 @@ import { Menu } from '@/components/common/Menu'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { StoryFrame, useMockPage } from './story-utils'
-import { TableV2 } from './TableV2'
+import { TableV2 } from '@/components/common/TableV2'
 
 type TMockMember = {
   email: string

@@ -12,7 +12,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { StoryFrame, useMockPage } from './story-utils'
-import { TableV2 } from './TableV2'
+import { TableV2 } from '@/components/common/TableV2'
 
 type TMockInstall = {
   app: string

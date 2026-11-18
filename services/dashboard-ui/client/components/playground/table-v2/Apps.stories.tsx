@@ -12,7 +12,7 @@ import { Text } from '@/components/common/Text'
 import type { TAppRow } from '@/components/apps/AppsTable/AppsTable'
 import type { TCloudPlatform } from '@/types'
 import { StoryFrame, useMockPage } from './story-utils'
-import { TableV2 } from './TableV2'
+import { TableV2 } from '@/components/common/TableV2'
 
 const APP_NAMES = [
   'payments',

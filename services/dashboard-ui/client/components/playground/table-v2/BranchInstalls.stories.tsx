@@ -18,7 +18,7 @@ import {
 } from '@/components/installs/InstallStatusSummary/InstallStatusSummary'
 import type { TCloudPlatform, TInstallStatus, TInstallStatusAxis } from '@/types'
 import { StoryFrame, hoursAgo, useMockPage } from './story-utils'
-import { TableV2 } from './TableV2'
+import { TableV2 } from '@/components/common/TableV2'
 
 type TMockBranchInstall = {
   createdAt: string

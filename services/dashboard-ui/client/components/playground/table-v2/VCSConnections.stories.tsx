@@ -11,7 +11,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TVCSConnectionRow } from '@/components/vcs-connections/VCSConnectionsTable/VCSConnectionsTable'
 import { StoryFrame, hoursAgo } from './story-utils'
-import { TableV2 } from './TableV2'
+import { TableV2 } from '@/components/common/TableV2'
 
 const accountName = (row: TVCSConnectionRow) =>
   row.connection.github_account_name ||

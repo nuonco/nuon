@@ -15,6 +15,7 @@ import {
   type Column,
   type ColumnDef,
   type Row,
+  type RowData,
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
@@ -27,18 +28,21 @@ import { Pagination, type IPagination } from '@/components/common/Pagination'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { usePagination } from '@/hooks/use-pagination'
+import { useTableSettings } from '@/hooks/use-table-settings'
 import { PaginationProvider } from '@/providers/pagination-provider'
 import { cn } from '@/utils/classnames'
+import type { TTableView } from '@/utils/table-settings-utils'
 import { ColumnSettings } from './ColumnSettings'
-import { useTableSettings, type TTableV2View } from './use-table-settings'
 
 export type TTableV2CardSlot = 'title' | 'status' | 'field' | 'actions' | 'hidden'
 
-export interface ITableV2ColumnMeta {
-  card?: TTableV2CardSlot
-  className?: string
-  defaultHidden?: boolean
-  label?: string
+declare module '@tanstack/react-table' {
+  interface ColumnMeta<TData extends RowData, TValue> {
+    card?: TTableV2CardSlot
+    className?: string
+    defaultHidden?: boolean
+    label?: string
+  }
 }
 
 export interface ITableV2<TData extends object> {
@@ -57,8 +61,8 @@ export interface ITableV2<TData extends object> {
   tableId: string
 }
 
-const columnMeta = (column: { columnDef: { meta?: unknown } }) =>
-  (column.columnDef.meta ?? {}) as ITableV2ColumnMeta
+const columnMeta = <TData,>(column: Column<TData, unknown>) =>
+  column.columnDef.meta ?? {}
 
 const columnLabel = <TData,>(column: Column<TData, unknown>) => {
   const meta = columnMeta(column)
@@ -218,7 +222,7 @@ export function TableV2Base<TData extends object>({
               column.id ??
               (column as { accessorKey?: string }).accessorKey ??
               ''
-            return [id, !(column.meta as ITableV2ColumnMeta)?.defaultHidden]
+            return [id, !column.meta?.defaultHidden]
           })
           .filter(([id]) => id)
       ),
@@ -249,7 +253,7 @@ export function TableV2Base<TData extends object>({
   const requiredWidth = table.getTotalSize()
   const forcedGrid =
     containerWidth !== null && containerWidth + 1 < requiredWidth
-  const view: TTableV2View = forcedGrid ? 'grid' : (settings.view ?? 'table')
+  const view: TTableView = forcedGrid ? 'grid' : (settings.view ?? 'table')
   const loading = isLoading || isPaginating
   const rows = table.getRowModel().rows
   const visibleColumns = table.getVisibleLeafColumns()
@@ -316,7 +320,7 @@ export function TableV2Base<TData extends object>({
             )}
             <ColumnSettings
               id={`${tableId}-column-settings`}
-              canReset={settings.hasCustomColumns || Boolean(settings.view)}
+              canReset={settings.isCustomized}
               onReset={settings.reset}
               onToggle={(id, visible) =>
                 table.getColumn(id)?.toggleVisibility(visible)
@@ -391,7 +395,9 @@ export function TableV2Base<TData extends object>({
                           columnMeta(column).className
                         )}
                       >
-                        <Text loading loadingWidth={10} />
+                        {isActionsColumn(column) ? null : (
+                          <Text loading loadingWidth={10} />
+                        )}
                       </td>
                     ))}
                   </tr>
