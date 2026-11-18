@@ -50,7 +50,17 @@ func (m *Migrator) dropViews(ctx context.Context) error {
 	}
 	// Views registered later may depend on earlier ones, so drop dependents first.
 	slices.Reverse(names)
-	return m.db.WithContext(ctx).Exec("DROP VIEW IF EXISTS " + strings.Join(names, ", ")).Error
+	err := m.db.WithContext(ctx).Exec("DROP VIEW IF EXISTS " + strings.Join(names, ", ")).Error
+	if err == nil {
+		return nil
+	}
+	// PostgreSQL names the refused view in the message but keeps the object that
+	// blocked it in DETAIL; surface the detail so the operator knows what to remove.
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Detail != "" {
+		return errors.Wrap(err, pgErr.Detail)
+	}
+	return err
 }
 
 // applyViewsTransactionally runs the drop and recreate inside one transaction
