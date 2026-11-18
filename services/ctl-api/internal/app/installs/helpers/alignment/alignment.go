@@ -593,7 +593,7 @@ func (s *Helpers) Read(ctx context.Context, install *app.Install) (*InstallAlign
 			res.Plan = nil
 		}
 	}
-	if err := s.loadOrigins(ctx, alignment); err != nil {
+	if err := s.loadOrigins(ctx, install.OrgID, alignment); err != nil {
 		return nil, err
 	}
 	return alignment, nil

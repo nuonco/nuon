@@ -62,7 +62,7 @@ FROM (
                 AND d.deleted_at = 0
                 AND d.plan_only = false
                 AND w.plan_only IS NOT TRUE
-            ORDER BY d.created_at DESC
+            ORDER BY d.created_at DESC, d.id DESC
             LIMIT 1
         ) last ON true
         LEFT JOIN LATERAL (
@@ -76,7 +76,7 @@ FROM (
                 AND d.component_build_id = live.component_build_id
                 AND d.created_at >= COALESCE(live.applied_at, live.created_at)
                 AND d.created_at >= COALESCE(last.created_at, '-infinity')
-            ORDER BY d.created_at DESC
+            ORDER BY d.created_at DESC, d.id DESC
             LIMIT 1
         ) scan ON true
         CROSS JOIN LATERAL (
