@@ -15,14 +15,15 @@ import (
 type EnsureCronWorkflowsRequest struct{}
 
 type EnsureCronWorkflowsResponse struct {
-	SweepStarted                 bool `json:"sweep_started"`
-	ComponentHealthSweepStarted  bool `json:"component_health_sweep_started"`
-	MetricsStarted               bool `json:"metrics_started"`
-	CleanupStarted               bool `json:"cleanup_started"`
-	TriggerEventCleanupStarted   bool `json:"trigger_event_cleanup_started"`
-	OIDCTokenCleanupStarted      bool `json:"oidc_token_cleanup_started"`
-	LogStreamAccountSweepStarted bool `json:"log_stream_account_sweep_started"`
-	DeadTokenCleanupStarted      bool `json:"dead_token_cleanup_started"`
+	SweepStarted                          bool `json:"sweep_started"`
+	ComponentHealthSweepStarted           bool `json:"component_health_sweep_started"`
+	MetricsStarted                        bool `json:"metrics_started"`
+	CleanupStarted                        bool `json:"cleanup_started"`
+	TriggerEventCleanupStarted            bool `json:"trigger_event_cleanup_started"`
+	OIDCTokenCleanupStarted               bool `json:"oidc_token_cleanup_started"`
+	RunnerAuthUsedSignatureCleanupStarted bool `json:"runner_auth_used_signature_cleanup_started"`
+	LogStreamAccountSweepStarted          bool `json:"log_stream_account_sweep_started"`
+	DeadTokenCleanupStarted               bool `json:"dead_token_cleanup_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -114,6 +115,21 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	}
 	resp.OIDCTokenCleanupStarted = true
 	a.logger.Info("oidc exchanged token cleanup cron started/replaced", zap.String("workflow-id", "general-oidc-exchanged-token-cleanup-cron"))
+
+	runnerAuthUsedSignatureCleanupOpts := tclient.StartWorkflowOptions{
+		ID:                    "general-runner-auth-used-signature-cleanup-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "0 0 * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", runnerAuthUsedSignatureCleanupOpts, "CleanupRunnerAuthUsedSignatures"); err != nil {
+		return nil, fmt.Errorf("unable to start runner auth used signature cleanup workflow: %w", err)
+	}
+	resp.RunnerAuthUsedSignatureCleanupStarted = true
+	a.logger.Info("runner auth used signature cleanup cron started/replaced", zap.String("workflow-id", "general-runner-auth-used-signature-cleanup-cron"))
 
 	logStreamAccountSweepOpts := tclient.StartWorkflowOptions{
 		ID:                    "general-log-stream-account-sweep-cron",

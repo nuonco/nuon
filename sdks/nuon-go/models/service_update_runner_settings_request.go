@@ -21,7 +21,7 @@ import (
 type ServiceUpdateRunnerSettingsRequest struct {
 
 	// aws auth method
-	// Enum: ["iid","sts"]
+	// Enum: ["iid","sts","sts-bound","sts-vendor"]
 	AwsAuthMethod string `json:"aws_auth_method,omitempty"`
 
 	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
@@ -80,7 +80,7 @@ var serviceUpdateRunnerSettingsRequestTypeAwsAuthMethodPropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["iid","sts"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["iid","sts","sts-bound","sts-vendor"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -95,6 +95,12 @@ const (
 
 	// ServiceUpdateRunnerSettingsRequestAwsAuthMethodSts captures enum value "sts"
 	ServiceUpdateRunnerSettingsRequestAwsAuthMethodSts string = "sts"
+
+	// ServiceUpdateRunnerSettingsRequestAwsAuthMethodStsDashBound captures enum value "sts-bound"
+	ServiceUpdateRunnerSettingsRequestAwsAuthMethodStsDashBound string = "sts-bound"
+
+	// ServiceUpdateRunnerSettingsRequestAwsAuthMethodStsDashVendor captures enum value "sts-vendor"
+	ServiceUpdateRunnerSettingsRequestAwsAuthMethodStsDashVendor string = "sts-vendor"
 )
 
 // prop value enum

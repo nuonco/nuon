@@ -23,6 +23,11 @@ func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete runner: %w", res.Error)
 	}
+	if res := a.db.WithContext(ctx).
+		Where(app.RunnerCloudIdentity{RunnerID: req.RunnerID}).
+		Delete(&app.RunnerCloudIdentity{}); res.Error != nil {
+		return fmt.Errorf("unable to delete runner cloud identity: %w", res.Error)
+	}
 	if err := a.acctClient.DeleteServiceAccount(ctx, req.RunnerID); err != nil {
 		return fmt.Errorf("delete runner service account: %w", err)
 	}

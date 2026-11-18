@@ -39,6 +39,7 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 
 	// runner auth: must be accessible w/out a token
 	{"POST", "/v1/runner-auth/aws"}:                   {},
+	{"POST", "/v1/runner-auth/aws/sts"}:               {},
 	{"POST", "/v1/runner-auth/gcp"}:                   {},
 	{"POST", "/v1/runner-auth/azure"}:                 {},
 	{"POST", "/v1/runner-auth/aws-iid"}:               {},
