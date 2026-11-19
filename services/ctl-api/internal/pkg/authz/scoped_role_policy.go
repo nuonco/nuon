@@ -41,6 +41,27 @@ func ScopedRolePolicy(role *app.Role) (permissions.Policy, error) {
 	if err != nil {
 		return permissions.Policy{}, err
 	}
+	var install []permissions.ScopedPermissions
+	if role.RoleType == app.RoleTypeRunnerJob {
+		installPrefix := permissions.Object(role.OrgID.String, permissions.KindInstall, "")
+		for object, value := range projection {
+			if !strings.HasPrefix(object, installPrefix) {
+				continue
+			}
+			if len(install) != 0 || value == nil || *value != string(permissions.PermissionAll) {
+				return permissions.Policy{}, fmt.Errorf("runner job role has an unexpected install grant")
+			}
+			set, err := permissions.NewPermissionSet(permissions.RunnerJobInstallPermissions...)
+			if err != nil {
+				return permissions.Policy{}, err
+			}
+			install = append(install, permissions.ScopedPermissions{
+				Scope:       permissions.Scope{Kind: permissions.KindInstall, OrgID: role.OrgID.String, ID: strings.TrimPrefix(object, installPrefix)},
+				Permissions: set,
+			})
+			delete(projection, object)
+		}
+	}
 	keys := 1
 	if enforced {
 		keys++
@@ -56,9 +77,15 @@ func ScopedRolePolicy(role *app.Role) (permissions.Policy, error) {
 		if !strings.HasPrefix(object, prefix) || value == nil || *value != string(verb) {
 			return permissions.Policy{}, fmt.Errorf("scoped role has an unexpected resource grant")
 		}
-		return permissions.ResourcePolicy(api, permissions.Scope{
-			Kind: scopeKind, OrgID: role.OrgID.String, ID: strings.TrimPrefix(object, prefix),
-		}, permission)
+		set, err := permissions.NewPermissionSet(permission)
+		if err != nil {
+			return permissions.Policy{}, err
+		}
+		rules := []permissions.ScopedPermissions{{
+			Scope:       permissions.Scope{Kind: scopeKind, OrgID: role.OrgID.String, ID: strings.TrimPrefix(object, prefix)},
+			Permissions: set,
+		}}
+		return permissions.ResourceRulesPolicy(api, append(rules, install...))
 	}
 	return permissions.Policy{}, fmt.Errorf("scoped role requires a resource grant")
 }

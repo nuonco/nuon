@@ -53,21 +53,26 @@ type resourceDocument struct {
 }
 
 func ResourcePolicy(api API, scope Scope, permission PermissionID) (Policy, error) {
+	set, err := NewPermissionSet(permission)
+	if err != nil {
+		return Policy{}, err
+	}
+	return ResourceRulesPolicy(api, []ScopedPermissions{{Scope: scope, Permissions: set}})
+}
+
+func ResourceRulesPolicy(api API, rules []ScopedPermissions) (Policy, error) {
 	if api != "" {
 		if _, err := ParseAPI(string(api)); err != nil {
 			return Policy{}, err
 		}
 	}
-	switch scope.Kind {
-	case KindInstall, KindRunnerJob, KindPhoneHome, KindLogStream:
-	default:
-		return Policy{}, fmt.Errorf("unsupported resource rule scope %q", scope.Kind)
+	for _, rule := range rules {
+		switch rule.Scope.Kind {
+		case KindInstall, KindRunnerJob, KindPhoneHome, KindLogStream:
+		default:
+			return Policy{}, fmt.Errorf("unsupported resource rule scope %q", rule.Scope.Kind)
+		}
 	}
-	set, err := NewPermissionSet(permission)
-	if err != nil {
-		return Policy{}, err
-	}
-	rules := []ScopedPermissions{{Scope: scope, Permissions: set}}
 	if _, err := LegacySources(rules); err != nil {
 		return Policy{}, err
 	}

@@ -92,6 +92,8 @@ var permissionBundles = map[PermissionID][]PermissionID{
 	StackAll:     {StackRead, StackReport},
 }
 
+var RunnerJobInstallPermissions = []PermissionID{ExecutionStateRead, ExecutionStateWrite, RunnerConfigRead}
+
 func ParsePermissionID(value string) (PermissionID, error) {
 	p := PermissionID(value)
 	if _, ok := permissionTargets[p]; !ok {
@@ -116,6 +118,18 @@ func (s PermissionSet) permits(permission PermissionID, kind ResourceKind) bool 
 		}
 	}
 	return false
+}
+
+func (s PermissionSet) equals(values []PermissionID) bool {
+	if len(s) != len(values) {
+		return false
+	}
+	for _, value := range values {
+		if _, ok := s[value]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func NewPermissionSet(values ...PermissionID) (PermissionSet, error) {
