@@ -368,7 +368,9 @@ export const CreateInstallFromAppContainer = ({
 
   const loadError =
     phase === 'form'
-      ? installInputConfigError || branchConfigsError || configError
+      ? (!selectedBranch && installInputConfigError) ||
+        branchConfigsError ||
+        configError
       : undefined
   const inputConfig = config?.input
     ? {
