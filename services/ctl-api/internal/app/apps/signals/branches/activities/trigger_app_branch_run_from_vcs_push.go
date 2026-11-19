@@ -266,7 +266,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 }
 
 func (a *Activities) pushMatchesRunPaths(ctx context.Context, config *app.AppBranchConfig, runConfig app.AppBranchRunConfig, req *TriggerAppBranchRunFromVCSPushRequest) bool {
-	filter, err := branchpaths.New(runConfig.Paths, runConfig.PathsIgnore, appBranchConfigDirectory(config))
+	filter, err := branchpaths.New(runConfig.Paths, runConfig.PathsIgnore)
 	if err != nil {
 		a.l.Warn("invalid app branch run paths, running branch", zap.String("app_branch_config_id", config.ID), zap.Error(err))
 		return true
@@ -312,16 +312,6 @@ func (a *Activities) pushChangedFiles(ctx context.Context, config *app.AppBranch
 		return nil, false
 	}
 	return changed.Paths, true
-}
-
-func appBranchConfigDirectory(config *app.AppBranchConfig) string {
-	if config.ConnectedGithubVCSConfig != nil {
-		return config.ConnectedGithubVCSConfig.Directory
-	}
-	if config.PublicGitVCSConfig != nil {
-		return config.PublicGitVCSConfig.Directory
-	}
-	return ""
 }
 
 func branchVCSIdentity(config *app.AppBranchConfig) (string, string, error) {

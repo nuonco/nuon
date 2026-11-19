@@ -143,17 +143,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func previewPathsFilter(cfg *app.AppBranchConfig) (*branchpaths.Filter, error) {
-	directory := ""
-	switch {
-	case cfg.ConnectedGithubVCSConfig != nil:
-		directory = cfg.ConnectedGithubVCSConfig.Directory
-	case cfg.PublicGitVCSConfig != nil:
-		directory = cfg.PublicGitVCSConfig.Directory
-	}
 	var paths, pathsIgnore []string
 	if cfg.RunConfig != nil {
 		paths = cfg.RunConfig.Paths
 		pathsIgnore = cfg.RunConfig.PathsIgnore
 	}
-	return branchpaths.New(paths, pathsIgnore, directory)
+	return branchpaths.New(paths, pathsIgnore)
 }

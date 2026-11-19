@@ -87,13 +87,13 @@ Full trigger table: [What triggers an app branch run](/concepts/app-branches#wha
 
 ### Filter runs by changed paths
 
-By default, a push or pull request starts a run only when a changed file is under the repo block's `directory`.
-A `directory` of `"."` matches every change. Set `paths` when config or source lives outside that directory:
+By default, every push and pull request starts a run. The repo block's `directory` does not filter runs. Set `paths`
+to start a run only when a changed file matches:
 
 ```toml
 [run]
 mode  = "push"
-paths = ["my-app/**", "shared/helm/**", "!my-app/docs/**"]
+paths = ["my-app/**", "shared/helm/**"]
 ```
 
 Or skip runs when every changed file matches `paths_ignore`:
@@ -105,8 +105,7 @@ paths_ignore = ["docs/**", "**/*.md"]
 
 - Patterns are globs relative to the repository root. `*` matches within one directory and `**` matches across
   directories, including none.
-- In `paths`, a pattern starting with `!` excludes matching files. Patterns apply in order and the last match wins.
-- `paths` and `paths_ignore` are mutually exclusive.
+- `paths` and `paths_ignore` are mutually exclusive, and neither list accepts a pattern starting with `!`.
 - Patterns cannot be absolute or contain `..`. A branch can have at most 100 patterns.
 - In `push` mode, a push that matches nothing does not create a run. A pull request that matches nothing creates a preview run marked
   not attempted, hidden from the runs list, and posts a success status when `send_statuses_on_ignore` is set.
@@ -448,8 +447,7 @@ feedback. A `[public_repo]` branch is fine if the owner is connected.
 ## Multiple apps in one repository
 
 In a repository with several app configs (for example `example-app-configs`), set each branch's `directory` to its
-app's directory. Pushes and pull requests that change nothing under it do not run the branch. Add `[run].paths` when
-the app also reads files elsewhere in the repository:
+app's directory and set `[run].paths` so changes to other apps do not run the branch:
 
 ```toml
 send_statuses_on_ignore = true
@@ -500,8 +498,8 @@ exactly one install group.
 **The branch synced but has no install groups.** The branch config is missing its `[connected_repo]` /
 `[public_repo]` block, or install groups were omitted. Add them and `nuon branches sync` again.
 
-**A push did not start a run.** Check `[run].mode`, that `branch` matches the ref you pushed, `[run].paths` or the
-repo `directory` (a push that changes nothing under them is skipped on purpose), and `ignore_changes_regex`.
+**A push did not start a run.** Check `[run].mode`, that `branch` matches the ref you pushed, `[run].paths` or
+`[run].paths_ignore` (a push that matches nothing is skipped on purpose), and `ignore_changes_regex`.
 
 **The pull request has no Nuon comment.** Your org has no GitHub App connection for that repository's owner, or
 `[preview].comment` is false. The preview run itself can still succeed.

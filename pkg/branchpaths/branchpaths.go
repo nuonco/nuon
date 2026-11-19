@@ -27,13 +27,10 @@ func (m matcher) Match(p string) bool {
 	return false
 }
 
-type rule struct {
-	matcher matcher
-	negate  bool
-}
-
+// Filter is either an allow list (paths) or a deny list (paths_ignore), never
+// both.
 type Filter struct {
-	include []rule
+	include []matcher
 	ignore  []matcher
 }
 
@@ -43,28 +40,13 @@ type Decision struct {
 }
 
 func Validate(paths, pathsIgnore []string) error {
-	_, err := compile(paths, pathsIgnore)
+	_, err := New(paths, pathsIgnore)
 	return err
 }
 
-// New returns nil when no filter applies. Without paths or paths_ignore, a
-// non-root directory becomes the implicit filter "<directory>/**".
-func New(paths, pathsIgnore []string, directory string) (*Filter, error) {
-	if len(paths) == 0 && len(pathsIgnore) == 0 {
-		dir, ok := normalizePath(directory)
-		if !ok || dir == "" {
-			return nil, nil
-		}
-		g, err := glob.Compile(glob.QuoteMeta(dir)+"/**", '/')
-		if err != nil {
-			return nil, fmt.Errorf("invalid directory %q: %w", directory, err)
-		}
-		return &Filter{include: []rule{{matcher: matcher{g}}}}, nil
-	}
-	return compile(paths, pathsIgnore)
-}
-
-func compile(paths, pathsIgnore []string) (*Filter, error) {
+// New returns nil when no filter applies: with neither paths nor paths_ignore
+// set, every change runs.
+func New(paths, pathsIgnore []string) (*Filter, error) {
 	if len(paths) > 0 && len(pathsIgnore) > 0 {
 		return nil, fmt.Errorf("paths and paths_ignore are mutually exclusive")
 	}
@@ -77,12 +59,14 @@ func compile(paths, pathsIgnore []string) (*Filter, error) {
 
 	f := &Filter{}
 	for _, p := range paths {
-		negate := strings.HasPrefix(p, "!")
-		m, err := compilePattern(strings.TrimPrefix(p, "!"))
+		if strings.HasPrefix(p, "!") {
+			return nil, fmt.Errorf("paths: pattern %q cannot be negated; use paths_ignore to deny paths", p)
+		}
+		m, err := compilePattern(p)
 		if err != nil {
 			return nil, fmt.Errorf("paths: %w", err)
 		}
-		f.include = append(f.include, rule{matcher: m, negate: negate})
+		f.include = append(f.include, m)
 	}
 	for _, p := range pathsIgnore {
 		if strings.HasPrefix(p, "!") {
@@ -193,13 +177,12 @@ func (f *Filter) Match(files []string) Decision {
 }
 
 func (f *Filter) included(p string) bool {
-	matched := false
-	for _, r := range f.include {
-		if r.matcher.Match(p) {
-			matched = !r.negate
+	for _, m := range f.include {
+		if m.Match(p) {
+			return true
 		}
 	}
-	return matched
+	return false
 }
 
 func (f *Filter) ignored(p string) bool {

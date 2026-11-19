@@ -5,7 +5,6 @@ import { Code } from '@/components/common/Code'
 import { FormCheckbox } from '@/components/common/form/FormCheckbox'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
-import { FormRadioGroup } from '@/components/common/form/FormRadioGroup'
 import { FormTextarea } from '@/components/common/form/FormTextarea'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
@@ -15,29 +14,39 @@ import {
   branchCISettingsSchema,
   parsePathPatterns,
   type BranchCISettingsValues,
+  type TPathFilter,
 } from './schema'
 
-type TPathFilter = Pick<
-  BranchCISettingsValues,
-  'pathFilterMode' | 'pathPatterns'
->
-
-const pathFilterLabel = (mode: BranchCISettingsValues['pathFilterMode']) =>
-  mode === 'paths_ignore' ? 'Ignored paths' : 'Run paths'
+const PatternList = ({
+  patterns,
+  empty,
+}: {
+  patterns: string[]
+  empty: string
+}) =>
+  patterns.length ? (
+    <div className="flex flex-wrap gap-1">
+      {patterns.map((pattern) => (
+        <Code key={pattern}>{pattern}</Code>
+      ))}
+    </div>
+  ) : (
+    <Text variant="subtext" theme="neutral">
+      {empty}
+    </Text>
+  )
 
 export const BranchCISettingsCard = ({
   ignoreChangesRegex,
   sendStatusesOnIgnore,
-  pathFilterMode,
-  pathPatterns,
+  allowedPaths,
+  deniedPaths,
   onEdit,
 }: {
   ignoreChangesRegex: string
   sendStatusesOnIgnore: boolean
   onEdit: () => void
 } & TPathFilter) => {
-  const patterns = parsePathPatterns(pathPatterns)
-
   return (
     <Card className="!p-4 !gap-4">
       <div className="flex items-center justify-between gap-3">
@@ -52,18 +61,14 @@ export const BranchCISettingsCard = ({
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <LabeledValue label={pathFilterLabel(pathFilterMode)}>
-          {patterns.length ? (
-            <div className="flex flex-wrap gap-1">
-              {patterns.map((pattern) => (
-                <Code key={pattern}>{pattern}</Code>
-              ))}
-            </div>
-          ) : (
-            <Text variant="subtext" theme="neutral">
-              Repo directory
-            </Text>
-          )}
+        <LabeledValue label="Allowed paths">
+          <PatternList
+            patterns={parsePathPatterns(allowedPaths)}
+            empty="Every change"
+          />
+        </LabeledValue>
+        <LabeledValue label="Denied paths">
+          <PatternList patterns={parsePathPatterns(deniedPaths)} empty="None" />
         </LabeledValue>
         <LabeledValue label="Ignored changes regex">
           {ignoreChangesRegex ? (
@@ -84,11 +89,14 @@ export const BranchCISettingsCard = ({
   )
 }
 
+const samePatterns = (a: string, b: string) =>
+  parsePathPatterns(a).join('\n') === parsePathPatterns(b).join('\n')
+
 export const BranchCISettingsModal = ({
   ignoreChangesRegex,
   sendStatusesOnIgnore,
-  pathFilterMode,
-  pathPatterns,
+  allowedPaths,
+  deniedPaths,
   isPending,
   error,
   onSubmit,
@@ -107,8 +115,8 @@ export const BranchCISettingsModal = ({
     defaultValues: {
       ignoreChangesRegex,
       sendStatusesOnIgnore,
-      pathFilterMode,
-      pathPatterns,
+      allowedPaths,
+      deniedPaths,
     } as BranchCISettingsValues,
     validators: {
       onMount: branchCISettingsSchema,
@@ -121,9 +129,8 @@ export const BranchCISettingsModal = ({
   const hasChanges =
     values.ignoreChangesRegex !== ignoreChangesRegex ||
     values.sendStatusesOnIgnore !== sendStatusesOnIgnore ||
-    values.pathFilterMode !== pathFilterMode ||
-    parsePathPatterns(values.pathPatterns).join('\n') !==
-      parsePathPatterns(pathPatterns).join('\n')
+    !samePatterns(values.allowedPaths, allowedPaths) ||
+    !samePatterns(values.deniedPaths, deniedPaths)
 
   return (
     <Modal
@@ -151,37 +158,27 @@ export const BranchCISettingsModal = ({
           error={error}
           fallback="Unable to update CI triggers"
         />
-        <form.Field name="pathFilterMode">
-          {(field) => (
-            <FormRadioGroup
-              field={field}
-              label="Path filter"
-              disabled={isPending}
-              options={[
-                {
-                  value: 'paths',
-                  label: 'Run paths',
-                  description:
-                    'Push and pull request runs start only when a changed file matches. Prefix a pattern with ! to exclude it.',
-                },
-                {
-                  value: 'paths_ignore',
-                  label: 'Ignored paths',
-                  description:
-                    'Push and pull request runs are skipped when every changed file matches.',
-                },
-              ]}
-            />
-          )}
-        </form.Field>
-        <form.Field name="pathPatterns">
+        <form.Field name="allowedPaths">
           {(field) => (
             <FormTextarea
               field={field}
-              id="path-patterns"
-              labelProps={{ labelText: 'Path patterns (optional)' }}
-              helperText="One glob per line, relative to the repository root. Leave empty to use the repo directory."
-              placeholder={'apps/acme/**\nshared/helm/**\n!apps/acme/docs/**'}
+              id="allowed-paths"
+              labelProps={{ labelText: 'Allowed paths (optional)' }}
+              helperText="A push or pull request starts a run only when a changed file matches one of these. One glob per line, relative to the repository root. Leave both lists empty to run on every change. Cannot be combined with denied paths."
+              placeholder={'apps/acme/**\nshared/helm/**'}
+              disabled={isPending}
+              autoResize
+            />
+          )}
+        </form.Field>
+        <form.Field name="deniedPaths">
+          {(field) => (
+            <FormTextarea
+              field={field}
+              id="denied-paths"
+              labelProps={{ labelText: 'Denied paths (optional)' }}
+              helperText="A run is skipped only when every changed file matches one of these. One glob per line. Cannot be combined with allowed paths."
+              placeholder={'docs/**\n**/*.md'}
               disabled={isPending}
               autoResize
             />

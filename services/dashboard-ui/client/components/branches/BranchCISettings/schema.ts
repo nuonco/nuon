@@ -9,40 +9,54 @@ export const parsePathPatterns = (text: string): string[] =>
     .map((line) => line.trim())
     .filter(Boolean)
 
-export const branchCISettingsSchema = z.object({
-  ignoreChangesRegex: z.string(),
-  sendStatusesOnIgnore: z.boolean(),
-  pathFilterMode: z.enum(['paths', 'paths_ignore']),
-  pathPatterns: z
-    .string()
-    .refine((text) => parsePathPatterns(text).length <= MAX_PATH_PATTERNS, {
-      message: `Use at most ${MAX_PATH_PATTERNS} patterns`,
-    }),
-})
+export const branchCISettingsSchema = z
+  .object({
+    ignoreChangesRegex: z.string(),
+    sendStatusesOnIgnore: z.boolean(),
+    allowedPaths: z.string(),
+    deniedPaths: z.string(),
+  })
+  .refine(
+    (values) =>
+      parsePathPatterns(values.allowedPaths).length <= MAX_PATH_PATTERNS &&
+      parsePathPatterns(values.deniedPaths).length <= MAX_PATH_PATTERNS,
+    {
+      message: `Use at most ${MAX_PATH_PATTERNS} patterns per list`,
+      path: ['deniedPaths'],
+    }
+  )
+  .refine(
+    (values) =>
+      !(
+        parsePathPatterns(values.allowedPaths).length &&
+        parsePathPatterns(values.deniedPaths).length
+      ),
+    {
+      message:
+        'Allowed paths and denied paths cannot both be set. Clear one of them.',
+      path: ['deniedPaths'],
+    }
+  )
 
 export type BranchCISettingsValues = z.infer<typeof branchCISettingsSchema>
 
+export type TPathFilter = Pick<
+  BranchCISettingsValues,
+  'allowedPaths' | 'deniedPaths'
+>
+
 export const pathFilterFromRunConfig = (
   runConfig?: TAppBranchRunConfig
-): Pick<BranchCISettingsValues, 'pathFilterMode' | 'pathPatterns'> =>
-  runConfig?.paths_ignore?.length
-    ? {
-        pathFilterMode: 'paths_ignore',
-        pathPatterns: runConfig.paths_ignore.join('\n'),
-      }
-    : {
-        pathFilterMode: 'paths',
-        pathPatterns: (runConfig?.paths ?? []).join('\n'),
-      }
+): TPathFilter => ({
+  allowedPaths: (runConfig?.paths ?? []).join('\n'),
+  deniedPaths: (runConfig?.paths_ignore ?? []).join('\n'),
+})
 
 export const runConfigWithPathFilter = (
   runConfig: TAppBranchRunConfig | undefined,
-  values: Pick<BranchCISettingsValues, 'pathFilterMode' | 'pathPatterns'>
-): TAppBranchRunConfig => {
-  const patterns = parsePathPatterns(values.pathPatterns)
-  return {
-    ...runConfig,
-    paths: values.pathFilterMode === 'paths' ? patterns : [],
-    paths_ignore: values.pathFilterMode === 'paths_ignore' ? patterns : [],
-  }
-}
+  values: TPathFilter
+): TAppBranchRunConfig => ({
+  ...runConfig,
+  paths: parsePathPatterns(values.allowedPaths),
+  paths_ignore: parsePathPatterns(values.deniedPaths),
+})

@@ -12,6 +12,7 @@ import {
   pathFilterFromRunConfig,
   runConfigWithPathFilter,
   type BranchCISettingsValues,
+  type TPathFilter,
 } from './schema'
 
 export const BranchCISettingsContainer = ({
@@ -62,8 +63,8 @@ const BranchCISettingsEditor = ({
   appId,
   ignoreChangesRegex,
   sendStatusesOnIgnore,
-  pathFilterMode,
-  pathPatterns,
+  allowedPaths,
+  deniedPaths,
   onSuccess,
   onSubmit: _onSubmit,
   ...props
@@ -75,7 +76,7 @@ const BranchCISettingsEditor = ({
   ignoreChangesRegex: string
   sendStatusesOnIgnore: boolean
   onSuccess?: () => void
-} & Pick<BranchCISettingsValues, 'pathFilterMode' | 'pathPatterns'> &
+} & TPathFilter &
   IModal) => {
   const queryClient = useQueryClient()
   const { addToast } = useToast()
@@ -121,8 +122,8 @@ const BranchCISettingsEditor = ({
     <BranchCISettingsModal
       ignoreChangesRegex={ignoreChangesRegex}
       sendStatusesOnIgnore={sendStatusesOnIgnore}
-      pathFilterMode={pathFilterMode}
-      pathPatterns={pathPatterns}
+      allowedPaths={allowedPaths}
+      deniedPaths={deniedPaths}
       isPending={isPending}
       error={error ?? null}
       onSubmit={(values) => save(values)}

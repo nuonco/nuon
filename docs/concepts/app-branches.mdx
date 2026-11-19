@@ -85,7 +85,7 @@ build, plan, and apply to a preview install. See [Previews](/guides/app-branches
 
 | Trigger (dashboard / CLI) | What starts it | Branch config |
 | --- | --- | --- |
-| **Commit pushed** | Push to the tracked branch that changes a file under `directory` or `[run].paths` (fleet run) | `[run] mode = "push"` (default) |
+| **Commit pushed** | Push to the tracked branch that that passes the `[run]` path filters (fleet run) | `[run] mode = "push"` (default) |
 | **Pull request** | PR opened or updated against the tracked branch (**preview** only; no install groups) | `[preview]` settings (GitHub App for comments and statuses) |
 | **Manual run** | `nuon branches trigger`, API, or dashboard (fleet run) | Always available |
 | **Tag pushed** | Tag matching `tag_prefix` on that branch's history (fleet run) | `[run] mode = "on_tag"` |
@@ -168,8 +168,7 @@ Know these constraints before you design your branch layout:
 - An install can belong to **one app branch** at a time.
 - Two branches of the same app cannot use an **identical label selector**.
 - When `install_groups` is non-empty, **exactly one** install group must set `default = true`.
-- Pushes and pull requests start a run only when a changed file is under `directory` on the repo block. Use
-  `[run].paths` or `[run].paths_ignore` to watch other files. See
+- Every push and pull request starts a run unless you set `[run].paths` or `[run].paths_ignore`. See
   [Filter runs by changed paths](/guides/app-branches#filter-runs-by-changed-paths).
 
 ## Migrating to app branches

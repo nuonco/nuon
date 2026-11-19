@@ -67,6 +67,6 @@ title: 'Branch'
 | **`mode`**<br/>string | automatic run mode: push, on_tag, on_github_label, or manual_only | **Optional**<br/>`"push"`, `"on_tag"`, `"on_github_label"`, `"manual_only"` | - |
 | **`tag_prefix`**<br/>string | case-sensitive git tag prefix required by on_tag | **Optional** | - |
 | **`github_label`**<br/>string | exact pull request label required by on_github_label | **Optional** | - |
-| **`paths`**<br/>array | repo-root globs; push and PR runs start only when a changed file matches. ! excludes. Defaults to the repo directory. Not with paths_ignore | **Optional** | - |
+| **`paths`**<br/>array | repo-root globs; push and PR runs start only when a changed file matches. Not with paths_ignore | **Optional** | - |
 | **`paths_ignore`**<br/>array | repo-root globs; push and PR runs are skipped when every changed file matches. Not with paths | **Optional** | - |
 

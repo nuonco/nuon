@@ -44,7 +44,7 @@ func (c AppBranchRunConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "mode", "automatic run mode: push, on_tag, on_github_label, or manual_only")
 	addDescription(schema, "tag_prefix", "case-sensitive git tag prefix required by on_tag")
 	addDescription(schema, "github_label", "exact pull request label required by on_github_label")
-	addDescription(schema, "paths", "repo-root globs; push and PR runs start only when a changed file matches. ! excludes. Defaults to the repo directory. Not with paths_ignore")
+	addDescription(schema, "paths", "repo-root globs; push and PR runs start only when a changed file matches. Not with paths_ignore")
 	addDescription(schema, "paths_ignore", "repo-root globs; push and PR runs are skipped when every changed file matches. Not with paths")
 }
 
