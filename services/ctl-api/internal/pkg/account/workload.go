@@ -31,17 +31,12 @@ func (c *Client) EnsureRunner(ctx context.Context, runnerID string) (*app.Accoun
 		if err != nil {
 			return err
 		}
-		if err := client.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, runner.OrgID, binding.AccountID); err != nil {
-			return err
-		}
 		installID, err := client.runnerInstallID(ctx, runner.OrgID, runner.ID)
 		if err != nil {
 			return err
 		}
-		if installID != "" {
-			if err := client.authzClient.EnsureRunnerInstallRole(ctx, runner.OrgID, installID, binding.AccountID); err != nil {
-				return err
-			}
+		if err := client.authzClient.EnsureRunnerRole(ctx, runner.OrgID, installID, binding.AccountID); err != nil {
+			return err
 		}
 		acct, err = client.FindAccount(ctx, binding.AccountID)
 		return err
