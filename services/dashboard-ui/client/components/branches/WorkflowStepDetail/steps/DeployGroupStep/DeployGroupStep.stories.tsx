@@ -145,6 +145,31 @@ export const GroupDeploying = () => (
   />
 )
 
+const desiredRows: IInstallDeployRow[] = [
+  {
+    installId: 'ins_acme',
+    install: mkInstall(),
+    deployStatus: 'success',
+    installHref,
+  },
+  {
+    installId: 'ins_globex',
+    install: azureInstall,
+    deployStatus: 'success',
+    installHref,
+  },
+]
+
+export const GroupUpdatedToDesired = () => (
+  <StepInCard
+    groupName="rollout"
+    totalInstalls={2}
+    deployedCount={2}
+    rows={desiredRows}
+    updatedToDesired
+  />
+)
+
 export const PreviewApplyInProgress = () => (
   <StepInCard
     variant="preview"
