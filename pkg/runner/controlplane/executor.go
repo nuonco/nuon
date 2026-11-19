@@ -33,9 +33,12 @@ import (
 	pulumibuild "github.com/nuonco/nuon/pkg/runner/jobs/build/pulumi"
 	sandboxbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/sandbox"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
+	deployhelm "github.com/nuonco/nuon/pkg/runner/jobs/deploy/helm"
+	deploykubernetesmanifest "github.com/nuonco/nuon/pkg/runner/jobs/deploy/kubernetes_manifest"
 	deployterraform "github.com/nuonco/nuon/pkg/runner/jobs/deploy/terraform"
 	sandboxterraform "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/terraform"
 	imagemetadatasync "github.com/nuonco/nuon/pkg/runner/jobs/sync/imagemetadata"
+	ocisync "github.com/nuonco/nuon/pkg/runner/jobs/sync/oci"
 	runnerlog "github.com/nuonco/nuon/pkg/runner/log"
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
 	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
@@ -118,8 +121,8 @@ type InstallConfig struct {
 }
 
 // NewInstallExecutor builds an executor for install jobs: every handler
-// NewExecutor registers, plus the sandbox and deploy Terraform handlers moved
-// from bins/runner. Unlike NewExecutor, runnerCfg points at the install's real
+// NewExecutor registers, plus the sandbox, Terraform, Helm, Kubernetes manifest
+// and OCI sync handlers moved from bins/runner. Unlike NewExecutor, runnerCfg points at the install's real
 // runner API and carries a per-job token, and apiClient delegates the methods
 // clientAdapter can't satisfy from the database (GetAppConfig,
 // Lock/UnlockTerraformWorkspace, UpdateTerraformStateJSON, ...) to a real
@@ -188,6 +191,24 @@ func NewInstallExecutor(client Client, l *zap.Logger, cfg InstallConfig) (*Execu
 		return nil, err
 	}
 	handlers = append(handlers, deployTFHandler)
+
+	ociSyncHandler, err := ocisync.New(ocisync.HandlerParams{V: v, APIClient: apiClient, ErrRecorder: recorder, Config: runnerCfg, OCICopy: ocicopy.New(ocicopy.CopierParams{V: v, Cfg: runnerCfg})})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, ociSyncHandler)
+
+	helmHandler, err := deployhelm.New(deployhelm.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder, ClusterProvider: clusterProvider, ManifestKindsProvider: manifestKinds})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, helmHandler)
+
+	manifestHandler, err := deploykubernetesmanifest.New(deploykubernetesmanifest.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder, ClusterProvider: clusterProvider, ManifestKinds: manifestKinds})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, manifestHandler)
 
 	return &Executor{client: client, l: l, handlers: handlers}, nil
 }
