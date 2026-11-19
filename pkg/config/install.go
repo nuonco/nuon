@@ -277,7 +277,7 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("staging").
 		Example("customer-acme").
 		Field("app_branch").Short("app branch name or ID").
-		Long("App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run. Required when disable-app-sync is enabled for the organization.").
+		Long("App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run.").
 		Example("main").
 		Field("app_branch_group").Short("app branch deployment group").
 		Long("Deployment group this install belongs to within its app branch. This explicit selection takes precedence over label matching.").
