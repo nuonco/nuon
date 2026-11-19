@@ -8,7 +8,6 @@ SELECT
     COALESCE(i.app_config_ref->>'applied_config_id', '') AS applied_config_id,
     COALESCE(conn.app_branch_id, '') AS app_branch_id,
     COALESCE(conn.app_branch_group, '') AS app_branch_group,
-    COALESCE(branch.name, '') AS app_branch_name,
     health.status AS composite_health_status,
     COALESCE(runner.status, 'deprovisioned') AS runner_status
 FROM installs i
@@ -21,9 +20,6 @@ LEFT JOIN LATERAL (
     ORDER BY c.created_at DESC, c.id DESC
     LIMIT 1
 ) conn ON true
-LEFT JOIN app_branches branch
-    ON branch.id = conn.app_branch_id
-   AND branch.deleted_at = 0
 LEFT JOIN LATERAL (
     SELECT
         CASE

@@ -242,6 +242,12 @@ func (i *Install) Indexes(db *gorm.DB) []migrations.Index {
 				"last_health_report_at",
 			},
 		},
+		{
+			Name:         indexes.Name(db, &Install{}, "org_id_app_id"),
+			Columns:      []string{"org_id", "app_id"},
+			Option:       "WHERE deleted_at = 0",
+			Concurrently: true,
+		},
 	}
 }
 

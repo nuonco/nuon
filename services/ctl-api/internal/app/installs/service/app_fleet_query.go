@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -22,6 +23,8 @@ const (
 	fleetRunnerNotActive = "not-active"
 	fleetDefaultPerGroup = 10
 	fleetMaxPerGroup     = 50
+
+	fleetStatementTimeout = "5s"
 )
 
 var (
@@ -202,9 +205,20 @@ func fleetViewName(db *gorm.DB) string {
 	return views.CustomViewName(db, &app.Install{}, "fleet_view_v1")
 }
 
-// fleetRolloutSQL derives each install's rollout from its applied config and
-// the target config for its branch. The target map is passed as one jsonb
-// argument so the branch lookup is a single keyed lookup per row.
+func (s *service) fleetTx(ctx context.Context, fn func(tx *gorm.DB) error) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec(fmt.Sprintf("SET LOCAL statement_timeout = '%s'", fleetStatementTimeout)).Error; err != nil {
+			return fmt.Errorf("unable to set fleet statement timeout: %w", err)
+		}
+		// The per-install laterals push the cost estimate past jit_above_cost, and
+		// compiling costs more than these short index-bound queries take to run.
+		if err := tx.Exec("SET LOCAL jit = off").Error; err != nil {
+			return fmt.Errorf("unable to disable jit for fleet queries: %w", err)
+		}
+		return fn(tx)
+	})
+}
+
 func fleetRolloutSQL(view string) string {
 	return fmt.Sprintf(`SELECT f.*,
 	CASE
@@ -213,11 +227,7 @@ func fleetRolloutSQL(view string) string {
 		ELSE 'behind'
 	END AS rollout
 FROM %s f
-LEFT JOIN LATERAL (
-	SELECT value AS target_config_id
-	FROM jsonb_each_text(?::jsonb)
-	WHERE key = f.app_branch_id
-) t ON true
+CROSS JOIN LATERAL (SELECT (?::jsonb) ->> f.app_branch_id AS target_config_id) t
 WHERE f.org_id = ? AND f.app_id = ?`, view)
 }
 
@@ -231,38 +241,32 @@ func fleetScopedSQL(view, targetsJSON, orgID, appID string, f fleetFilters) (str
 		append(base, args...), nil
 }
 
-type fleetTotalRow struct {
-	AppBranchID    string `gorm:"column:app_branch_id"`
-	AppBranchGroup string `gorm:"column:app_branch_group"`
-	AppBranchName  string `gorm:"column:app_branch_name"`
-	Total          int64  `gorm:"column:total"`
-}
-
-func fleetTotalsSQL(view string) string {
-	return fmt.Sprintf(`SELECT app_branch_id, app_branch_group, MAX(app_branch_name) AS app_branch_name, COUNT(*) AS total
-FROM %s
-WHERE org_id = ? AND app_id = ?
-GROUP BY app_branch_id, app_branch_group`, view)
-}
-
 type fleetCountRow struct {
 	AppBranchID     string `gorm:"column:app_branch_id"`
 	AppBranchGroup  string `gorm:"column:app_branch_group"`
 	Rollout         string `gorm:"column:rollout"`
-	Installs        int64  `gorm:"column:installs"`
+	Total           int64  `gorm:"column:total"`
+	Matched         int64  `gorm:"column:matched"`
 	RunnerNotActive int64  `gorm:"column:runner_not_active"`
 }
 
 func fleetCountsSQL(view, targetsJSON, orgID, appID string, f fleetFilters) (string, []any, error) {
-	scoped, args, err := fleetScopedSQL(view, targetsJSON, orgID, appID, f)
+	where, whereArgs, err := f.where()
 	if err != nil {
 		return "", nil, err
 	}
-	return fmt.Sprintf(`SELECT scoped.app_branch_id, scoped.app_branch_group, scoped.rollout,
-	COUNT(*) AS installs,
-	COUNT(*) FILTER (WHERE scoped.runner_status <> 'active') AS runner_not_active
-FROM (%s) scoped
-GROUP BY scoped.app_branch_id, scoped.app_branch_group, scoped.rollout`, scoped), args, nil
+	sql := fmt.Sprintf(`SELECT fleet.app_branch_id, fleet.app_branch_group, fleet.rollout,
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE %s) AS matched,
+	COUNT(*) FILTER (WHERE (%s) AND fleet.runner_status <> 'active') AS runner_not_active
+FROM (%s) fleet
+GROUP BY fleet.app_branch_id, fleet.app_branch_group, fleet.rollout`, where, where, fleetRolloutSQL(view))
+
+	args := make([]any, 0, len(whereArgs)*2+3)
+	args = append(args, whereArgs...)
+	args = append(args, whereArgs...)
+	args = append(args, targetsJSON, orgID, appID)
+	return sql, args, nil
 }
 
 type fleetInstallRow struct {

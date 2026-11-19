@@ -79,6 +79,20 @@ func (s *InstallsServiceTestSuite) TestGetAppFleetRollout() {
 	assert.Equal(s.T(), int64(1), resp.Summary.Applied)
 	assert.Equal(s.T(), int64(1), resp.Summary.Behind)
 	assert.Equal(s.T(), int64(1), resp.Summary.Unknown)
+
+	rr = s.makeRequest(http.MethodGet, fmt.Sprintf("/v1/apps/%s/fleet?rollout=behind", s.testApp.ID), nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var filtered AppFleetResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &filtered))
+	assert.Equal(s.T(), int64(3), filtered.Summary.Total)
+	assert.Equal(s.T(), int64(1), filtered.Summary.Matched)
+	assert.Equal(s.T(), int64(1), filtered.Summary.Behind)
+	assert.Equal(s.T(), int64(0), filtered.Summary.Applied)
+	require.Len(s.T(), filtered.Branches, 1)
+	require.Len(s.T(), filtered.Branches[0].Groups, 1)
+	require.Len(s.T(), filtered.Branches[0].Groups[0].Installs, 1)
+	assert.Equal(s.T(), behind.ID, filtered.Branches[0].Groups[0].Installs[0].ID)
 }
 
 func (s *InstallsServiceTestSuite) TestGetAppFleetInstallsPaginates() {

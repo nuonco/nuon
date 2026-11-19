@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -126,83 +127,100 @@ func (s *service) GetAppFleet(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
-func (s *service) getAppFleet(ctx *gin.Context, orgID, appID string, f fleetFilters, perGroup int) (*AppFleetResponse, error) {
-	targets, err := s.fleetTargets(ctx, orgID, appID)
+func (s *service) getAppFleet(ctx context.Context, orgID, appID string, f fleetFilters, perGroup int) (*AppFleetResponse, error) {
+	var resp AppFleetResponse
+	err := s.fleetTx(ctx, func(tx *gorm.DB) error {
+		branches, err := loadFleetBranches(tx, orgID, appID)
+		if err != nil {
+			return err
+		}
+		targetsJSON, err := fleetTargetsJSON(branches.targets)
+		if err != nil {
+			return err
+		}
+		configs, err := fleetGroupConfigs(tx, orgID, appID)
+		if err != nil {
+			return err
+		}
+
+		view := fleetViewName(tx)
+
+		countsSQL, countsArgs, err := fleetCountsSQL(view, targetsJSON, orgID, appID, f)
+		if err != nil {
+			return err
+		}
+		var counts []fleetCountRow
+		if err := tx.Raw(countsSQL, countsArgs...).Scan(&counts).Error; err != nil {
+			return fmt.Errorf("unable to count installs: %w", err)
+		}
+
+		topSQL, topArgs, err := fleetTopPerGroupSQL(view, targetsJSON, orgID, appID, f, perGroup)
+		if err != nil {
+			return err
+		}
+		var rows []fleetInstallRow
+		if err := tx.Raw(topSQL, topArgs...).Scan(&rows).Error; err != nil {
+			return fmt.Errorf("unable to list fleet installs: %w", err)
+		}
+
+		resp = buildAppFleet(counts, rows, branches, configs)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	targetsJSON, err := fleetTargetsJSON(targets)
-	if err != nil {
-		return nil, err
-	}
-	configs, err := s.fleetGroupConfigs(ctx, orgID, appID)
-	if err != nil {
-		return nil, err
-	}
-
-	view := fleetViewName(s.db)
-
-	var totals []fleetTotalRow
-	if err := s.db.WithContext(ctx).Raw(fleetTotalsSQL(view), orgID, appID).Scan(&totals).Error; err != nil {
-		return nil, fmt.Errorf("unable to count installs: %w", err)
-	}
-
-	countsSQL, countsArgs, err := fleetCountsSQL(view, targetsJSON, orgID, appID, f)
-	if err != nil {
-		return nil, err
-	}
-	var counts []fleetCountRow
-	if err := s.db.WithContext(ctx).Raw(countsSQL, countsArgs...).Scan(&counts).Error; err != nil {
-		return nil, fmt.Errorf("unable to count matching installs: %w", err)
-	}
-
-	topSQL, topArgs, err := fleetTopPerGroupSQL(view, targetsJSON, orgID, appID, f, perGroup)
-	if err != nil {
-		return nil, err
-	}
-	var rows []fleetInstallRow
-	if err := s.db.WithContext(ctx).Raw(topSQL, topArgs...).Scan(&rows).Error; err != nil {
-		return nil, fmt.Errorf("unable to list fleet installs: %w", err)
-	}
-
-	resp := buildAppFleet(totals, counts, rows, targets, configs)
 	return &resp, nil
 }
 
-type fleetTargetRow struct {
+type fleetBranchRow struct {
 	AppBranchID string `gorm:"column:app_branch_id"`
+	Name        string `gorm:"column:name"`
 	RunID       string `gorm:"column:run_id"`
 	AppConfigID string `gorm:"column:app_config_id"`
 }
 
-func (s *service) fleetTargets(ctx *gin.Context, orgID, appID string) (map[string]AppFleetTargetRun, error) {
-	var rows []fleetTargetRow
-	err := s.db.WithContext(ctx).Raw(`SELECT DISTINCT ON (r.app_branch_id) r.app_branch_id, r.id AS run_id, r.app_config_id
-FROM app_branch_runs r
-WHERE r.org_id = ?
-  AND r.app_config_id <> ''
-  AND r.no_config_changes = false
-  AND r.plan_only = false
-  AND r.run_type IS DISTINCT FROM ?
-  AND r.deleted_at = 0
-  AND NOT EXISTS (
-    SELECT 1 FROM app_branch_run_previews p
-    WHERE p.app_branch_run_id = r.id AND p.deleted_at = 0
-  )
-  AND r.app_branch_id IN (
-    SELECT id FROM app_branches WHERE org_id = ? AND app_id = ? AND deleted_at = 0
-  )
-ORDER BY r.app_branch_id, r.created_at DESC, r.id DESC`,
-		orgID, string(app.AppBranchRunTypeGitPreview), orgID, appID).Scan(&rows).Error
+type fleetBranches struct {
+	names   map[string]string
+	targets map[string]AppFleetTargetRun
+}
+
+func loadFleetBranches(tx *gorm.DB, orgID, appID string) (fleetBranches, error) {
+	var rows []fleetBranchRow
+	err := tx.Raw(`SELECT b.id AS app_branch_id, b.name, COALESCE(r.id, '') AS run_id, COALESCE(r.app_config_id, '') AS app_config_id
+FROM app_branches b
+LEFT JOIN LATERAL (
+  SELECT r.id, r.app_config_id
+  FROM app_branch_runs r
+  WHERE r.app_branch_id = b.id
+    AND r.deleted_at = 0
+    AND r.app_config_id <> ''
+    AND r.no_config_changes = false
+    AND r.plan_only = false
+    AND r.run_type IS DISTINCT FROM ?
+    AND NOT EXISTS (
+      SELECT 1 FROM app_branch_run_previews p
+      WHERE p.app_branch_run_id = r.id AND p.deleted_at = 0
+    )
+  ORDER BY r.created_at DESC, r.id DESC
+  LIMIT 1
+) r ON true
+WHERE b.org_id = ? AND b.app_id = ? AND b.deleted_at = 0`,
+		string(app.AppBranchRunTypeGitPreview), orgID, appID).Scan(&rows).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to get branch target runs: %w", err)
+		return fleetBranches{}, fmt.Errorf("unable to get branch target runs: %w", err)
 	}
 
-	targets := make(map[string]AppFleetTargetRun, len(rows))
-	for _, row := range rows {
-		targets[row.AppBranchID] = AppFleetTargetRun{ID: row.RunID, AppConfigID: row.AppConfigID}
+	out := fleetBranches{
+		names:   make(map[string]string, len(rows)),
+		targets: make(map[string]AppFleetTargetRun, len(rows)),
 	}
-	return targets, nil
+	for _, row := range rows {
+		out.names[row.AppBranchID] = row.Name
+		if row.RunID != "" {
+			out.targets[row.AppBranchID] = AppFleetTargetRun{ID: row.RunID, AppConfigID: row.AppConfigID}
+		}
+	}
+	return out, nil
 }
 
 func fleetTargetsJSON(targets map[string]AppFleetTargetRun) (string, error) {
@@ -222,24 +240,31 @@ type fleetGroupConfig struct {
 	matchLabels labels.Labels
 }
 
-func (s *service) fleetGroupConfigs(ctx *gin.Context, orgID, appID string) (map[string]map[string]fleetGroupConfig, error) {
-	branches := s.db.WithContext(ctx).
-		Model(&app.AppBranch{}).
-		Select("id").
-		Where("org_id = ? AND app_id = ?", orgID, appID)
-
-	latest := s.db.WithContext(ctx).
-		Model(&app.AppBranchConfig{}).
-		Select("DISTINCT ON (app_branch_id) id").
-		Where("org_id = ? AND app_branch_id IN (?)", orgID, branches).
-		Order("app_branch_id, created_at DESC")
+func fleetGroupConfigs(tx *gorm.DB, orgID, appID string) (map[string]map[string]fleetGroupConfig, error) {
+	var latestIDs []string
+	err := tx.Raw(`SELECT c.id
+FROM app_branches b
+CROSS JOIN LATERAL (
+  SELECT c.id
+  FROM app_branch_configs c
+  WHERE c.app_branch_id = b.id AND c.deleted_at = 0
+  ORDER BY c.created_at DESC, c.id DESC
+  LIMIT 1
+) c
+WHERE b.org_id = ? AND b.app_id = ? AND b.deleted_at = 0`, orgID, appID).Scan(&latestIDs).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to get latest branch configs: %w", err)
+	}
+	if len(latestIDs) == 0 {
+		return map[string]map[string]fleetGroupConfig{}, nil
+	}
 
 	var configs []app.AppBranchConfig
-	err := s.db.WithContext(ctx).
+	err = tx.
 		Preload("InstallGroups", func(db *gorm.DB) *gorm.DB {
 			return db.Order("\"order\" ASC")
 		}).
-		Where("id IN (?)", latest).
+		Where("id IN ?", latestIDs).
 		Find(&configs).Error
 	if err != nil {
 		return nil, fmt.Errorf("unable to get branch install groups: %w", err)
@@ -304,10 +329,9 @@ func (c *AppFleetCounts) addMatched(rollout string, n int64) {
 }
 
 func buildAppFleet(
-	totals []fleetTotalRow,
 	counts []fleetCountRow,
 	rows []fleetInstallRow,
-	targets map[string]AppFleetTargetRun,
+	branches fleetBranches,
 	configs map[string]map[string]fleetGroupConfig,
 ) AppFleetResponse {
 	b := &fleetBuilder{
@@ -315,18 +339,14 @@ func buildAppFleet(
 		groups:   map[fleetGroupKey]*AppFleetGroup{},
 	}
 
-	for _, t := range totals {
-		branch, g := b.ensure(t.AppBranchID, t.AppBranchGroup, t.AppBranchName)
-		g.Counts.Total += t.Total
-		branch.Counts.Total += t.Total
-		b.summary.Total += t.Total
-	}
-
 	for _, c := range counts {
-		branch, g := b.ensure(c.AppBranchID, c.AppBranchGroup, "")
-		g.Counts.addMatched(c.Rollout, c.Installs)
-		branch.Counts.addMatched(c.Rollout, c.Installs)
-		b.summary.addMatched(c.Rollout, c.Installs)
+		branch, g := b.ensure(c.AppBranchID, c.AppBranchGroup, branches.names[c.AppBranchID])
+		g.Counts.Total += c.Total
+		branch.Counts.Total += c.Total
+		b.summary.Total += c.Total
+		g.Counts.addMatched(c.Rollout, c.Matched)
+		branch.Counts.addMatched(c.Rollout, c.Matched)
+		b.summary.addMatched(c.Rollout, c.Matched)
 		b.summary.RunnerNotActive += c.RunnerNotActive
 	}
 
@@ -344,21 +364,21 @@ func buildAppFleet(
 		}
 	}
 
-	branches := make([]*AppFleetBranch, 0, len(b.branches))
+	out := make([]*AppFleetBranch, 0, len(b.branches))
 	for key, branch := range b.branches {
-		if target, ok := targets[key]; ok {
+		if target, ok := branches.targets[key]; ok {
 			branch.TargetRun = &target
 		}
 		sort.SliceStable(branch.Groups, func(i, j int) bool {
 			return fleetGroupLess(branch.Groups[i], branch.Groups[j])
 		})
-		branches = append(branches, branch)
+		out = append(out, branch)
 	}
-	sort.SliceStable(branches, func(i, j int) bool {
-		return fleetBranchLess(branches[i], branches[j])
+	sort.SliceStable(out, func(i, j int) bool {
+		return fleetBranchLess(out[i], out[j])
 	})
 
-	return AppFleetResponse{Summary: b.summary, Branches: branches}
+	return AppFleetResponse{Summary: b.summary, Branches: out}
 }
 
 func (s *AppFleetSummary) addMatched(rollout string, n int64) {
