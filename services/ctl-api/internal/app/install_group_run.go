@@ -20,6 +20,7 @@ import (
 const (
 	InstallGroupRunPhaseDeploy  = "deploy"
 	InstallGroupRunPhaseRunbook = "runbook"
+	InstallGroupRunPhaseDesired = "desired"
 )
 
 type InstallGroupRunInstall struct {
@@ -36,7 +37,8 @@ type InstallGroupRunInstall struct {
 	// SupersededByRunID is the later app branch run that cancelled this one.
 	SupersededByRunID string `json:"superseded_by_run_id,omitempty"`
 
-	// Phase is which stage of the group the install is in: "deploy" or "runbook".
+	// Phase is which stage of the group the install is in: "deploy", "desired",
+	// or "runbook".
 	Phase    string                   `json:"phase,omitempty"`
 	Runbooks []InstallGroupRunRunbook `json:"runbooks,omitempty"`
 }
