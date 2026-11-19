@@ -6,18 +6,22 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import type { TApp, TCloudPlatform } from '@/types'
 
 export type TAppRow = {
   actionHref: string
   appId: string
   configVersion: number
+  createdAt?: string
   defaultBranch: string
+  description?: string
   name: string
   nameHref: string
   platform: string
   sandboxHref: string
   sandboxName: string
+  updatedAt?: string
 }
 
 export function parseAppsToTableData(apps: TApp[], orgId: string): TAppRow[] {
@@ -28,6 +32,7 @@ export function parseAppsToTableData(apps: TApp[], orgId: string): TAppRow[] {
       actionHref: `/${orgId}/apps/${app.id}`,
       appId: app.id,
       configVersion: app?.app_configs?.length,
+      createdAt: app?.created_at,
       defaultBranch: app?.config_repo || 'main',
       name: app.name,
       nameHref: `/${orgId}/apps/${app.id}`,
@@ -36,6 +41,8 @@ export function parseAppsToTableData(apps: TApp[], orgId: string): TAppRow[] {
         ? `https://github.com/${sandbox?.repo}`
         : undefined,
       sandboxName: sandbox?.repo,
+      description: app?.description,
+      updatedAt: app?.updated_at,
     }
   })
 }
@@ -61,7 +68,7 @@ const columns: ColumnDef<TAppRow>[] = [
     header: 'Config version',
     cell: (info) => (
       <Text family="mono" theme="neutral">
-        {info.getValue<number>() === 0 ? "No config" : info.getValue<number>()}
+        {info.getValue<number>() === 0 ? 'No config' : info.getValue<number>()}
       </Text>
     ),
     enableSorting: true,
@@ -72,7 +79,11 @@ const columns: ColumnDef<TAppRow>[] = [
     cell: (info) =>
       info.row.original.sandboxHref ? (
         <Text>
-          <Link href={info.row.original.sandboxHref} isExternal variant="inline">
+          <Link
+            href={info.row.original.sandboxHref}
+            isExternal
+            variant="inline"
+          >
             {info.getValue() as string}
           </Link>
         </Text>
@@ -95,12 +106,62 @@ const columns: ColumnDef<TAppRow>[] = [
   },
   {
     enableSorting: false,
+    accessorKey: 'description',
+    header: 'Description',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Text variant="subtext" theme="neutral">
+          {info.getValue() as string}
+        </Text>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Created',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          time={info.getValue() as string}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+    enableSorting: true,
+  },
+  {
+    accessorKey: 'updatedAt',
+    header: 'Updated',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          time={info.getValue() as string}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+    enableSorting: true,
+  },
+  {
+    enableSorting: false,
     accessorKey: 'actionHref',
     id: 'action',
     header: '',
     cell: (info) => (
       <Text>
-        <Link className="text-left" href={info.getValue() as string} variant="inline">
+        <Link
+          className="text-left"
+          href={info.getValue() as string}
+          variant="inline"
+        >
           View app
         </Link>
       </Text>
@@ -125,6 +186,7 @@ export const AppsTable = ({
 }: IAppsTable) => {
   return (
     <Table<TAppRow>
+      tableId="apps"
       data={data}
       columns={columns}
       isLoading={isLoading}

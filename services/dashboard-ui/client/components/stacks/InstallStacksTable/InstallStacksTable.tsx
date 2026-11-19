@@ -46,6 +46,17 @@ export const InstallStacksTable = ({
         ),
       },
       {
+        accessorKey: 'stack_name',
+        header: 'Stack name',
+        enableSorting: false,
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <Text family="mono" variant="subtext">
+            {row.original?.stack_name || '—'}
+          </Text>
+        ),
+      },
+      {
         accessorKey: 'composite_status.status',
         header: 'Status',
         enableSorting: false,
@@ -101,6 +112,7 @@ export const InstallStacksTable = ({
 
   return (
     <Table<TStackVersion>
+      tableId="install-stacks"
       columns={columns}
       data={versions ?? []}
       enableSearch={false}

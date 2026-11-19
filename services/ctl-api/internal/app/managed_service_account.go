@@ -18,6 +18,8 @@ const (
 	ManagedServiceAccountPurposeTelemetryCollector ManagedServiceAccountPurpose = "telemetry_collector"
 	ManagedServiceAccountPurposePhoneHome          ManagedServiceAccountPurpose = "phone_home"
 	ManagedServiceAccountPurposeRunnerJob          ManagedServiceAccountPurpose = "runner_job"
+	ManagedServiceAccountPurposeRunner             ManagedServiceAccountPurpose = "runner"
+	ManagedServiceAccountPurposeLogStream          ManagedServiceAccountPurpose = "log_stream"
 )
 
 type ManagedServiceAccount struct {

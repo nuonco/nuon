@@ -7,6 +7,7 @@ import { Link } from '@/components/common/Link'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { ListPage } from '@/components/layout/ListPage'
 import type { TAPIError, TCloudConnectionSummary } from '@/types'
@@ -117,6 +118,69 @@ export const ConnectionsList = ({
         header: 'Status',
         cell: ({ row }) => <ConnectionStatus connection={row.original} />,
       },
+      {
+        accessorKey: 'principal',
+        header: 'Principal',
+        enableSorting: false,
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <Text family="mono" variant="subtext" className="break-all">
+            {row.original.principal || '—'}
+          </Text>
+        ),
+      },
+      {
+        id: 'used_by',
+        accessorFn: (connection) => connection.used_by?.installs ?? 0,
+        header: 'Used by',
+        meta: { defaultHidden: true },
+        cell: ({ row }) => {
+          const installs = row.original.used_by?.installs ?? 0
+          const repositories = row.original.used_by?.image_repositories ?? 0
+          return (
+            <div className="flex flex-col gap-1">
+              <Text variant="subtext">
+                {installs} install{installs === 1 ? '' : 's'}
+              </Text>
+              {repositories ? (
+                <Text variant="subtext" theme="neutral">
+                  {repositories} image repositor
+                  {repositories === 1 ? 'y' : 'ies'}
+                </Text>
+              ) : null}
+            </div>
+          )
+        },
+      },
+      {
+        accessorKey: 'last_verified_at',
+        header: 'Last verified',
+        meta: { defaultHidden: true },
+        cell: ({ row }) =>
+          row.original.last_verified_at ? (
+            <Time
+              time={row.original.last_verified_at}
+              format="relative"
+              variant="subtext"
+            />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              Never
+            </Text>
+          ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created',
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <Time
+            time={row.original.created_at}
+            format="relative"
+            variant="subtext"
+          />
+        ),
+      },
     ],
     [orgId]
   )
@@ -135,6 +199,7 @@ export const ConnectionsList = ({
         fallback="Cloud connections failed to load"
       />
       <Table
+        tableId="cloud-connections"
         columns={columns}
         data={connections}
         isLoading={isLoading}

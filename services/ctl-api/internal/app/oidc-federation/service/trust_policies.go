@@ -8,10 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -160,14 +157,7 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 		TokenDurationSeconds: duration,
 	}
 
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		acct, err := s.createPolicyServiceAccount(tx, org.ID, role)
-		if err != nil {
-			return err
-		}
-		policy.ServiceAccountID = acct.ID
-		return tx.Create(&policy).Error
-	})
+	err = account.New(account.Params{DB: s.db}).CreateTrustPolicy(ctx, &policy)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create trust policy: %w", err))
 		return
@@ -268,12 +258,10 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	disabling := false
 	if req.Name != "" {
 		policy.Name = req.Name
 	}
 	if req.Enabled != nil {
-		disabling = policy.Enabled && !*req.Enabled
 		policy.Enabled = *req.Enabled
 	}
 	if req.IssuerURL != "" {
@@ -306,30 +294,16 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 		policy.TokenDurationSeconds = duration
 	}
 
-	var roleChange app.RoleType
 	if req.Role != "" && req.Role != policy.Role {
 		role, err := s.resolveTrustPolicyRole(ctx, org.ID, req.Role)
 		if err != nil {
 			ctx.Error(stderr.NewInvalidRequest(err))
 			return
 		}
-		roleChange = role
 		policy.Role = string(role)
 	}
 
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if roleChange != "" {
-			if err := s.setAccountOrgRole(tx, org.ID, policy.ServiceAccountID, roleChange); err != nil {
-				return fmt.Errorf("unable to update service account role: %w", err)
-			}
-		}
-		if disabling {
-			if err := account.RevokeDerivedCredentials(tx, app.TokenSourceTypeOIDCTrustPolicy, []string{policy.ID}); err != nil {
-				return fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
-			}
-		}
-		return tx.Save(policy).Error
-	})
+	err = account.New(account.Params{DB: s.db}).UpdateTrustPolicy(ctx, policy)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update trust policy: %w", err))
 		return
@@ -363,15 +337,7 @@ func (s *service) DeleteOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(policy).Error; err != nil {
-			return err
-		}
-		if err := account.RevokeDerivedCredentials(tx, app.TokenSourceTypeOIDCTrustPolicy, []string{policy.ID}); err != nil {
-			return fmt.Errorf("unable to revoke tokens issued under this policy: %w", err)
-		}
-		return s.deletePolicyServiceAccount(tx, org.ID, policy.ServiceAccountID)
-	})
+	err = account.New(account.Params{DB: s.db}).DeleteTrustPolicy(ctx, org.ID, policy.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to delete trust policy: %w", err))
 		return
@@ -444,68 +410,4 @@ func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
 		}
 	}
 	return false
-}
-
-func (s *service) createPolicyServiceAccount(tx *gorm.DB, orgID string, roleType app.RoleType) (*app.Account, error) {
-	name := fmt.Sprintf("%s-oidc-%s", orgID, domains.NewAccountID())
-
-	newAcct := app.Account{
-		Email:       account.ServiceAccountEmail(name),
-		Subject:     name,
-		AccountType: app.AccountTypeService,
-	}
-	if err := tx.Create(&newAcct).Error; err != nil {
-		return nil, fmt.Errorf("unable to create service account: %w", err)
-	}
-
-	if err := s.setAccountOrgRole(tx, orgID, newAcct.ID, roleType); err != nil {
-		return nil, fmt.Errorf("unable to add org role to service account: %w", err)
-	}
-
-	return &newAcct, nil
-}
-
-func (s *service) deletePolicyServiceAccount(tx *gorm.DB, orgID, accountID string) error {
-	if err := tx.Unscoped().
-		Where(app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: accountID}).
-		Delete(&app.AccountRole{}).Error; err != nil {
-		return fmt.Errorf("unable to remove service account roles: %w", err)
-	}
-
-	if err := tx.
-		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).
-		Delete(&app.Account{}).Error; err != nil {
-		return fmt.Errorf("unable to delete service account: %w", err)
-	}
-
-	return nil
-}
-
-// setAccountOrgRole replaces the account's roles in the org. It writes through
-// the caller's transaction, unlike authz.Client.SetAccountOrgRole which opens
-// its own.
-func (s *service) setAccountOrgRole(tx *gorm.DB, orgID, accountID string, roleType app.RoleType) error {
-	var role app.Role
-	if err := tx.
-		Where(app.Role{OrgID: generics.NewNullString(orgID), RoleType: roleType}).
-		First(&role).Error; err != nil {
-		return fmt.Errorf("unable to find role: %w", err)
-	}
-
-	if err := tx.Unscoped().
-		Where(app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: accountID}).
-		Delete(&app.AccountRole{}).Error; err != nil {
-		return fmt.Errorf("unable to remove existing roles: %w", err)
-	}
-
-	acctRole := &app.AccountRole{
-		OrgID:     generics.NewNullString(orgID),
-		RoleID:    role.ID,
-		AccountID: accountID,
-	}
-	if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&acctRole).Error; err != nil {
-		return fmt.Errorf("unable to add role: %w", err)
-	}
-
-	return nil
 }

@@ -2272,7 +2272,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+     * @description Returns branch tracking, config drift, and per-resource alignment for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
      */
     get: operations["GetInstallOverview"];
   };
@@ -2291,20 +2291,6 @@ export interface paths {
      * inputs and component outputs.
      */
     get: operations["GetInstallReadme"];
-  };
-  "/v1/installs/{install_id}/reconcile": {
-    /**
-     * reconcile an install onto its app branch
-     * @description Starts the workflow that brings the install onto its app branch's latest deployable config. expected_app_config_id is the config the caller reviewed; the request fails with 409 when the branch has since moved to another config, when the install is blocked, or when it has no deployable target. When the install already runs the target config, or a workflow is already rolling it out, nothing is created and the current state is returned with 200. plan_only runs the workflow without applying it. Requires the install-reconciliation org feature.
-     */
-    post: operations["ReconcileInstall"];
-  };
-  "/v1/installs/{install_id}/reconciliation": {
-    /**
-     * install reconciliation state
-     * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. pinned is the install's selected app config, which is the config a reconcile diffs from. status is current when the install already runs the target, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the pinned config and the target. Requires the install-reconciliation org feature.
-     */
-    get: operations["GetInstallReconciliation"];
   };
   "/v1/installs/{install_id}/reprovision": {
     /**
@@ -3905,6 +3891,7 @@ export interface components {
       created_by_id?: string;
       description?: string;
       display_name?: string;
+      eks_access?: components["schemas"]["app.AppAWSIAMRoleEKSAccess"];
       enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
       name?: string;
@@ -3922,6 +3909,16 @@ export interface components {
       policies?: components["schemas"]["app.AppAWSIAMPolicyConfig"][];
       type?: components["schemas"]["app.AWSIAMRoleType"];
       updated_at?: string;
+    };
+    "app.AppAWSIAMRoleEKSAccess": {
+      cluster_name?: string;
+      kubernetes_groups?: string[];
+      policies?: components["schemas"]["app.AppAWSIAMRoleEKSAccessPolicy"][];
+    };
+    "app.AppAWSIAMRoleEKSAccessPolicy": {
+      access_scope?: string;
+      namespaces?: string[];
+      policy_arn?: string;
     };
     "app.AppBranch": {
       app_id?: string;
@@ -5568,7 +5565,10 @@ export interface components {
     };
     "app.InstallGroupRunInstall": {
       install_id?: string;
-      /** @description Phase is which stage of the group the install is in: "deploy" or "runbook". */
+      /**
+       * @description Phase is which stage of the group the install is in: "deploy", "desired",
+       * or "runbook".
+       */
       phase?: string;
       /** @description ReleaseReason is why the group stopped waiting on this install. */
       release_reason?: string;
@@ -5957,7 +5957,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home" | "runner_job";
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home" | "runner_job" | "runner" | "log_stream";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6471,7 +6471,7 @@ export interface components {
       version?: number;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_identity" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -6601,7 +6601,7 @@ export interface components {
     };
     "app.RunnerGroupSettings": {
       /** @enum {string} */
-      aws_auth_method?: "iid" | "sts";
+      aws_auth_method?: "iid" | "sts" | "sts-bound" | "sts-vendor";
       aws_cloudformation_stack_type?: string;
       /** @description aws runner specifics runner-v2 */
       aws_instance_type?: string;
@@ -8422,6 +8422,7 @@ export interface components {
       cloud_platform?: "aws" | "gcp" | "azure";
       description: string;
       display_name: string;
+      eks_access?: components["schemas"]["app.AppAWSIAMRoleEKSAccess"];
       enabled_in_stack?: boolean | null;
       name: string;
       named_policy_names?: string[];
@@ -9963,6 +9964,7 @@ export interface components {
       created_by_id?: string;
       description?: string;
       display_name?: string;
+      eks_access?: components["schemas"]["app.AppAWSIAMRoleEKSAccess"];
       enabled?: boolean;
       enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
@@ -9984,32 +9986,6 @@ export interface components {
     };
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
-    };
-    "service.InstallReconciliationBlocker": {
-      code?: string;
-      message?: string;
-      workflow_id?: string;
-    };
-    "service.InstallReconciliationConfig": {
-      app_branch_run_id?: string;
-      app_config_id?: string;
-      commit?: components["schemas"]["service.InstallOverviewCommit"];
-      version?: number;
-    };
-    "service.InstallReconciliationResponse": {
-      app_branch_id?: string;
-      app_branch_name?: string;
-      applied?: components["schemas"]["service.InstallReconciliationConfig"];
-      blockers?: components["schemas"]["service.InstallReconciliationBlocker"][];
-      in_flight_workflow_id?: string;
-      install_group_id?: string;
-      install_group_name?: string;
-      pinned?: components["schemas"]["service.InstallReconciliationConfig"];
-      skipped_run_count?: number;
-      skipped_runs?: components["schemas"]["service.InstallOverviewCommit"][];
-      /** @enum {string} */
-      status?: "current" | "behind" | "in_progress" | "blocked";
-      target?: components["schemas"]["service.InstallReconciliationConfig"];
     };
     "service.InstallStackUpdate": {
       input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
@@ -10210,15 +10186,6 @@ export interface components {
       original?: string;
       readme?: string;
       warnings?: string[];
-    };
-    "service.ReconcileInstallRequest": {
-      expected_app_config_id: string;
-      plan_only?: boolean;
-    };
-    "service.ReconcileInstallResponse": {
-      install_app_config_version_id?: string;
-      reconciliation?: components["schemas"]["service.InstallReconciliationResponse"];
-      workflow_id?: string;
     };
     "service.RecoverInstallComponentHelmReleaseRequest": {
       request_id?: string;
@@ -10598,7 +10565,7 @@ export interface components {
     };
     "service.UpdateRunnerSettingsRequest": {
       /** @enum {string} */
-      aws_auth_method?: "iid" | "sts";
+      aws_auth_method?: "iid" | "sts" | "sts-bound" | "sts-vendor";
       /** @description Deprecated: no longer used. Instance refresh is handled by a backend cron. */
       aws_max_instance_lifetime?: number;
       binary_version?: string;
@@ -27492,7 +27459,7 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+   * @description Returns branch tracking, config drift, and per-resource alignment for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
    */
   GetInstallOverview: {
     parameters: {
@@ -27626,124 +27593,6 @@ export interface operations {
       206: {
         content: {
           "application/json": components["schemas"]["service.Readme"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * reconcile an install onto its app branch
-   * @description Starts the workflow that brings the install onto its app branch's latest deployable config. expected_app_config_id is the config the caller reviewed; the request fails with 409 when the branch has since moved to another config, when the install is blocked, or when it has no deployable target. When the install already runs the target config, or a workflow is already rolling it out, nothing is created and the current state is returned with 200. plan_only runs the workflow without applying it. Requires the install-reconciliation org feature.
-   */
-  ReconcileInstall: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.ReconcileInstallRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["service.ReconcileInstallResponse"];
-        };
-      };
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["service.ReconcileInstallResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * install reconciliation state
-   * @description Reports whether the install runs its app branch's latest deployable config and what reconciling it would do. The target is the newest completed, non-preview branch run, the same one moving an install to a branch resolves. pinned is the install's selected app config, which is the config a reconcile diffs from. status is current when the install already runs the target, in_progress when a workflow is already rolling it out, blocked when something prevents a reconcile, and behind otherwise. skipped_runs lists the branch runs between the pinned config and the target. Requires the install-reconciliation org feature.
-   */
-  GetInstallReconciliation: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["service.InstallReconciliationResponse"];
         };
       };
       /** @description Bad Request */
