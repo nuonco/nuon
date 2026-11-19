@@ -31,9 +31,6 @@ import (
 )
 
 const SignalType signal.SignalType = "install-action-workflow-run"
-const runbookEventOutputsVersion = "runbook-event-outputs-v1"
-const preparationCompositeErrorVersion = "action-preparation-composite-error-v1"
-const actionImageDepSyncVersion = "action-image-dep-sync-v1"
 
 type Signal struct {
 	signal.LifecycleBase
@@ -179,7 +176,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create action workflow run")
 	}
-	if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if s.TriggeredByType == "runbook" {
 		if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: actionWorkflowRun.ID}); err != nil {
 			return errors.Wrap(err, "unable to render runbook event outputs")
 		}
@@ -215,7 +212,7 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 	l.Info("executing adhoc action workflow run signal",
 		zap.String("adhoc_action_run_id", s.AdhocActionRunID))
 
-	if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if s.TriggeredByType == "runbook" {
 		if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: s.AdhocActionRunID}); err != nil {
 			return errors.Wrap(err, "unable to render runbook event outputs")
 		}
@@ -259,13 +256,10 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
-	preparationCompositeErrorsEnabled := workflow.GetVersion(ctx, preparationCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if preparationCompositeErrorsEnabled {
-		if err := activities.AwaitSetActionWorkflowRunPreparationCompositeError(ctx, activities.SetActionWorkflowRunPreparationCompositeErrorRequest{
-			RunID: run.ID,
-		}); err != nil {
-			l.Warn("unable to clear action workflow run preparation composite error", zap.Error(err))
-		}
+	if err := activities.AwaitSetActionWorkflowRunPreparationCompositeError(ctx, activities.SetActionWorkflowRunPreparationCompositeErrorRequest{
+		RunID: run.ID,
+	}); err != nil {
+		l.Warn("unable to clear action workflow run preparation composite error", zap.Error(err))
 	}
 
 	parentLS, _ := cctx.GetLogStreamWorkflow(ctx)
@@ -303,14 +297,10 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		return errors.Wrap(err, "unable to get log stream")
 	}
 
-	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		if err := s.syncActionImageDeps(ctx, run, ls.ID); err != nil {
-			if preparationCompositeErrorsEnabled {
-				s.recordPreparationCompositeError(ctx, run.ID, err)
-			}
-			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to sync action image dependencies")
-			return errors.Wrap(err, "unable to sync action image dependencies")
-		}
+	if err := s.syncActionImageDeps(ctx, run, ls.ID); err != nil {
+		s.recordPreparationCompositeError(ctx, run.ID, err)
+		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to sync action image dependencies")
+		return errors.Wrap(err, "unable to sync action image dependencies")
 	}
 
 	l.Info("creating plan for executing action run")
@@ -320,9 +310,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		if preparationCompositeErrorsEnabled {
-			s.recordPreparationCompositeError(ctx, run.ID, err)
-		}
+		s.recordPreparationCompositeError(ctx, run.ID, err)
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
 		return errors.Wrap(err, "unable to create plan")
 	}
@@ -358,9 +346,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		},
 	})
 	if err != nil {
-		if preparationCompositeErrorsEnabled {
-			s.recordPreparationCompositeError(ctx, run.ID, err)
-		}
+		s.recordPreparationCompositeError(ctx, run.ID, err)
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to create runner job")
 	}
@@ -369,9 +355,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	// save runner job plan
 	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
-		if preparationCompositeErrorsEnabled {
-			s.recordPreparationCompositeError(ctx, run.ID, err)
-		}
+		s.recordPreparationCompositeError(ctx, run.ID, err)
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
@@ -381,9 +365,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		PlanJSON:      string(planJSON),
 		CompositePlan: plantypes.CompositePlan{ActionWorkflowRunPlan: planResponse.Plan},
 	}); err != nil {
-		if preparationCompositeErrorsEnabled {
-			s.recordPreparationCompositeError(ctx, run.ID, err)
-		}
+		s.recordPreparationCompositeError(ctx, run.ID, err)
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
 	}
@@ -393,9 +375,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		RunnerJobID:   runnerJob.ID,
 		RoleSelection: planResponse.RoleSelection,
 	}); err != nil {
-		if preparationCompositeErrorsEnabled {
-			s.recordPreparationCompositeError(ctx, run.ID, err)
-		}
+		s.recordPreparationCompositeError(ctx, run.ID, err)
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to record install role usage")
 		return errors.Wrap(err, "unable to record install role usage")
 	}
@@ -539,17 +519,15 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	}
 	awPlan.ImageDigestRef = digestRef
 
-	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		// One attempt: retried runs that re-mirror hit a unique owner key.
-		if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
-			OwnerID:   run.ID,
-			OwnerType: "install_action_workflow_runs",
-			Outputs:   outputs,
-		}, &workflow.ActivityOptions{
-			RetryPolicy: &temporal.RetryPolicy{MaximumAttempts: 1},
-		}); err != nil {
-			l.Warn("unable to record mirrored action image artifact", zap.Error(err))
-		}
+	// One attempt: retried runs that re-mirror hit a unique owner key.
+	if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
+		OwnerID:   run.ID,
+		OwnerType: "install_action_workflow_runs",
+		Outputs:   outputs,
+	}, &workflow.ActivityOptions{
+		RetryPolicy: &temporal.RetryPolicy{MaximumAttempts: 1},
+	}); err != nil {
+		l.Warn("unable to record mirrored action image artifact", zap.Error(err))
 	}
 
 	l.Info("bound image-backed action to mirrored manifest",

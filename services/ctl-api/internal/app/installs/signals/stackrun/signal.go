@@ -141,18 +141,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.handleProvisionComplete(ctx, install, version, l)
 		s.propagateToNewerVersion(ctx, install, version, l)
 	} else {
-		var installState *pkgstate.State
-		var err error
-		if workflow.GetVersion(ctx, "stackrun-fresh-install-state", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-			installState, err = activities.AwaitGetLatestInstallStateByInstallID(ctx, install.ID)
-		} else {
-			installState, err = activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
-			if err != nil {
-				return errors.Wrap(err, "unable to get fresh install state for role name rendering")
-			}
-		}
+		installState, err := activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
 		if err != nil {
-			l.Warn("unable to get install state for role name rendering", zap.Error(err))
+			return errors.Wrap(err, "unable to get fresh install state for role name rendering")
 		}
 		diffAndEnqueueRoleChanges(ctx, install.ID, beforeRoles, afterRoles, installState, l)
 	}
@@ -425,7 +416,7 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
-	if installStackOutputs.AWSStackOutputs != nil && workflow.GetVersion(ctx, "update-runner-cloud-identity-role", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if installStackOutputs.AWSStackOutputs != nil {
 		update, err := activities.AwaitUpdateRunnerCloudIdentityRole(ctx, &activities.UpdateRunnerCloudIdentityRole{
 			RunnerID:         install.RunnerID,
 			RunnerIAMRoleARN: runnerIAMRoleARN,

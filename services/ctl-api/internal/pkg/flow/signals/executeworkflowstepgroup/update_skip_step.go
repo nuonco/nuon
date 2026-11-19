@@ -131,12 +131,8 @@ func SkipSettledStep(ctx workflow.Context, step *app.WorkflowStep) error {
 	return nil
 }
 
-// NotifyOnSkip runs a signal's OnSkip hook. The version gate keeps replays of
-// skips that completed before the hook was called from scheduling new work.
+// NotifyOnSkip runs a signal's OnSkip hook.
 func NotifyOnSkip(ctx workflow.Context, step *app.WorkflowStep) {
-	if workflow.GetVersion(ctx, "skip-notifies-signal-on-skip-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return
-	}
 	if step == nil || step.QueueSignal == nil || step.QueueSignal.Signal == nil {
 		return
 	}

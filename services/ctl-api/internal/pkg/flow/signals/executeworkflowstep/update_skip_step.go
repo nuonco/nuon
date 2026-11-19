@@ -26,10 +26,6 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		},
 	})
 
-	if workflow.GetVersion(ctx, "preserve-group-skip-directive-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		_ = setResultDirective(ctx, s.StepID, DirectiveContinue)
-	}
-
 	// Unblock handleStepError's Await.
 	s.skipped = true
 

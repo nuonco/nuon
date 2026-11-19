@@ -254,8 +254,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	cb := callback.New(ctx, step.ID)
 	dedupeKey := fmt.Sprintf("workflow-step:%s:retry:%d:group-retry:%d", step.ID, step.RetryIndex, step.GroupRetryIdx)
-	if driftresolution.ApplyTarget(flw, step) != nil &&
-		workflow.GetVersion(ctx, "resolve-drift-apply-admission-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if driftresolution.ApplyTarget(flw, step) != nil {
 		if err := activities.AwaitAdmitResolveDriftApplyByStepID(ctx, step.ID); err != nil {
 			return err
 		}
