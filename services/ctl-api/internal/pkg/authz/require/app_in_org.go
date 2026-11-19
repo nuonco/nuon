@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -36,19 +36,13 @@ func AppInOrg(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		var n int64
-		err = db.WithContext(ctx.Request.Context()).
-			Model(&app.App{}).
-			Where("org_id = ?", orgID).
-			Where("id = ? OR name = ?", appID, appID).
-			Limit(1).
-			Count(&n).Error
-		if err != nil {
+		a, err := applookup.ByRef(ctx.Request.Context(), db, orgID, appID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.Error(fmt.Errorf("unable to authorize app: %w", err))
 			ctx.Abort()
 			return
 		}
-		if n < 1 {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			cctx.GetLogger(ctx, zap.NewNop()).Info("route authorization denied",
 				zap.String("route", ctx.FullPath()),
 				zap.Error(fmt.Errorf("app %s is not in org %s", appID, orgID)),
@@ -61,6 +55,7 @@ func AppInOrg(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
+		cctx.SetResolvedAppGinContext(ctx, appID, a)
 		ctx.Next()
 	}
 }
