@@ -33,6 +33,11 @@ const (
 	// heartbeats or health checks, but this is intentional and not an error.
 	RunnerStatusDisabled RunnerStatus = "disabled"
 
+	// RunnerStatusNotUsed is set when the install stack was applied with
+	// use_runner = false. Unlike disabled, the install is not frozen: its jobs
+	// run on control-plane install workers instead of a runner.
+	RunnerStatusNotUsed RunnerStatus = "not-used"
+
 	RunnerStatusUnknown RunnerStatus = "unknown"
 )
 

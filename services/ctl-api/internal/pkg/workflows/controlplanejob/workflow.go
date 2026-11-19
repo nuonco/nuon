@@ -11,12 +11,26 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-const TaskQueue = "control-plane-builds"
+const (
+	TaskQueue         = "control-plane-builds"
+	TaskQueueInstalls = "control-plane-installs"
+)
 
 type Workflows struct{}
 
 type ExecuteRequest struct {
 	JobID string `json:"job_id" validate:"required"`
+
+	// TaskQueue is where RunJob is scheduled. Empty means the build queue, which
+	// is what every request before install jobs used.
+	TaskQueue string `json:"task_queue,omitempty"`
+}
+
+func (r *ExecuteRequest) taskQueue() string {
+	if r.TaskQueue == "" {
+		return TaskQueue
+	}
+	return r.TaskQueue
 }
 
 func NewWorkflows() *Workflows { return &Workflows{} }
@@ -32,7 +46,7 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 	}
 
 	runCtx := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		TaskQueue:           TaskQueue,
+		TaskQueue:           req.taskQueue(),
 		StartToCloseTimeout: execution.JobExecutionTimeout,
 		HeartbeatTimeout:    30 * time.Second,
 		WaitForCancellation: true,

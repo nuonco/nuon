@@ -48,7 +48,14 @@ type InstallConfig struct {
 	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" gorm:"default null" temporaljson:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID            *string                               `json:"runner_image_id,omitempty" gorm:"default null" temporaljson:"runner_image_id,omitempty"`
 	ActionTimeout            *time.Duration                        `json:"action_timeout,omitempty" gorm:"default null" swaggertype:"primitive,integer" temporaljson:"action_timeout,omitempty" extensions:"x-nullable"`
+	// UseRunner is the desired runner mode; nil means true. The runner's status
+	// (not-used) reflects what the applied stack actually has.
+	UseRunner *bool `json:"use_runner" gorm:"default null" temporaljson:"use_runner,omitempty" extensions:"x-nullable"`
 	labels.Labeled
+}
+
+func (c *InstallConfig) UsesRunner() bool {
+	return c == nil || c.UseRunner == nil || *c.UseRunner
 }
 
 func (c *InstallConfig) ResolveActionTimeout(configured time.Duration) time.Duration {

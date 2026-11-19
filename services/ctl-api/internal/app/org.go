@@ -90,6 +90,9 @@ const (
 	// enabled it cannot be disabled.
 	OrgFeatureDesiredConfigRollout OrgFeature = "desired-config-rollout"
 	OrgFeatureFleetView            OrgFeature = "fleet-view"
+	// OrgFeatureRunnerlessInstalls lets AWS installs with a cloud connection set
+	// use_runner=false, so their jobs run on control-plane install workers.
+	OrgFeatureRunnerlessInstalls OrgFeature = "runnerless-installs"
 )
 
 type OrgTelemetrySettings struct {
@@ -255,6 +258,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureRunnerVendorSTS:         false,
 		OrgFeatureDesiredConfigRollout:    false,
 		OrgFeatureFleetView:               false,
+		OrgFeatureRunnerlessInstalls:      false,
 	}
 }
 
@@ -279,6 +283,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureRunnerVendorSTS,
 		OrgFeatureDesiredConfigRollout,
 		OrgFeatureFleetView,
+		OrgFeatureRunnerlessInstalls,
 	}
 }
 
@@ -312,6 +317,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureRunnerVendorSTS:         "Allow this org's runner groups to use the sts-vendor AWS auth method (runner assumes its Nuon-side identity role and authenticates via POST /v1/runner-auth/aws/sts). Enabling it provisions the vendor identity role for every AWS install runner in the org; each runner group is then switched individually.",
 		OrgFeatureDesiredConfigRollout:    "Ship app branch config changes by desired state: approving a branch run only moves each install's desired app config; nothing deploys until you reconcile from the drift view.",
 		OrgFeatureFleetView:               "Enable the app fleet view in the dashboard: installs grouped by app branch and install group, with rollout state, health, and runner status, served by the paginated /v1/apps/:app_id/fleet endpoints.",
+		OrgFeatureRunnerlessInstalls:      "Allow AWS installs with a cloud connection to set use_runner=false. The install stack omits the runner, and the install's jobs run on control-plane install workers that assume the stack's roles through the cloud connection.",
 	}
 }
 
@@ -341,6 +347,7 @@ var adminOnlyFeatures = map[OrgFeature]struct{}{
 	OrgFeatureUserManagedFeatures:  {},
 	OrgFeaturePhoneHomeAuth:        {},
 	OrgFeatureDesiredConfigRollout: {},
+	OrgFeatureRunnerlessInstalls:   {},
 }
 
 // GetUserManageableFeatures returns features that users are allowed to toggle

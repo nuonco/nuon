@@ -72,6 +72,9 @@ type AWSStackOutputs struct {
 	// Nil when the stack predates the runner_enabled variable, which must read
 	// as enabled rather than disabled.
 	RunnerEnabled *bool `json:"runner_enabled,omitempty" mapstructure:"runner_enabled" temporaljson:"runner_enabled,omitzero,omitempty"`
+
+	// Nil when the stack predates use_runner, which must read as using a runner.
+	UseRunner *bool `json:"use_runner,omitempty" mapstructure:"use_runner" temporaljson:"use_runner,omitzero,omitempty"`
 }
 
 func (a *AWSStackOutputs) ProvisionRoleID() (string, error)   { return a.ProvisionIAMRoleARN, nil }
@@ -254,6 +257,12 @@ func (a *InstallStackOutputs) RunnerDisabled() bool {
 		return !*a.GCPStackOutputs.RunnerEnabled
 	}
 	return false
+}
+
+// RunnerNotUsed reports whether the stack was applied with use_runner = false.
+// Only AWS stacks support it.
+func (a *InstallStackOutputs) RunnerNotUsed() bool {
+	return a.AWSStackOutputs != nil && a.AWSStackOutputs.UseRunner != nil && !*a.AWSStackOutputs.UseRunner
 }
 
 // HasAzureOperationIdentities reports whether the Azure stack reports
