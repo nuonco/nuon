@@ -48,6 +48,9 @@ const (
 	// AppRoleTypeRunner captures enum value "runner"
 	AppRoleTypeRunner AppRoleType = "runner"
 
+	// AppRoleTypeRunnerIdentity captures enum value "runner_identity"
+	AppRoleTypeRunnerIdentity AppRoleType = "runner_identity"
+
 	// AppRoleTypeRunnerInstall captures enum value "runner_install"
 	AppRoleTypeRunnerInstall AppRoleType = "runner_install"
 
@@ -75,7 +78,7 @@ var appRoleTypeEnum []any
 
 func init() {
 	var res []AppRoleType
-	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","runner_install","runner_job","hosted-installer","stack","telemetry_collector","phone_home","log_stream"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","runner_identity","runner_install","runner_job","hosted-installer","stack","telemetry_collector","phone_home","log_stream"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
