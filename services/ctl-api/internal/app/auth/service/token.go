@@ -1,16 +1,16 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 var (
@@ -27,67 +27,24 @@ type TokenInfo struct {
 }
 
 type accessToken struct {
-	AccountID  string
-	Role       string
-	TokenType  app.TokenType
-	TTL        time.Duration
-	SourceType app.TokenSourceType
-	SourceID   string
+	AccountID     string
+	Role          string
+	TokenType     app.TokenType
+	TTL           time.Duration
+	SourceTokenID string
 }
 
 func (s *service) createAccessToken(tx *gorm.DB, spec accessToken) (*app.Token, error) {
-	now := time.Now()
-	token := app.Token{
-		Token:       domains.NewUserTokenID(),
-		TokenType:   spec.TokenType,
-		AccountID:   spec.AccountID,
-		CreatedByID: spec.AccountID,
-		Role:        spec.Role,
-		Issuer:      s.domain,
-		IssuedAt:    now,
-		ExpiresAt:   now.Add(spec.TTL),
-		SourceType:  spec.SourceType,
-		SourceID:    spec.SourceID,
+	client := account.New(account.Params{DB: tx})
+	req := account.SessionTokenRequest{AccountID: spec.AccountID, Issuer: s.domain, TTL: spec.TTL, SourceTokenID: spec.SourceTokenID}
+	if spec.TokenType == app.TokenTypeOAuth {
+		return client.IssueOAuthAccessToken(tx.Statement.Context, req, spec.Role)
 	}
-	if err := tx.Create(&token).Error; err != nil {
-		return nil, fmt.Errorf("failed to create token: %w", err)
-	}
-
-	return &token, nil
-}
-
-func tokenSource(sourceTokenID string) (app.TokenSourceType, string) {
-	if sourceTokenID == "" {
-		return "", ""
-	}
-	return app.TokenSourceTypeToken, sourceTokenID
+	return client.IssueSessionToken(tx.Statement.Context, req)
 }
 
 func lockGrantSource(tx *gorm.DB, accountID, tokenID string, historical bool) error {
-	var account app.Account
-	err := tx.Clauses(clause.Locking{Strength: "KEY SHARE"}).
-		Select("id").
-		Where(app.Account{ID: accountID}).
-		First(&account).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return errTokenNotFound
-	}
-	if err != nil {
-		return err
-	}
-
-	if tokenID == "" {
-		return nil
-	}
-	if historical {
-		tx = tx.Unscoped()
-	}
-
-	var token app.Token
-	err = tx.Clauses(clause.Locking{Strength: "SHARE"}).
-		Select("id").
-		Where(app.Token{ID: tokenID}).
-		First(&token).Error
+	err := account.LockGrantSource(tx, accountID, tokenID, historical)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return errTokenNotFound
 	}
@@ -95,13 +52,11 @@ func lockGrantSource(tx *gorm.DB, accountID, tokenID string, historical bool) er
 }
 
 func (s *service) createToken(tx *gorm.DB, account *app.Account, sourceTokenID string) (string, error) {
-	sourceType, sourceID := tokenSource(sourceTokenID)
 	token, err := s.createAccessToken(tx, accessToken{
-		AccountID:  account.ID,
-		TokenType:  app.TokenTypeNuon,
-		TTL:        time.Duration(s.cfg.NuonAuthTokenTTL) * time.Minute,
-		SourceType: sourceType,
-		SourceID:   sourceID,
+		AccountID:     account.ID,
+		TokenType:     app.TokenTypeNuon,
+		TTL:           time.Duration(s.cfg.NuonAuthTokenTTL) * time.Minute,
+		SourceTokenID: sourceTokenID,
 	})
 	if err != nil {
 		return "", err
@@ -167,7 +122,5 @@ func (s *service) deleteToken(tokenValue string) error {
 		return nil
 	}
 
-	return s.db.
-		Where(&app.Token{Token: tokenValue}).
-		Delete(&app.Token{}).Error
+	return account.New(account.Params{DB: s.db}).EndSession(context.Background(), tokenValue)
 }

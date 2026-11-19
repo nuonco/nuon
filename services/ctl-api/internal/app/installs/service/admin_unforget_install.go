@@ -16,7 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -75,8 +74,14 @@ func (s *service) unforgetInstall(ctx context.Context, install *app.Install) err
 	installOwnerType := plugins.TableName(s.db, app.Install{})
 	runnerOwnerType := plugins.TableName(s.db, app.Runner{})
 
-	var stackIDs []string
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Select("id").Clauses(clause.Locking{Strength: "SHARE"}).Where(app.Org{ID: install.OrgID}).Take(&app.Org{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Scopes(scopes.WithDisableViews).Select("id").
+			Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Install{ID: install.ID, OrgID: install.OrgID}).Take(&app.Install{}).Error; err != nil {
+			return err
+		}
 		var conflict app.Install
 		err := tx.Scopes(scopes.WithDisableViews).
 			Where(app.Install{AppID: install.AppID, Name: install.Name}).
@@ -92,10 +97,6 @@ func (s *service) unforgetInstall(ctx context.Context, install *app.Install) err
 			return fmt.Errorf("unable to check install name: %w", err)
 		}
 
-		stackIDs, err = pluckIDs(tx, &app.InstallStack{}, forgottenAt, app.InstallStack{InstallID: install.ID}, true)
-		if err != nil {
-			return fmt.Errorf("unable to list install stacks: %w", err)
-		}
 		runnerGroupIDs, err := pluckIDs(tx, &app.RunnerGroup{}, forgottenAt, app.RunnerGroup{
 			OwnerID:   install.ID,
 			OwnerType: installOwnerType,
@@ -146,10 +147,6 @@ func (s *service) unforgetInstall(ctx context.Context, install *app.Install) err
 				return err
 			}
 		}
-		if err := restoreStackServiceAccounts(tx, stackIDs); err != nil {
-			return err
-		}
-
 		install.Labels.RemoveKeys([]string{
 			"nuon.co/forgotten-by-email",
 			"nuon.co/forgotten-by-account-id",
@@ -167,35 +164,9 @@ func (s *service) unforgetInstall(ctx context.Context, install *app.Install) err
 		if res.RowsAffected < 1 {
 			return fmt.Errorf("install not found %s: %w", install.ID, gorm.ErrRecordNotFound)
 		}
-		return ensureUnforgottenStackServiceAccounts(ctx, tx, install.OrgID, install.ID, stackIDs)
+		return account.New(account.Params{DB: tx}).RestoreInstallServiceAccounts(ctx, install.ID)
 	})
 	return err
-}
-
-func ensureUnforgottenStackServiceAccounts(ctx context.Context, tx *gorm.DB, orgID, installID string, stackIDs []string) error {
-	acctClient := account.New(account.Params{DB: tx})
-	authzClient := authz.New(authz.Params{DB: tx})
-	ownerType := plugins.TableName(tx, app.InstallStack{})
-	for _, stackID := range stackIDs {
-		binding, err := acctClient.EnsureManagedServiceAccount(ctx, account.ManagedServiceAccountRequest{
-			OrgID:       orgID,
-			OwnerType:   ownerType,
-			OwnerID:     stackID,
-			Purpose:     app.ManagedServiceAccountPurposeStack,
-			InstanceKey: "default",
-			Subject:     stackID,
-		})
-		if err != nil {
-			return fmt.Errorf("unable to ensure stack service account: %w", err)
-		}
-		if err := authzClient.EnsureStackInstallRole(ctx, orgID, installID, binding.AccountID); err != nil {
-			return fmt.Errorf("unable to ensure stack service account role: %w", err)
-		}
-		if err := authzClient.RemoveAccountOrgRoleByType(ctx, app.RoleTypeOrgAdmin, orgID, binding.AccountID); err != nil {
-			return fmt.Errorf("unable to revoke stack service account org admin: %w", err)
-		}
-	}
-	return nil
 }
 
 func pluckIDs(tx *gorm.DB, model any, forgottenAt soft_delete.DeletedAt, where any, includeLive bool, args ...any) ([]string, error) {
@@ -275,74 +246,6 @@ func restoreEmittersDisabled(ctx context.Context, tx *gorm.DB, forgottenAt soft_
 		})
 	if res.Error != nil {
 		return fmt.Errorf("unable to restore queue emitters: %w", res.Error)
-	}
-	return nil
-}
-
-func restoreStackServiceAccounts(tx *gorm.DB, stackIDs []string) error {
-	for _, stackID := range stackIDs {
-		accountID, err := restoreStackServiceAccount(tx, stackID)
-		if err != nil {
-			return err
-		}
-		if accountID == "" {
-			continue
-		}
-		if err := restoreManagedStackBinding(tx, accountID, stackID); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func restoreStackServiceAccount(tx *gorm.DB, stackID string) (string, error) {
-	var live app.Account
-	err := tx.Scopes(scopes.WithDisableViews).
-		Where(app.Account{Subject: stackID, AccountType: app.AccountTypeService}).
-		First(&live).Error
-	if err == nil {
-		return live.ID, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", fmt.Errorf("unable to look up stack service account: %w", err)
-	}
-
-	var acct app.Account
-	err = tx.Unscoped().Scopes(scopes.WithDisableViews).
-		Where(app.Account{Subject: stackID, AccountType: app.AccountTypeService}).
-		Where("deleted_at > ?", 0).
-		Order("deleted_at DESC").
-		First(&acct).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", nil
-	}
-	if err != nil {
-		return "", fmt.Errorf("unable to look up forgotten stack service account: %w", err)
-	}
-	res := tx.Unscoped().Scopes(scopes.WithDisableViews).
-		Model(&app.Account{}).
-		Where(app.Account{ID: acct.ID}).
-		Update("deleted_at", 0)
-	if res.Error != nil {
-		return "", fmt.Errorf("unable to restore stack service account: %w", res.Error)
-	}
-	return acct.ID, nil
-}
-
-func restoreManagedStackBinding(tx *gorm.DB, accountID, stackID string) error {
-	res := tx.Unscoped().
-		Model(&app.ManagedServiceAccount{}).
-		Where(app.ManagedServiceAccount{
-			AccountID:   accountID,
-			OwnerType:   plugins.TableName(tx, app.InstallStack{}),
-			OwnerID:     stackID,
-			Purpose:     app.ManagedServiceAccountPurposeStack,
-			InstanceKey: "default",
-		}).
-		Where("deleted_at > ?", 0).
-		Update("deleted_at", 0)
-	if res.Error != nil {
-		return fmt.Errorf("unable to restore stack service account binding: %w", res.Error)
 	}
 	return nil
 }

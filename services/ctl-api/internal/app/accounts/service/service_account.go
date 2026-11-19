@@ -15,8 +15,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -499,14 +497,9 @@ func (s *service) CreateServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.acctClient.CreateServiceAccount(ctx, domains.NewAccountID(), req.Name)
+	acct, err := s.acctClient.CreateOrgServiceAccount(ctx, org.ID, domains.NewAccountID(), req.Name, roleType)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create service account: %w", err))
-		return
-	}
-
-	if err := s.authzClient.SetAccountOrgRole(ctx, org.ID, acct.ID, roleType); err != nil {
-		ctx.Error(fmt.Errorf("unable to assign role to service account: %w", err))
 		return
 	}
 
@@ -565,12 +558,7 @@ func (s *service) UpdateServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
-			return err
-		}
-		return tx.Model(&app.Account{}).Where(app.Account{ID: acct.ID}).Update("name", req.Name).Error
-	}); err != nil {
+	if err := s.acctClient.RenameServiceAccount(ctx, acct.ID, req.Name); err != nil {
 		ctx.Error(fmt.Errorf("unable to update service account: %w", err))
 		return
 	}
@@ -635,12 +623,7 @@ func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
-			return err
-		}
-		return authz.New(authz.Params{DB: tx}).SetAccountOrgRole(ctx, org.ID, acct.ID, roleType)
-	}); err != nil {
+	if err := s.acctClient.SetOrgRole(ctx, org.ID, acct.ID, roleType); err != nil {
 		ctx.Error(fmt.Errorf("unable to update service account role: %w", err))
 		return
 	}
@@ -685,15 +668,7 @@ func (s *service) DeleteServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
-			return err
-		}
-		if err := authz.New(authz.Params{DB: tx}).RemoveAccountOrgRoles(ctx, org.ID, acct.ID); err != nil {
-			return fmt.Errorf("unable to remove roles: %w", err)
-		}
-		return account.New(account.Params{DB: tx}).InvalidateTokens(ctx, acct.Email)
-	}); err != nil {
+	if err := s.acctClient.RemoveOrgAccess(ctx, org.ID, acct.ID, true); err != nil {
 		ctx.Error(fmt.Errorf("unable to delete service account: %w", err))
 		return
 	}
