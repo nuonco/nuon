@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -351,16 +350,11 @@ func (a *Activities) livePhoneHomeTokens(
 // The reconciler has already converged the version's managed service account and
 // private role before this function issues its credential.
 func (a *Activities) mintPhoneHomeToken(ctx context.Context, version *app.InstallStackVersion) (string, error) {
-	token, err := a.acctClient.CreateToken(ctx, account.ServiceAccountEmail(version.ID), phoneHomeTokenTimeout)
+	token, err := a.acctClient.IssuePhoneHomeToken(ctx, version.ID, phoneHomeTokenTimeout)
 	if err != nil {
 		return "", fmt.Errorf("unable to create phone home token: %w", err)
 	}
 
-	if res := a.db.WithContext(ctx).
-		Model(&app.InstallStackVersion{ID: version.ID}).
-		Update("phone_home_token_id", token.ID); res.Error != nil {
-		return "", generics.TemporalGormError(res.Error)
-	}
 	version.PhoneHomeTokenID = token.ID
 
 	return token.Token, nil
@@ -370,16 +364,8 @@ func (a *Activities) mintPhoneHomeToken(ctx context.Context, version *app.Instal
 // load-bearing: a token row without a map entry is unreachable, and a map entry
 // without a token row is inert, so either interleaving is recoverable by re-running.
 func (a *Activities) revokePhoneHomeToken(ctx context.Context, version *app.InstallStackVersion) error {
-	if res := a.db.WithContext(ctx).
-		Where(app.Token{ID: version.PhoneHomeTokenID}).
-		Delete(&app.Token{}); res.Error != nil {
-		return generics.TemporalGormError(res.Error)
-	}
-
-	if res := a.db.WithContext(ctx).
-		Model(&app.InstallStackVersion{ID: version.ID}).
-		Update("phone_home_token_id", ""); res.Error != nil {
-		return generics.TemporalGormError(res.Error)
+	if err := a.acctClient.RevokePhoneHomeToken(ctx, version.ID); err != nil {
+		return err
 	}
 	version.PhoneHomeTokenID = ""
 

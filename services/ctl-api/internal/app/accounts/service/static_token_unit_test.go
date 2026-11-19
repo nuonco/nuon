@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 func TestParseTokenDuration(t *testing.T) {
@@ -37,13 +39,13 @@ func TestParseTokenDuration(t *testing.T) {
 	}
 }
 
-// The guard on deleteTokenServiceAccount. Static tokens created with their own
+// The guard in account.DeleteStaticToken. Static tokens created with their own
 // dedicated service account take it with them when revoked; tokens issued against
 // an account that outlives them — an install stack's, a runner's — must not. Getting
 // this wrong deletes a live identity out from under running infrastructure.
 func TestDedicatedTokenSubjectPrefix(t *testing.T) {
 	const orgID = "org_abc"
-	prefix := dedicatedTokenSubjectPrefix(orgID)
+	prefix := account.DedicatedTokenSubjectPrefix(orgID)
 
 	testCases := []struct {
 		name          string
@@ -62,7 +64,7 @@ func TestDedicatedTokenSubjectPrefix(t *testing.T) {
 		},
 		{
 			name:          "another org's dedicated account",
-			subject:       dedicatedTokenSubjectPrefix("org_other") + "acc123",
+			subject:       account.DedicatedTokenSubjectPrefix("org_other") + "acc123",
 			wantDedicated: false,
 		},
 		{

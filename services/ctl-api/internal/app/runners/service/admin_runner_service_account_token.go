@@ -59,14 +59,7 @@ func (s *service) AdminCreateRunnerServiceAccountToken(ctx *gin.Context) {
 
 	email := account.ServiceAccountEmail(runnerID)
 
-	if req.Invalidate {
-		if err := s.acctClient.InvalidateTokens(ctx, email); err != nil {
-			ctx.Error(err)
-			return
-		}
-	}
-
-	token, err := s.acctClient.CreateToken(ctx, email, duration)
+	token, err := s.acctClient.IssueToken(ctx, email, duration, account.IssueTokenRequest{Invalidate: req.Invalidate})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create token: %w", err))
 		return
