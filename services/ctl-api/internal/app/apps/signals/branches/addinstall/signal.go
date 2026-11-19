@@ -7,9 +7,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "app-branch-add-install"
@@ -43,6 +45,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to resolve branch app config: %w", err)
 	}
 	if result.AlreadyCurrent || result.AppConfigID == "" {
+		return nil
+	}
+
+	if result.DesiredOnly {
+		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   s.InstallID,
+			OwnerType: "installs",
+			QueueName: queuenames.InstallSignalsQueueName,
+			Signal: &updateappconfig.Signal{
+				InstallID:      s.InstallID,
+				NewAppConfigID: result.AppConfigID,
+				TriggeredBy:    "app-branch",
+				InstallGroupID: s.InstallGroupID,
+				Metadata:       map[string]string{"source": "app-branch", "rollout": "desired-only"},
+			},
+		}); err != nil {
+			return fmt.Errorf("unable to enqueue update-app-config signal: %w", err)
+		}
 		return nil
 	}
 
