@@ -134,33 +134,6 @@
                 "expanded": true
               },
               {
-                "group": "Deployments",
-                "pages": [
-                  "guides/deployment-options",
-                  "guides/nuon-cloud",
-                  {
-                    "group": "BYOC",
-                    "root": "guides/byoc",
-                    "expanded": false,
-                    "pages": [
-                      "guides/byoc/requirements",
-                      "guides/byoc/installation",
-                      "guides/byoc/optional",
-                      "guides/byoc/telemetry",
-                      "guides/byoc/updates"
-                    ]
-                  },
-                  {
-                    "group": "Self-Hosted",
-                    "root": "guides/self-hosted",
-                    "expanded": false,
-                    "pages": [
-                      "guides/self-hosted/dependencies"
-                    ]
-                  }
-                ]
-              },
-              {
                 "group": "Components",
                 "boost": 3,
                 "pages": [
@@ -290,6 +263,33 @@
                   "concepts/oidc-federation"
                 ],
                 "expanded": false
+              },
+              {
+                "group": "Nuon Deployment Options",
+                "pages": [
+                  "guides/deployment-options",
+                  "guides/nuon-cloud",
+                  {
+                    "group": "BYOC",
+                    "root": "guides/byoc",
+                    "expanded": false,
+                    "pages": [
+                      "guides/byoc/requirements",
+                      "guides/byoc/installation",
+                      "guides/byoc/optional",
+                      "guides/byoc/telemetry",
+                      "guides/byoc/updates"
+                    ]
+                  },
+                  {
+                    "group": "Self-Hosted",
+                    "root": "guides/self-hosted",
+                    "expanded": false,
+                    "pages": [
+                      "guides/self-hosted/dependencies"
+                    ]
+                  }
+                ]
               }
             ]
           }
