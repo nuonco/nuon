@@ -7,14 +7,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -41,32 +36,7 @@ func (s *service) EnsureInstallTelemetryCollector(ctx *gin.Context) {
 		return
 	}
 
-	var binding *app.ManagedServiceAccount
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		binding, err = account.New(account.Params{DB: tx}).EnsureManagedServiceAccount(ctx, account.ManagedServiceAccountRequest{
-			OrgID: orgID, OwnerType: plugins.TableName(tx, app.Install{}), OwnerID: ctx.Param("install_id"),
-			Purpose: app.ManagedServiceAccountPurposeTelemetryCollector, InstanceKey: "default",
-			Name: "Telemetry collector",
-		})
-		if err != nil {
-			return err
-		}
-		return authz.New(authz.Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, binding.AccountID, &app.Role{
-			OrgID:       generics.NewNullString(orgID),
-			RoleType:    app.RoleTypeTelemetryCollector,
-			Version:     app.RoleVersionV2,
-			Title:       "Telemetry collector",
-			Description: "Scoped access to telemetry endpoints for a single install.",
-			Policies: []app.Policy{{
-				OrgID: generics.NewNullString(orgID),
-				Name:  app.PolicyNameTelemetryCollector,
-				Permissions: pgtype.Hstore{
-					permissions.APIPermissionKey:                                          generics.ToPtr(string(permissions.APIRunner)),
-					permissions.Object(orgID, permissions.KindTelemetry, binding.OwnerID): permissions.PermissionAll.ToStrPtr(),
-				},
-			}},
-		})
-	})
+	binding, err := s.acctClient.EnsureTelemetryCollector(ctx, orgID, ctx.Param("install_id"))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to ensure telemetry collector: %w", err))
 		return
@@ -121,16 +91,10 @@ func (s *service) DeleteInstallTelemetryCollector(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	binding, err := s.getInstallTelemetryCollector(ctx, orgID, ctx.Param("install_id"))
+	err = s.acctClient.DeleteTelemetryCollector(ctx, orgID, ctx.Param("install_id"))
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.Error(err)
 		return
-	}
-	if err == nil {
-		if err := s.acctClient.DeleteServiceAccountByID(ctx, binding.AccountID); err != nil {
-			ctx.Error(fmt.Errorf("unable to delete telemetry collector: %w", err))
-			return
-		}
 	}
 	ctx.Status(http.StatusNoContent)
 }
