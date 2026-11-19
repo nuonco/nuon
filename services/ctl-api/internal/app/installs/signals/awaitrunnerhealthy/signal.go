@@ -20,21 +20,6 @@ import (
 
 const SignalType signal.SignalType = "await-runner-healthy"
 
-// Existing await-runner-healthy histories already scheduled their poll
-// activities, so the disabled-runner short circuit must not apply on replay.
-const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
-
-// Offline or error runners will never become healthy during the poll window.
-// Old histories that already started the poll loop must not be interrupted.
-const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-v1"
-
-// Existing histories must retain the aggregate-status fail-fast behavior they recorded.
-const processReadinessPolicyVersion = "await-runner-healthy-process-readiness-v1"
-
-// A runner that has not reported in yet is starting, not down, so require-active
-// waits for it instead of failing fast.
-const requireActiveAwaitsStartingRunnerVersion = "await-runner-healthy-require-active-starting-v1"
-
 type Mode string
 
 const (
@@ -113,8 +98,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// hour and then fail it. Nothing downstream can run without a runner
 	// either, but that is the deploy steps' problem to report, not this
 	// step's.
-	skipDisabled := workflow.GetVersion(ctx, skipDisabledRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if skipDisabled && runnerDisabled(runner) {
+	if runnerDisabled(runner) {
 		if s.WorkflowStepID != "" {
 			// The step executor only preserves a status it recognises as a skip,
 			// so write auto-skipped here rather than letting it default to
@@ -131,9 +115,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		return nil
 	}
-
-	failFast := workflow.GetVersion(ctx, failFastUnhealthyRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	processReadiness := workflow.GetVersion(ctx, processReadinessPolicyVersion, workflow.DefaultVersion, 1)
 
 	// Determine the process type to poll based on runner group type
 	processType := app.InstallProcessForRunnerGroupType(runner.RunnerGroup.Type)
@@ -158,22 +139,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		ProcessType: processType,
 	}
 
-	if processReadiness == workflow.DefaultVersion {
-		if failFast && runnerCannotBecomeHealthy(runner.Status) {
-			return errors.Errorf("runner is %s and cannot process jobs; check the runner status and try again", runner.Status)
-		}
-		return s.awaitActiveProcess(ctx, processReq)
-	}
-
 	if s.Mode == "" {
-		if failFast && runnerCannotBecomeHealthy(runner.Status) {
+		if runnerCannotBecomeHealthy(runner.Status) {
 			return errors.Errorf("runner is %s and cannot process jobs; check the runner status and try again", runner.Status)
 		}
 		return s.awaitActiveProcess(ctx, processReq)
 	}
 	if s.Mode == ModeRequireActive {
-		awaitStarting := workflow.GetVersion(ctx, requireActiveAwaitsStartingRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-		if awaitStarting && runnerStarting(runner.Status) {
+		if runnerStarting(runner.Status) {
 			return s.awaitActiveProcess(ctx, processReq)
 		}
 		return requireActiveProcess(ctx, processReq)

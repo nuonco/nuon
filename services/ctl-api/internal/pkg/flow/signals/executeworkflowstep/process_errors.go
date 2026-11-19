@@ -14,19 +14,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// parkedWaitCeilingVersion gates the parked-step wait ceiling: histories
-// written before the ceiling recorded an unbounded Await (no timer command),
-// so replaying them with AwaitWithTimeout is nondeterministic.
-const parkedWaitCeilingVersion = "parked-step-wait-ceiling-v1"
-
-// targetlessStepCompositeErrorVersion gates the hints lookup for steps with no
-// step target: histories written before it have no such activity command.
-const targetlessStepCompositeErrorVersion = "targetless-step-composite-error-v1"
-
-const terminalTargetlessStopVersion = "terminal-targetless-step-stop-v1"
-
-const resolutionTargetChangedStopVersion = "resolve-drift-target-changed-stop-v1"
-
 // handleStepCancelled stops the group when the step's inner signal reported a
 // cancelled completion. Cancellation is never a failure: it must not enter the
 // auto-retry path, and it must never let the group carry on to the next step.
@@ -63,8 +50,7 @@ func (s *Signal) handleStepCancelled(ctx workflow.Context, l *zap.Logger) error 
 // and returns nil. The group reads the directive and handles cloning.
 func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, stepErr error) error {
 	var applicationErr *temporal.ApplicationError
-	if errors.As(stepErr, &applicationErr) && applicationErr.Type() == "resolution-target-changed" &&
-		workflow.GetVersion(ctx, resolutionTargetChangedStopVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if errors.As(stepErr, &applicationErr) && applicationErr.Type() == "resolution-target-changed" {
 		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
 			return errors.Wrap(err, "unable to set stop directive for outdated resolution")
 		}
@@ -80,9 +66,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	ar, isAutoRetry := sig.(signal.SignalWithAutoRetry)
 	if !isAutoRetry || !ar.AutoRetry() {
 		stepCE := s.targetlessStepCompositeError(ctx, l, step)
-		if stepCE != nil &&
-			stepCE.Hints.Terminal() &&
-			workflow.GetVersion(ctx, terminalTargetlessStopVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if stepCE != nil && stepCE.Hints.Terminal() {
 			if err := s.updateStepFailedStatus(ctx, step, stepErr, nil, stepCE); err != nil {
 				return err
 			}
@@ -252,9 +236,6 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		// terminal directive (retry or retry-group) before setting s.retried.
 		// The ceiling stops abandoned parks from holding Temporal workflows
 		// open forever.
-		if workflow.GetVersion(ctx, parkedWaitCeilingVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-			return workflow.Await(ctx, func() bool { return s.retried || s.canceled || s.skipped })
-		}
 		parked, err := workflow.AwaitWithTimeout(ctx, callback.MaxWaitCeiling, func() bool {
 			return s.retried || s.canceled || s.skipped
 		})
@@ -371,9 +352,6 @@ func (s *Signal) updateStepFailedStatus(ctx workflow.Context, step *app.Workflow
 // failed does not clear it.
 func (s *Signal) targetlessStepCompositeError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) *compositeerrors.CompositeErrorData {
 	if step.StepTargetID != "" || step.StepTargetType != "" {
-		return nil
-	}
-	if workflow.GetVersion(ctx, targetlessStepCompositeErrorVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		return nil
 	}
 

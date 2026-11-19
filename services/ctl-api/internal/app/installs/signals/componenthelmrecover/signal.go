@@ -23,8 +23,6 @@ import (
 
 const SignalType signal.SignalType = "component-helm-release-recover"
 
-const planCompositeErrorVersion = "helm-recover-plan-composite-error-v1"
-
 // Signal recovers a Helm release that was left mid-operation. It is deliberately
 // not a deploy: it applies no chart and changes no desired state, so it neither
 // plans nor asks for approval. It exists to run one helm rollback (or, when
@@ -215,12 +213,9 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 	}
 	s.runnerJobID = runnerJob.ID
 
-	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if planCompositeErrorsEnabled {
-		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
-			InstallDeployID: installDeploy.ID,
-		})
-	}
+	_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+		InstallDeployID: installDeploy.ID,
+	})
 
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
@@ -229,7 +224,7 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 		WorkflowID: fmt.Sprintf("%s-create-recover-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
+		if deployerrors.IsDeployPlanRenderFailed(err) {
 			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
 				InstallDeployID: installDeploy.ID,
 				ComponentName:   installDeploy.ComponentName,

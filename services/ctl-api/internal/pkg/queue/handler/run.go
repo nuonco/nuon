@@ -37,11 +37,6 @@ const (
 
 var DrainTimeout = callback.QuickTimeout
 
-// handlerCancelledStatusVersion gates the cancelled-status handling on
-// terminal-drain runs and the validate stamp; in-flight histories scheduled
-// neither the callbacks nor the skip.
-const handlerCancelledStatusVersion = "queue-handler-cancelled-status-v1"
-
 // rewarmEligible reports whether a terminal queue signal may re-enter Execute
 // on a fresh Handler run. Only resident signals qualify, and only from success
 // or error: a stale queue run can overwrite a completed resident signal with
@@ -114,8 +109,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		if isTerminalQueueStatus(qs.Status.Status) && !h.rewarmEligible(qs) {
 			l.Debug("terminal signal re-entered via update; draining update handlers")
 			h.setFinished(qs.Status.Status, "")
-			if qs.Status.Status == app.StatusCancelled &&
-				workflow.GetVersion(ctx, handlerCancelledStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			if qs.Status.Status == app.StatusCancelled {
 				h.canceled = true
 				if qs.ExecutionCount == 0 {
 					h.sendCompletionCallbacks(ctx)
