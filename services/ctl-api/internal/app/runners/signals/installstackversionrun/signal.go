@@ -14,6 +14,7 @@ import (
 
 const SignalType signal.SignalType = "install_stack_version_run"
 const atomicRunnerStatusVersion = "install-stack-version-run-atomic-runner-status-v1"
+const useRunnerVersion = "install-stack-version-run-use-runner-v1"
 
 type Signal struct {
 	RunnerID                 string `json:"runner_id"`
@@ -51,13 +52,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
+	useRunnerVersioned := workflow.GetVersion(ctx, useRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+
 	// Offline/error are included so a re-applied stack gets a fresh heartbeat window.
-	if !generics.SliceContains(runner.Status, []app.RunnerStatus{
+	eligibleStatuses := []app.RunnerStatus{
 		app.RunnerStatusAwaitingInstallStackRun,
 		app.RunnerStatusPending,
 		app.RunnerStatusOffline,
 		app.RunnerStatusError,
-	}) {
+	}
+	if useRunnerVersioned {
+		// A runner moving back from not-used needs a fresh heartbeat wait, same as
+		// any other re-applied stack.
+		eligibleStatuses = append(eligibleStatuses, app.RunnerStatusNotUsed)
+	}
+	if !generics.SliceContains(runner.Status, eligibleStatuses) {
 		return nil
 	}
 
@@ -74,6 +83,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	if runnerDisabled {
 		return nil
+	}
+
+	// Likewise, a stack applied with use_runner = false provisions no runner:
+	// nothing here should move it toward awaiting-heartbeat.
+	if useRunnerVersioned {
+		useRunner, err := activities.AwaitGetStackRunUseRunner(ctx, activities.GetStackRunUseRunnerRequest{
+			InstallStackVersionRunID: s.InstallStackVersionRunID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to determine whether stack run uses a runner")
+		}
+		if !useRunner {
+			return nil
+		}
 	}
 
 	statusVersion := workflow.GetVersion(ctx, atomicRunnerStatusVersion, workflow.DefaultVersion, 1)

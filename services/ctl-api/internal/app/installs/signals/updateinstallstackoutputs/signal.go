@@ -154,6 +154,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to reconcile runner enabled status")
 	}
 
+	if workflow.GetVersion(ctx, "reconcile-use-runner", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitReconcileUseRunner(ctx, &activities.ReconcileUseRunner{
+			RunnerID:  install.RunnerID,
+			UseRunner: !installStackOutputs.RunnerNotUsed(),
+		}); err != nil {
+			return errors.Wrap(err, "unable to reconcile use_runner status")
+		}
+	}
+
 	// update the runner settings group
 	runnerIAMRoleARN := ""
 	if installStackOutputs.AWSStackOutputs != nil {

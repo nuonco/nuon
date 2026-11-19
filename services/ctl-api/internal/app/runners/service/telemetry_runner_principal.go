@@ -40,7 +40,7 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 		return principal, fmt.Errorf("get telemetry runner: %w", err)
 	}
 
-	if runner.Status == app.RunnerStatusDisabled || runner.Status == app.RunnerStatusDeprovisioned {
+	if runner.Status == app.RunnerStatusDisabled || runner.Status == app.RunnerStatusNotUsed || runner.Status == app.RunnerStatusDeprovisioned {
 		return principal, telemetryRunnerAuthorizationError()
 	}
 

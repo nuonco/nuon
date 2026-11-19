@@ -5,9 +5,9 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
+	pkgplantypes "github.com/nuonco/nuon/pkg/runner/plantypes"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
 )

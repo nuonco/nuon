@@ -84,14 +84,13 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeStartup,
-	}, flw.PlanOnly)
+	step, err = maybeRunnerHealthyStep(ctx, sg, installID, awaitrunnerhealthy.ModeStartup, true, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, step)
+	if step != nil {
+		steps = append(steps, step)
+	}
 
 	// Stop with the stack and runner up so inputs that are only knowable once the
 	// runner exists can be set before the sandbox reads them. Provisioning the

@@ -808,14 +808,13 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy boo
 	if gateRunnerHealthy {
 		dg.sg.nextGroup()
 
-		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: dg.installID,
-			Mode:      awaitrunnerhealthy.ModeRequireActive,
-		}, dg.flw.PlanOnly)
+		step, err := maybeRunnerHealthyStep(ctx, dg.sg, dg.installID, awaitrunnerhealthy.ModeRequireActive, false, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
-		steps = append(steps, step)
+		if step != nil {
+			steps = append(steps, step)
+		}
 	}
 
 	var lifecycleSteps []*app.WorkflowStep

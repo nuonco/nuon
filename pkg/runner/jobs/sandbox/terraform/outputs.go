@@ -3,7 +3,7 @@ package terraform
 import (
 	"context"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/outputs"
+	"github.com/nuonco/nuon/pkg/runner/outputs"
 )
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {

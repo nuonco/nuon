@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -27,14 +26,13 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	// Eager group — returned early so execution can start immediately.
 	sg.nextGroupEager()
 
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
+	step, err := maybeRunnerHealthyStep(ctx, sg, installID, awaitrunnerhealthy.ModeRequireActive, false, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, step)
+	if step != nil {
+		steps = append(steps, step)
+	}
 
 	// Remaining groups — fetch dependencies needed for component deploys.
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)

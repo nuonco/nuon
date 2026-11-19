@@ -160,12 +160,21 @@ func (s *Helpers) CheckInstallRunnerForWorkflow(ctx context.Context, installID s
 	}
 
 	if requiresLiveInstallRunner(workflowType, metadata) {
-		active, err := s.HasActiveRunner(ctx, installID)
+		// A not-used runner has no process to ever report active -- this
+		// install's jobs run on control-plane install workers instead, so the
+		// live-runner requirement doesn't apply to it.
+		notUsed, err := s.IsRunnerNotUsed(ctx, installID)
 		if err != nil {
 			return err
 		}
-		if !active {
-			return NewNoActiveRunnerConflict()
+		if !notUsed {
+			active, err := s.HasActiveRunner(ctx, installID)
+			if err != nil {
+				return err
+			}
+			if !active {
+				return NewNoActiveRunnerConflict()
+			}
 		}
 	}
 	return nil

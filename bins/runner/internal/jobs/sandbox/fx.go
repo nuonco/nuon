@@ -8,7 +8,7 @@ import (
 
 	pulumisandbox "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/pulumi"
 	syncsecrets "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/sync_secrets"
-	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/terraform"
+	terraform "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/terraform"
 )
 
 func GetJobs() []fx.Option {

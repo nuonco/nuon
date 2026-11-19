@@ -15,6 +15,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
+// useRunner reports whether the rendered stack should include the runner
+// resources: the install's desired use_runner value, unless dev-mode local
+// runners override it off entirely.
+func (t *Templates) useRunner(inp *stacks.TemplateInput) bool {
+	return !t.cfg.UseLocalRunners && inp.UseRunner
+}
+
 func (t *Templates) Template(inputs *stacks.TemplateInput) (*cloudformation.Template, string, error) {
 	if !inputs.CustomStacksOnly {
 		if err := config.ValidateCloudFormationCustomNestedStacks("aws-cloudformation", inputs.AppCfg.StackConfig.CustomNestedStacks); err != nil {
@@ -22,7 +29,7 @@ func (t *Templates) Template(inputs *stacks.TemplateInput) (*cloudformation.Temp
 		}
 	}
 	if !inputs.CustomStacksOnly && !inputs.BundleCompile && inputs.Install.InstallConfig != nil {
-		known := map[string]bool{"VPC": true, "RunnerAutoScalingGroup": !t.cfg.UseLocalRunners}
+		known := map[string]bool{"VPC": true, "RunnerAutoScalingGroup": t.useRunner(inputs)}
 		for _, stack := range inputs.AppCfg.StackConfig.CustomNestedStacks {
 			known[stack.Name] = true
 		}

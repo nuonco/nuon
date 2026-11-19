@@ -108,14 +108,13 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	// block the apply that brings its replacement up.
 	if !stackChanged && (sandboxChanged || len(deployComponentIDs) > 0) {
 		sg.nextGroupEager()
-		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: installID,
-			Mode:      awaitrunnerhealthy.ModeRequireActive,
-		}, flw.PlanOnly)
+		step, err := maybeRunnerHealthyStep(ctx, sg, installID, awaitrunnerhealthy.ModeRequireActive, false, flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
-		steps = append(steps, step)
+		if step != nil {
+			steps = append(steps, step)
+		}
 	}
 
 	if stackChanged {
@@ -126,14 +125,13 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		steps = append(steps, stackSteps...)
 
 		sg.nextGroup()
-		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: installID,
-			Mode:      awaitrunnerhealthy.ModeStartup,
-		}, flw.PlanOnly)
+		step, err := maybeRunnerHealthyStep(ctx, sg, installID, awaitrunnerhealthy.ModeStartup, true, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create post-stack runner health step")
 		}
-		steps = append(steps, step)
+		if step != nil {
+			steps = append(steps, step)
+		}
 	}
 
 	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))

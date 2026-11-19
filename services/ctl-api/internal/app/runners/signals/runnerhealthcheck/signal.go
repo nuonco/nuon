@@ -101,7 +101,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if runner.Status == app.RunnerStatusDisabled {
+	if runner.Status == app.RunnerStatusDisabled || runner.Status == app.RunnerStatusNotUsed {
 		if err := s.toggleInstallCronEmitter(ctx, runner, activities.InstallCronsDisabled); err != nil {
 			return err
 		}
@@ -408,7 +408,8 @@ func isSkippableStatus(status app.RunnerStatus) bool {
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusPending,
-		app.RunnerStatusDisabled:
+		app.RunnerStatusDisabled,
+		app.RunnerStatusNotUsed:
 		return true
 	}
 	return false

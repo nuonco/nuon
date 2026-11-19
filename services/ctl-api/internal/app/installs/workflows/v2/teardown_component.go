@@ -46,14 +46,13 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.New("component id is not set on the install workflow for a manual deploy")
 	}
 
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
+	step, err := maybeRunnerHealthyStep(ctx, sg, installID, awaitrunnerhealthy.ModeRequireActive, false, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, step)
+	if step != nil {
+		steps = append(steps, step)
+	}
 
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, generics.FromPtrStr(componentID))
 	if err != nil {

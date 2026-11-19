@@ -27,6 +27,17 @@ func (h *Helpers) requireLiveInstallRunner(ctx context.Context, installID string
 		}
 	}
 
+	// A not-used runner has no process to ever report active -- this
+	// install's jobs run on control-plane install workers instead, so the
+	// live-runner requirement doesn't apply to it.
+	notUsed, err := h.installRunnerNotUsed(ctx, installID)
+	if err != nil {
+		return err
+	}
+	if notUsed {
+		return nil
+	}
+
 	active, err := h.installRunnerActive(ctx, installID)
 	if err != nil {
 		return err
@@ -61,6 +72,29 @@ func (h *Helpers) installRunnerDisabled(ctx context.Context, installID string) (
 		return false, nil
 	}
 	return statuses[0] == app.RunnerStatusDisabled, nil
+}
+
+func (h *Helpers) installRunnerNotUsed(ctx context.Context, installID string) (bool, error) {
+	groupIDs := h.db.WithContext(ctx).
+		Model(&app.RunnerGroup{}).
+		Select("id").
+		Where(app.RunnerGroup{OwnerID: installID, OwnerType: "installs"})
+
+	var statuses []app.RunnerStatus
+	res := h.db.WithContext(ctx).
+		Model(&app.Runner{}).
+		Scopes(scopes.WithDisableViews).
+		Where("runner_group_id IN (?)", groupIDs).
+		Order("created_at DESC").
+		Limit(1).
+		Pluck("status", &statuses)
+	if res.Error != nil {
+		return false, errors.Wrap(res.Error, "unable to get install runner status")
+	}
+	if len(statuses) == 0 {
+		return false, nil
+	}
+	return statuses[0] == app.RunnerStatusNotUsed, nil
 }
 
 func (h *Helpers) installRunnerActive(ctx context.Context, installID string) (bool, error) {

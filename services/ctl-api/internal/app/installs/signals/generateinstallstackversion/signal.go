@@ -274,6 +274,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to ensure install phone home secret")
 	}
 
+	// Desired use_runner and the cloud connection principal to trust, so the AWS
+	// renderer can decide whether to include the runner and which principal, if
+	// any, control-plane install workers should assume install roles as.
+	useRunnerInputs, err := activities.AwaitGetInstallUseRunnerInputsByInstallID(ctx, install.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install use_runner inputs")
+	}
+
 	// TODO(ja): Ignoring this for Azure. Should probably update.
 
 	// AWS and Azure diverge here, while generating the stack template file.
@@ -298,6 +306,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		PhoneHomeSecretRegion:           phoneHome.SecretRegion,
 		PhoneHomeIdentityName:           phoneHome.IdentityName,
 		UnrenderedCustomStackParameters: unrenderedCustomStackParams,
+		UseRunner:                       useRunnerInputs.UseRunner,
+		CloudConnectionPrincipalARN:     useRunnerInputs.CloudConnectionPrincipalARN,
 	}
 
 	switch cfg.RunnerConfig.Type {
