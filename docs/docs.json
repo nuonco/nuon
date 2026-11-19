@@ -150,6 +150,7 @@
                 "boost": 3,
                 "pages": [
                   "guides/building-nuon-apps",
+                  "guides/configure-an-app-template",
                   "guides/multiple-app-configurations",
                   "guides/retaining-resources-on-teardown",
                   "guides/configuring-inputs-and-secrets",
@@ -362,7 +363,6 @@
             "group": "Configuration",
             "pages": [
               "config-ref/index",
-              "configuration-files",
               {
                 "group": "Component Types",
                 "boost": 2.5,
@@ -544,7 +544,11 @@
     },
     {
       "source": "/guides/app-init",
-      "destination": "/configuration-files"
+      "destination": "/guides/configure-an-app-template"
+    },
+    {
+      "source": "/configuration-files",
+      "destination": "/guides/configure-an-app-template"
     },
     {
       "source": "/guides/self-hosted/supported-platforms",
