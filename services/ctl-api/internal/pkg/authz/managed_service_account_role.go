@@ -116,7 +116,7 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 	if want.ID == "" {
 		want.Policies[0].OrgID = want.OrgID
 		switch want.RoleType {
-		case app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
+		case app.RoleTypeRunnerIdentity, app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
 			policy, err := ScopedRolePolicy(want)
 			if err != nil {
 				return err
