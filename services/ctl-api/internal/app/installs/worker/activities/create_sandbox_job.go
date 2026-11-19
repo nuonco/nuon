@@ -28,6 +28,8 @@ func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJob
 
 	var run app.InstallSandboxRun
 	res := a.db.WithContext(ctx).
+		Preload("Install").
+		Preload("InstallWorkflow").
 		Select("install_id", "install_workflow_id").
 		Where(app.InstallSandboxRun{ID: req.OwnerID}).
 		First(&run)
@@ -36,6 +38,11 @@ func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJob
 	}
 	if run.InstallID != req.InstallID {
 		return nil, fmt.Errorf("sandbox run install %s does not match request install %s", run.InstallID, req.InstallID)
+	}
+	if run.InstallWorkflow != nil {
+		if _, err := run.InstallWorkflow.PreparedInstallConfigID(run.Install); err != nil {
+			return nil, err
+		}
 	}
 
 	if run.InstallWorkflowID != nil {

@@ -52,6 +52,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get sandbox run")
 	}
+	if run.InstallWorkflow != nil {
+		if _, err := run.InstallWorkflow.PreparedInstallConfigID(install); err != nil {
+			return nil, nil, err
+		}
+	}
 
 	if run.AppSandboxConfig.AppConfigID != "" && run.AppSandboxConfig.AppConfigID != appCfg.ID {
 		target, err := activities.AwaitGetAppConfigByID(ctx, run.AppSandboxConfig.AppConfigID)
