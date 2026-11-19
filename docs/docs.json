@@ -58,7 +58,6 @@
             "group": "Get Started",
             "pages": [
               "get-started/quickstart",
-              "get-started/create-your-first-app",
               "get-started/app-branches-walkthrough"
             ]
           }
@@ -549,6 +548,10 @@
     {
       "source": "/configuration-files",
       "destination": "/guides/configure-an-app-template"
+    },
+    {
+      "source": "/get-started/create-your-first-app",
+      "destination": "/get-started/quickstart"
     },
     {
       "source": "/guides/self-hosted/supported-platforms",

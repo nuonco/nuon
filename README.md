@@ -48,8 +48,7 @@ nuon auth login
 Not using Homebrew? See the [other install options](https://docs.nuon.co/cli). Then follow the
 [quickstart](https://docs.nuon.co/get-started/quickstart) to install an example app into an AWS account.
 
-The docs for creating your first app are [here](https://docs.nuon.co/get-started/create-your-first-app). Nuon maintains
-a list of [example apps](https://github.com/nuonco/example-app-configs) to test Nuon and install them into AWS. We will
+Nuon maintains a list of [example apps](https://github.com/nuonco/example-app-configs) to test Nuon and install them into AWS. We will
 add more examples that install into Azure and Google Cloud.
 
 ## Deployment options
