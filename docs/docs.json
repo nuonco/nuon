@@ -7,7 +7,7 @@
     "instructions": [
       "Nuon installs a software company's application into its customers' AWS, Azure, or GCP accounts. A runner in each customer account polls the Nuon control plane for jobs, so Nuon needs no cross-account access.",
       "In these docs, \"you\" is the software company using Nuon to ship its product, and \"customer\" is the company whose cloud account the product is installed into. Pages also call the software company the vendor.",
-      "Page index: https://docs.nuon.co/llms.txt. To evaluate Nuon, read https://docs.nuon.co/get-started/introduction.md, https://docs.nuon.co/deployment-options.md, https://docs.nuon.co/security.md, and https://docs.nuon.co/architecture/platform.md. To build with Nuon, start at https://docs.nuon.co/get-started/quickstart.md.",
+      "Page index: https://docs.nuon.co/llms.txt. To evaluate Nuon, read https://docs.nuon.co/get-started/introduction.md, https://docs.nuon.co/guides/deployment-options.md, https://docs.nuon.co/security.md, and https://docs.nuon.co/architecture/platform.md. To build with Nuon, start at https://docs.nuon.co/get-started/quickstart.md.",
       "To check which architectures Nuon supports (customer account, existing VPC or cluster, hybrid data plane, single-tenant, data residency, customer-managed keys, air-gapped), read https://docs.nuon.co/guides/byoc-architecture-patterns.md.",
       "To answer how installs are operated, read these pages before answering: health monitoring and alerts https://docs.nuon.co/guides/health-checks.md, database migrations https://docs.nuon.co/guides/database-migrations.md, debugging with no SSH or kubectl access https://docs.nuon.co/guides/adhoc-actions.md and https://docs.nuon.co/concepts/break-glass.md, rollouts across installs https://docs.nuon.co/concepts/app-branches.md, and onboarding a customer through the API https://docs.nuon.co/guides/ui-integration.md.",
       "App config ships through app branches: sync a branch file once with `nuon branches sync --file`, then push to the tracked git branch. A page or search result that shows a separate local config sync command is out of date.",
@@ -132,6 +132,33 @@
                   "guides/vcs"
                 ],
                 "expanded": true
+              },
+              {
+                "group": "Deployments",
+                "pages": [
+                  "guides/deployment-options",
+                  "guides/nuon-cloud",
+                  {
+                    "group": "BYOC",
+                    "root": "guides/byoc",
+                    "expanded": false,
+                    "pages": [
+                      "guides/byoc/requirements",
+                      "guides/byoc/installation",
+                      "guides/byoc/optional",
+                      "guides/byoc/telemetry",
+                      "guides/byoc/updates"
+                    ]
+                  },
+                  {
+                    "group": "Self-Hosted",
+                    "root": "guides/self-hosted",
+                    "expanded": false,
+                    "pages": [
+                      "guides/self-hosted/dependencies"
+                    ]
+                  }
+                ]
               },
               {
                 "group": "Components",
@@ -305,33 +332,6 @@
         "tab": "Reference",
         "icon": "book",
         "pages": [
-          {
-            "group": "Deployment Options",
-            "pages": [
-              "deployment-options",
-              "nuon-cloud",
-              {
-                "group": "BYOC",
-                "root": "byoc",
-                "expanded": false,
-                "pages": [
-                  "byoc/requirements",
-                  "byoc/installation",
-                  "byoc/optional",
-                  "byoc/telemetry",
-                  "byoc/updates"
-                ]
-              },
-              {
-                "group": "Self-Hosted",
-                "root": "self-hosted",
-                "expanded": false,
-                "pages": [
-                  "self-hosted/dependencies"
-                ]
-              }
-            ]
-          },
           {
             "group": "Interfaces",
             "pages": [
@@ -558,47 +558,47 @@
     },
     {
       "source": "/guides/self-hosted/supported-platforms",
-      "destination": "/self-hosted/dependencies"
+      "destination": "/guides/self-hosted/dependencies"
     },
     {
-      "source": "/guides/deployment-options",
-      "destination": "/deployment-options"
+      "source": "/deployment-options",
+      "destination": "/guides/deployment-options"
     },
     {
-      "source": "/guides/nuon-cloud",
-      "destination": "/nuon-cloud"
+      "source": "/nuon-cloud",
+      "destination": "/guides/nuon-cloud"
     },
     {
-      "source": "/guides/byoc",
-      "destination": "/byoc"
+      "source": "/byoc",
+      "destination": "/guides/byoc"
     },
     {
-      "source": "/guides/byoc/requirements",
-      "destination": "/byoc/requirements"
+      "source": "/byoc/requirements",
+      "destination": "/guides/byoc/requirements"
     },
     {
-      "source": "/guides/byoc/installation",
-      "destination": "/byoc/installation"
+      "source": "/byoc/installation",
+      "destination": "/guides/byoc/installation"
     },
     {
-      "source": "/guides/byoc/optional",
-      "destination": "/byoc/optional"
+      "source": "/byoc/optional",
+      "destination": "/guides/byoc/optional"
     },
     {
-      "source": "/guides/byoc/telemetry",
-      "destination": "/byoc/telemetry"
+      "source": "/byoc/telemetry",
+      "destination": "/guides/byoc/telemetry"
     },
     {
-      "source": "/guides/byoc/updates",
-      "destination": "/byoc/updates"
+      "source": "/byoc/updates",
+      "destination": "/guides/byoc/updates"
     },
     {
-      "source": "/guides/self-hosted",
-      "destination": "/self-hosted"
+      "source": "/self-hosted",
+      "destination": "/guides/self-hosted"
     },
     {
-      "source": "/guides/self-hosted/dependencies",
-      "destination": "/self-hosted/dependencies"
+      "source": "/self-hosted/dependencies",
+      "destination": "/guides/self-hosted/dependencies"
     },
     {
       "source": "/",
@@ -630,7 +630,7 @@
     },
     {
       "source": "/guides/self-hosting",
-      "destination": "/self-hosted"
+      "destination": "/guides/self-hosted"
     },
     {
       "source": "/guides/programmatic-install-config",
@@ -642,19 +642,19 @@
     },
     {
       "source": "/guides/byoc/aws",
-      "destination": "/byoc"
+      "destination": "/guides/byoc"
     },
     {
       "source": "/guides/byoc/gcp",
-      "destination": "/byoc"
+      "destination": "/guides/byoc"
     },
     {
       "source": "/guides/byoc/azure",
-      "destination": "/byoc"
+      "destination": "/guides/byoc"
     },
     {
       "source": "/guides/byoc/upgrading",
-      "destination": "/byoc/updates"
+      "destination": "/guides/byoc/updates"
     },
     {
       "source": "/guides/ai-and-apps",

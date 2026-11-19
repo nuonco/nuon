@@ -5,7 +5,7 @@ keywords: ['install telemetry', 'enable telemetry', 'disable telemetry', 'org de
 ---
 
 Choose which customer installs send application logs, metrics, and traces to your observability backend.
-Before enabling collection for the first time, complete the [BYOC telemetry setup](/byoc/telemetry).
+Before enabling collection for the first time, complete the [BYOC telemetry setup](/guides/byoc/telemetry).
 
 Telemetry is disabled by default at the org level. You can change that default and override it for individual
 installs. Existing and new installs without an override follow the current org default.
@@ -129,7 +129,7 @@ and queue storage in place; it does not delete data already stored in the backen
 
 Before shutting down the central relay, disable telemetry on the installs using it, including any explicit
 overrides. Then coordinate with Nuon to disable the relay. For backend credential rotation, see
-[the setup guide](/byoc/telemetry#change-your-backend-or-rotate-credentials).
+[the setup guide](/guides/byoc/telemetry#change-your-backend-or-rotate-credentials).
 
 ## Troubleshooting
 
@@ -138,7 +138,7 @@ overrides. Then coordinate with Nuon to disable the relay. For backend credentia
 If the modal says **Managed by install config**, edit and sync the install config. Otherwise, retry failed settings
 reads or check install permissions. A missing runner or private endpoint does not block saving forwarding policy.
 For runner-bound collection only, update the stack or re-enable its ingress using the
-[setup guide](/byoc/telemetry#3-check-the-install-endpoint). In-cluster collection does not need that ingress.
+[setup guide](/guides/byoc/telemetry#3-check-the-install-endpoint). In-cluster collection does not need that ingress.
 
 ### Telemetry is enabled, but no data appears
 
