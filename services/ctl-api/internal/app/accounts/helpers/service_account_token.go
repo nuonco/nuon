@@ -122,15 +122,18 @@ func (h *Helpers) OrgServiceAccounts(ctx context.Context, orgID string, includeR
 
 	excludedRoleTypes := []app.RoleType{}
 	if !includeRunners {
-		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner, app.RoleTypeRunnerIdentity)
+		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner, app.RoleTypeRunnerInstall, app.RoleTypeRunnerIdentity)
 	}
 	if !includeStacks {
 		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeStack)
 	}
 	if len(excludedRoleTypes) > 0 {
-		tx = tx.
+		excludedAccounts := h.db.WithContext(ctx).Model(&app.AccountRole{}).
+			Select("account_roles.account_id").
 			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
-			Where("roles.role_type NOT IN ?", excludedRoleTypes)
+			Where(app.AccountRole{OrgID: generics.NewNullString(orgID)}).
+			Where("roles.role_type IN ?", excludedRoleTypes)
+		tx = tx.Where("account_roles.account_id NOT IN (?)", excludedAccounts)
 	}
 
 	return tx.Distinct("account_roles.account_id")

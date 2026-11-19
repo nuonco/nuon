@@ -54,14 +54,13 @@ func ScopedRolePolicy(role *app.Role) (permissions.Policy, error) {
 	}
 	orgID := role.OrgID.String
 	if role.RoleType == app.RoleTypeRunnerIdentity {
-		keys := 1
-		if enforced {
-			keys++
+		if !enforced || api != permissions.APIRunner {
+			return permissions.Policy{}, fmt.Errorf("runner identity requires the runner api")
 		}
-		if grant := projection[orgID]; grant == nil || *grant != string(permissions.PermissionAll) || len(projection) != keys {
+		if grant := projection[orgID]; grant == nil || *grant != string(permissions.PermissionAll) || len(projection) != 2 {
 			return permissions.Policy{}, fmt.Errorf("runner identity requires full access to its owning org")
 		}
-		return permissions.RolePolicy(permissions.RoleOrgAdmin, api)
+		return permissions.RolePolicy(permissions.RoleOrgAdmin, permissions.APIRunner)
 	}
 	allowed, err := scopedRoleGrants(role.RoleType)
 	if err != nil {
