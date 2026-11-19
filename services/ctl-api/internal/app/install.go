@@ -220,6 +220,11 @@ func (i *Install) Views(db *gorm.DB) []migrations.View {
 			Name: views.CustomViewName(db, &Install{}, "migration_test"),
 			SQL:  `SELECT * FROM installs ORDER BY created_at DESC`,
 		},
+		{
+			Name:          views.CustomViewName(db, &Install{}, "fleet_view_v1"),
+			SQL:           viewsql.InstallsFleetViewV1,
+			AlwaysReapply: true,
+		},
 	}
 }
 
