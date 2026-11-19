@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
@@ -47,11 +46,7 @@ func (h *Helpers) CreateBuildJob(ctx context.Context,
 		Metadata:          generics.ToHstore(metadata),
 	}
 
-	db := h.db.WithContext(ctx).Omit("RunnerID")
-	if res := db.Create(&job); res.Error != nil {
-		return nil, fmt.Errorf("unable to create job: %w", res.Error)
-	}
-	if err := h.provisionJobCredentials(ctx, job); err != nil {
+	if err := h.createJobWithCredentials(ctx, job); err != nil {
 		return nil, err
 	}
 

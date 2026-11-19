@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
@@ -56,10 +55,7 @@ func (a *Activities) CleanupInstallTokens(ctx context.Context, req CleanupInstal
 			}
 			for _, job := range jobs {
 				if job.Status.IsTerminal() {
-					if err := account.RevokeDerivedCredentials(a.db.WithContext(ctx), app.TokenSourceTypeRunnerJob, []string{job.ID}); err != nil {
-						return nil, fmt.Errorf("revoke job tokens: %w", err)
-					}
-					if err := a.acctClient.DeleteServiceAccount(ctx, job.ID); err != nil {
+					if err := a.acctClient.DeleteRunnerJobCredentials(ctx, job.ID); err != nil {
 						return nil, fmt.Errorf("delete job service account: %w", err)
 					}
 					out.JobAccounts++
@@ -98,13 +94,11 @@ func (a *Activities) deleteExpiredRunnerTokens(ctx context.Context, runnerIDs []
 	for _, acct := range accounts {
 		accountIDs = append(accountIDs, acct.ID)
 	}
-	res := a.db.WithContext(ctx).
-		Where("account_id IN ? AND expires_at < ?", accountIDs, time.Now()).
-		Delete(&app.Token{})
-	if res.Error != nil {
-		return fmt.Errorf("delete expired runner tokens: %w", res.Error)
+	count, err := a.acctClient.RevokeExpiredTokens(ctx, accountIDs, time.Now())
+	if err != nil {
+		return fmt.Errorf("delete expired runner tokens: %w", err)
 	}
-	out.ExpiredTokens = int(res.RowsAffected)
+	out.ExpiredTokens = int(count)
 	return nil
 }
 
