@@ -28,6 +28,7 @@ type Signal struct {
 
 	childWorkflowIDs []string
 	directiveCh      workflow.Channel
+	desiredOnly      bool
 }
 
 var _ signal.Signal = (*Signal)(nil)
