@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -54,9 +55,19 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		return
 	}
 
-	parentApp, err := s.findApp(ctx, org.ID, aw.AppID)
+	currentApp, err := applookup.ByRef(ctx, s.db, org.ID, ctx.Param("app_id"))
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", parentApp.ID, err))
+		ctx.Error(err)
+		return
+	}
+	if aw.AppID != currentApp.ID {
+		ctx.Error(stderr.ErrNotFound{Err: errors.New("action does not belong to app"), Description: "action not found"})
+		return
+	}
+
+	parentApp, err := s.findAppByID(ctx, org.ID, aw.AppID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", aw.AppID, err))
 		return
 	}
 
@@ -70,7 +81,7 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		return
 	}
 
-	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, awID, &req)
+	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, aw.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -250,9 +261,9 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 		return
 	}
 
-	parentApp, err := s.findApp(ctx, org.ID, aw.AppID)
+	parentApp, err := s.findAppByID(ctx, org.ID, aw.AppID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", parentApp.ID, err))
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", aw.AppID, err))
 		return
 	}
 
@@ -266,7 +277,7 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 		return
 	}
 
-	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, awID, &req)
+	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, aw.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
