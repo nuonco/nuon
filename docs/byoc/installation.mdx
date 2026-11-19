@@ -13,7 +13,7 @@ This is the same process your customers will complete when installing your app t
 
 ## Gather Inputs and Secrets
 
-Gather all the inputs and secrets from the [Requirements](/guides/byoc/requirements).
+Gather all the inputs and secrets from the [Requirements](/byoc/requirements).
 
 ### Authentication Inputs
 
@@ -60,7 +60,7 @@ If using the deprecated Auth0 integration, you will need to provide these inputs
 
 The Install Stack consists of the Nuon Runner and the foundational network resources it depends on. Once the Runner is provisioned it will take over the installation process and deploy the components of Nuon BYOC.
 
-We provide Terraform modules to provision and manage the Stack. The install process is the same on AWS and GCP: `install_id`, `inputs`, `secrets`, and `roles` are identical. Use `nuonco/stack/aws` or `nuonco/stack/gcp` for the platform you are installing into. See [Architecture](/guides/byoc#architecture) for platform-specific resources.
+We provide Terraform modules to provision and manage the Stack. The install process is the same on AWS and GCP: `install_id`, `inputs`, `secrets`, and `roles` are identical. Use `nuonco/stack/aws` or `nuonco/stack/gcp` for the platform you are installing into. See [Architecture](/byoc#architecture) for platform-specific resources.
 
 ### Set Up the Stack Module
 
