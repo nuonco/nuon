@@ -151,6 +151,14 @@ func (c *ComponentBuild) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
+			Name: indexes.Name(db, &ComponentBuild{}, "component_config_connection_id_created_at"),
+			Columns: []string{
+				"component_config_connection_id",
+				"created_at DESC",
+			},
+			Concurrently: true,
+		},
+		{
 			Name: indexes.Name(db, &ComponentBuild{}, "history"),
 			Columns: []string{
 				"org_id",

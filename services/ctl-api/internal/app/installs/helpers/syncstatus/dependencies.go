@@ -1,4 +1,4 @@
-package alignment
+package syncstatus
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func unscoped(db *gorm.DB) *gorm.DB {
 	return db.Unscoped()
 }
 
-func (s *Helpers) loadDependencyState(ctx context.Context, st *installAlignmentState) error {
+func (s *Helpers) loadDependencyState(ctx context.Context, st *installResourceSyncStatusState) error {
 	st.appliedBuilds = map[string]*app.ComponentBuild{}
 	for _, ic := range st.components {
 		if deploy := st.appliedDeploys[ic.ID]; deploy != nil {
@@ -103,7 +103,7 @@ func (s *Helpers) loadDependencyState(ctx context.Context, st *installAlignmentS
 	return nil
 }
 
-func (s *Helpers) loadSandboxChanged(ctx context.Context, st *installAlignmentState) error {
+func (s *Helpers) loadSandboxChanged(ctx context.Context, st *installResourceSyncStatusState) error {
 	if st.appliedSandbox == nil || st.expectedSandbox == nil {
 		return nil
 	}
@@ -136,7 +136,7 @@ func (s *Helpers) loadSandboxChanged(ctx context.Context, st *installAlignmentSt
 	return nil
 }
 
-func (st *installAlignmentState) dependenciesAppliedSince(componentID string, conn *app.ComponentConfigConnection, deploy *app.InstallDeploy) (changed, verified bool) {
+func (st *installResourceSyncStatusState) dependenciesAppliedSince(componentID string, conn *app.ComponentConfigConnection, deploy *app.InstallDeploy) (changed, verified bool) {
 	deps, sandbox := st.directDependencies(componentID, conn)
 	if len(deps) == 0 && !sandbox {
 		return false, true
@@ -156,7 +156,7 @@ func (st *installAlignmentState) dependenciesAppliedSince(componentID string, co
 	return false, true
 }
 
-func (st *installAlignmentState) directDependencies(componentID string, conn *app.ComponentConfigConnection) (componentIDs []string, sandbox bool) {
+func (st *installResourceSyncStatusState) directDependencies(componentID string, conn *app.ComponentConfigConnection) (componentIDs []string, sandbox bool) {
 	if conn == nil {
 		return nil, false
 	}

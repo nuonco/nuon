@@ -154,12 +154,13 @@ func TestDecideSurfacesLoaderErrors(t *testing.T) {
 
 func TestSyncFailed(t *testing.T) {
 	for status, want := range map[app.InstallDeployStatus]bool{
-		app.InstallDeployStatusError:     true,
-		app.InstallDeployStatusCancelled: true,
-		app.InstallDeployStatusActive:    false,
-		app.InstallDeployStatusSyncing:   false,
-		app.InstallDeployStatusPlanning:  false,
-		app.InstallDeployStatusNoop:      false,
+		app.InstallDeployStatusError:       true,
+		app.InstallDeployStatusCancelled:   true,
+		app.InstallDeployStatusUserSkipped: true,
+		app.InstallDeployStatusActive:      false,
+		app.InstallDeployStatusSyncing:     false,
+		app.InstallDeployStatusPlanning:    false,
+		app.InstallDeployStatusNoop:        false,
 	} {
 		if got := syncFailed(status); got != want {
 			t.Errorf("syncFailed(%q) = %v, want %v", status, got, want)

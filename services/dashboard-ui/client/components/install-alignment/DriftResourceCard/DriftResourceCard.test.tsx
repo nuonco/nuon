@@ -1,88 +1,115 @@
 import { afterEach, expect, test } from 'bun:test'
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitForElementToBeRemoved,
-} from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import {
   inputUpdateResource,
+  manualOrigin,
+  openDeploymentResource,
+  stateDriftResource,
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
+import type { TInstallResourceSyncStatusOrigin } from '@/types'
 import { DriftResourceCard } from './DriftResourceCard'
 
 afterEach(cleanup)
 
-test('cancelled input changes keep details and their workflow link even when the last attempt is the evidence', async () => {
+const originHref = (origin?: TInstallResourceSyncStatusOrigin) =>
+  origin?.run
+    ? `/runs/${origin.run.workflow_id}`
+    : `/workflows/${origin?.workflow_id}`
+
+const renderCard = (props: Parameters<typeof DriftResourceCard>[0]) =>
   render(
     <MemoryRouter>
-      <DriftResourceCard
-        resource={inputUpdateResource()}
-        explanationHref="/workflows/input-update?panel=deploy"
-        lastAttemptHref="/workflows/input-update"
-      />
+      <DriftResourceCard {...props} />
     </MemoryRouter>
   )
 
-  expect(
-    screen.getByText('Saved input changes haven’t taken effect.')
-  ).toBeTruthy()
-  expect(screen.getByText('Workflow cancelled')).toBeTruthy()
-  const details = screen.getByRole('button', {
-    name: 'Saved input changes haven’t taken effect.',
+test('a version change shows the deployed branch run, the reason, and deploy history', () => {
+  renderCard({
+    resource: unappliedResource(),
+    historyHref: '/components/cmp-api/deploys',
+    originHref,
   })
-  expect(details.getAttribute('aria-expanded')).toBe('false')
-  fireEvent.click(details)
-  expect(details.getAttribute('aria-expanded')).toBe('true')
+
+  const builds = screen.getByTestId('live-build')
+  const [live] = within(builds).getAllByTestId('run-ref')
+  expect(builds.textContent).toStartWith(
+    'DeployedPR #412Pin the ledger module to 2.4.0·'
+  )
   expect(
-    document.getElementById(details.getAttribute('aria-controls')!)
-  ).toBeTruthy()
-  expect(
-    screen.getAllByText('Saved input changes haven’t taken effect.')
-  ).toHaveLength(1)
-  expect(screen.queryByText('What hasn’t been applied')).toBeNull()
-  expect(
-    screen.queryByRole('button', { name: /View details|Hide details/ })
+    within(live).queryByRole('link', { name: /Pull request 412/ })
   ).toBeNull()
   expect(
-    screen.getByText(
-      'Applying the input changes was cancelled. The saved values haven’t taken effect.'
-    )
-  ).toBeTruthy()
+    within(live)
+      .getByRole('link', { name: 'Pin the ledger module to 2.4.0' })
+      .getAttribute('href')
+  ).toBe('/runs/wf-branch-run-1')
+  expect(screen.getAllByTestId('run-ref')).toHaveLength(1)
+  const summary = screen.getByTestId('drift-summary')
+  expect(summary.textContent).toStartWith(
+    'The deployed version doesn’t match this install’s configuration.'
+  )
+  expect(summary.textContent).not.toContain('bld-')
   expect(
-    screen.getByRole('link', { name: 'View workflow' }).getAttribute('href')
-  ).toBe('/workflows/input-update?panel=deploy')
-  expect(screen.getByText(/Started/)).toBeTruthy()
-  fireEvent.click(details)
-  expect(details.getAttribute('aria-expanded')).toBe('false')
-  await waitForElementToBeRemoved(() =>
-    screen.queryByRole('link', { name: 'View workflow' })
+    within(summary)
+      .getByRole('link', { name: 'View deploy history' })
+      .getAttribute('href')
+  ).toBe('/components/cmp-api/deploys')
+})
+
+test('a live version from outside a branch run names its workflow', () => {
+  renderCard({
+    resource: unappliedResource({
+      applied_by: manualOrigin,
+    }),
+    originHref,
+  })
+
+  const builds = screen.getByTestId('live-build')
+  expect(
+    within(builds)
+      .getByRole('link', { name: 'Manual deploy' })
+      .getAttribute('href')
+  ).toBe('/workflows/wf-manual-deploy')
+  expect(within(builds).getAllByTestId('run-ref')).toHaveLength(1)
+})
+
+test('changed inputs on the live build keep the live run and show the reason', () => {
+  renderCard({ resource: inputUpdateResource(), originHref })
+
+  expect(screen.getByTestId('live-build')).toBeTruthy()
+  expect(screen.getByTestId('drift-summary').textContent).toBe(
+    'Saved input changes haven’t taken effect.'
   )
 })
 
-test('unattributed changes explain the missing evidence without inventing a workflow', () => {
-  render(
-    <DriftResourceCard
-      resource={unappliedResource({
-        explanation: undefined,
-        last_attempt: undefined,
-        plan: undefined,
-        newer_branch_runs: null,
-      })}
-    />
-  )
-  fireEvent.click(
-    screen.getByRole('button', {
-      name: 'This component hasn’t been deployed yet.',
-    })
-  )
+test('an open deployment shows its status and links to it instead of resolving', () => {
+  renderCard({
+    resource: openDeploymentResource(),
+    deploymentHref: '/workflows/wf-open-ic-api',
+    onResolve: () => {},
+  })
+
+  expect(screen.getByText('Failed — awaiting retry')).toBeTruthy()
   expect(
-    screen.getByText(
-      'We couldn’t determine why these changes haven’t taken effect.'
-    )
-  ).toBeTruthy()
-  expect(screen.queryByRole('link')).toBeNull()
-  expect(screen.queryByText('Workflow cancelled')).toBeNull()
+    screen.getByRole('link', { name: 'View deployment' }).getAttribute('href')
+  ).toBe('/workflows/wf-open-ic-api')
+  expect(screen.queryByRole('button', { name: /Resolve drift/ })).toBeNull()
+})
+
+test('state drift keeps the live run and links to the drift check, not deploy history', () => {
+  renderCard({
+    resource: stateDriftResource(),
+    driftCheckHref: '/workflows/wf-plan-ic-api',
+    historyHref: '/components/cmp-api/deploys',
+    originHref,
+  })
+
+  expect(screen.getByTestId('live-build')).toBeTruthy()
+  expect(screen.getByText('Drift detected')).toBeTruthy()
+  expect(
+    screen.getByRole('link', { name: 'View drift scan' }).getAttribute('href')
+  ).toBe('/workflows/wf-plan-ic-api')
+  expect(screen.queryByRole('link', { name: 'View deploy history' })).toBeNull()
 })

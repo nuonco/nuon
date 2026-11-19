@@ -4,6 +4,10 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
 import {
+  LiveBuild,
+  useOriginHref,
+} from '@/components/install-alignment/LiveBuild'
+import {
   hasOngoingDeployment,
   listedResources,
   resourcePage,
@@ -13,6 +17,7 @@ import {
   useResourceComponentPanelLinks,
 } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
@@ -31,6 +36,8 @@ const LIMIT = 10
 export const InstallImagesListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
+  const originHref = useOriginHref()
   const { appConfig } = useInstallAppConfig()
   const [searchParams, setSearchParams] = useSearchParams()
   const {
@@ -38,9 +45,9 @@ export const InstallImagesListContainer = () => {
     isLoading: overviewLoading,
     isPlaceholderData,
   } = useInstallOverview()
-  const alignmentAvailable = !!overview?.alignment && !overview.alignment.error
+  const alignmentAvailable = !!overview?.resource_sync_status && !overview.resource_sync_status.error
   const ongoingIds = new Set(
-    (overview?.alignment?.resources ?? [])
+    (overview?.resource_sync_status?.resources ?? [])
       .filter(hasOngoingDeployment)
       .map((resource) => resource.id)
   )
@@ -48,7 +55,7 @@ export const InstallImagesListContainer = () => {
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
   const listed = alignmentAvailable
-    ? listedResources(overview.alignment.resources, ['image'], { search: q })
+    ? listedResources(overview.resource_sync_status.resources, ['image'], { search: q })
     : undefined
   const membership = listed?.map((resource) => resource.id).join(',')
   const pagedMembership = useRef(membership)
@@ -116,14 +123,15 @@ export const InstallImagesListContainer = () => {
     )
     const latestDeploy = installComponent.install_deploys?.[0]
     const appliedConfigId = installComponent.app_config_ref?.applied_config_id
+    const alignment = overview?.resource_sync_status?.resources?.find(
+      (resource) => resource.id === installComponent.id
+    )
 
     return {
       id: componentId || (installComponent.id ?? ''),
       name: component?.name ?? 'Image',
       type: component?.type,
-      alignment: overview?.alignment?.resources?.find(
-        (resource) => resource.id === installComponent.id
-      )?.category,
+      alignment: alignment?.category,
       status: installComponent.status_v2?.status ?? installComponent.status,
       consumers: componentId ? (
         <ImageConsumersContainer componentId={componentId} />
@@ -143,6 +151,21 @@ export const InstallImagesListContainer = () => {
         <InstallImageSummaryContainer
           componentId={componentId}
           sourceRef={config?.external_image?.image_url}
+          live={
+            alignment?.applied_deploy_id ? (
+              <LiveBuild
+                appliedAt={alignment.applied_deploy_at}
+                origin={alignment.applied_by}
+                originHref={originHref(alignment.applied_by)}
+                deployHref={installLink({
+                  installId: install?.id,
+                  appId: install?.app_id,
+                  suffix: `/components/${componentId}/deploys/${alignment.applied_deploy_id}`,
+                })}
+                variant="sync"
+              />
+            ) : undefined
+          }
         />
       ) : null,
     }

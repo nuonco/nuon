@@ -10,7 +10,12 @@ import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
-import type { TAPIError, TInstallAlignmentResource } from '@/types'
+import type {
+  TAPIError,
+  TInstallResourceSyncStatusOrigin,
+  TInstallResourceSyncStatusResource,
+  TInstallOverviewCommit,
+} from '@/types'
 import { cn } from '@/utils/classnames'
 import {
   driftCounts,
@@ -20,6 +25,7 @@ import {
   matchesSearch,
   type TDriftFilter,
 } from '../alignment-utils'
+import { RunRef } from '../LiveBuild'
 import { OngoingDeployments } from './OngoingDeployments'
 
 export interface IDriftedResources {
@@ -29,15 +35,18 @@ export interface IDriftedResources {
   loading?: boolean
   noun: string
   onRetry?: () => void
+  originHref?: (origin?: TInstallResourceSyncStatusOrigin) => string | undefined
+  repo?: string
+  selectedCommit?: TInstallOverviewCommit
   pageSize?: number
-  renderCard: (resource: TInstallAlignmentResource) => ReactNode
-  resources: TInstallAlignmentResource[]
+  renderCard: (resource: TInstallResourceSyncStatusResource) => ReactNode
+  resources: TInstallResourceSyncStatusResource[]
   search?: string
   unavailable?: boolean
   view?: TCollectionView
 }
 
-const notComparedSummary = (resources: TInstallAlignmentResource[]) => {
+const notComparedSummary = (resources: TInstallResourceSyncStatusResource[]) => {
   const unknown = resources.filter(
     (resource) => resource.category === 'unknown' || !resource.category
   ).length
@@ -59,7 +68,10 @@ export const DriftedResources = ({
   loading = false,
   noun,
   onRetry,
+  originHref,
   pageSize = 4,
+  repo,
+  selectedCommit,
   renderCard,
   resources,
   search,
@@ -270,6 +282,16 @@ export const DriftedResources = ({
                         .slice(start, start + pageSize)
                         .filter((resource) => resource.category === category)
                       if (!group.length) return null
+                      const wanted =
+                        selectedCommit &&
+                        group.some(
+                          (resource) =>
+                            resource.expected_build_id &&
+                            resource.expected_build_id !==
+                              resource.applied_build_id
+                        )
+                          ? { run: selectedCommit }
+                          : undefined
                       return (
                         <section key={category} className="flex flex-col gap-2">
                           <div className="flex flex-col gap-1">
@@ -280,13 +302,44 @@ export const DriftedResources = ({
                                   : 'State drift detected'}
                               </Text>
                             ) : null}
-                            <Text variant="subtext" theme="neutral">
-                              {category === 'changes-not-applied'
-                                ? imagesOnly
-                                  ? 'Image versions specified by this install’s configuration haven’t been synced to its registry.'
-                                  : 'Saved configuration or input changes haven’t been deployed.'
-                                : 'Live resources differ from what was last applied.'}
-                            </Text>
+                            {category === 'changes-not-applied' && wanted ? (
+                              <div
+                                className="flex flex-wrap items-center gap-x-1.5 gap-y-1"
+                                data-testid="drift-wanted"
+                              >
+                                <Text
+                                  as="span"
+                                  variant="subtext"
+                                  theme="neutral"
+                                >
+                                  {imagesOnly
+                                    ? 'Image versions from'
+                                    : 'Saved changes from'}
+                                </Text>
+                                <RunRef
+                                  origin={wanted}
+                                  href={originHref?.(wanted)}
+                                  repo={repo}
+                                />
+                                <Text
+                                  as="span"
+                                  variant="subtext"
+                                  theme="neutral"
+                                >
+                                  {imagesOnly
+                                    ? 'haven’t been synced to this install’s registry.'
+                                    : 'haven’t been deployed.'}
+                                </Text>
+                              </div>
+                            ) : (
+                              <Text variant="subtext" theme="neutral">
+                                {category === 'changes-not-applied'
+                                  ? imagesOnly
+                                    ? 'Image versions specified by this install’s configuration haven’t been synced to its registry.'
+                                    : 'Saved configuration or input changes haven’t been deployed.'
+                                  : 'Live resources differ from what was last applied.'}
+                              </Text>
+                            )}
                           </div>
                           <div
                             className={cn(
