@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -132,7 +133,7 @@ func (s *AccountsServiceTestSuite) TestCreateServiceAccountTokenRejectsFederated
 	for name, tc := range testCases {
 		s.Run(name, func() {
 			router := s.routerWithTokenType(admin, tc.tokenType)
-			target, err := s.service.AccountsService.createTokenServiceAccount(cctx.SetAccountContext(s.ctx, s.testAcc), s.testOrg.ID, "federated-target", app.RoleTypeOrgAdmin)
+			target, err := s.service.AccountsService.acctClient.CreateOrgServiceAccount(cctx.SetAccountContext(s.ctx, s.testAcc), s.testOrg.ID, domains.NewAccountID(), "federated-target", app.RoleTypeOrgAdmin)
 			require.NoError(s.T(), err)
 			tokensBefore := s.countStaticTokens()
 

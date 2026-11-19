@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 const (
@@ -49,34 +50,17 @@ func (s *service) CreateIntegrationUser(ctx *gin.Context) {
 
 func (s *service) createIntegrationUser(ctx context.Context) (*app.Token, string, error) {
 	intID := domains.NewIntegrationUserID()
-
-	email := fmt.Sprintf("%s@nuon.co", intID)
-	acct := app.Account{
-		Email:       email,
-		Subject:     intID,
-		AccountType: app.AccountTypeIntegration,
-	}
-	res := s.db.WithContext(ctx).
-		Create(&acct)
-	if res.Error != nil {
-		return nil, "", fmt.Errorf("unable to create integration account: %w", res.Error)
+	acct, err := s.acctClient.CreateTestAccount(ctx, intID, app.AccountTypeIntegration)
+	if err != nil {
+		return nil, "", err
 	}
 
-	token := app.Token{
-		CreatedByID: intID,
-		AccountID:   acct.ID,
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeIntegration,
-		ExpiresAt:   time.Now().Add(defaultIntegrationAPITokenTimeout),
-		IssuedAt:    time.Now(),
-		Issuer:      intID,
+	token, err := s.acctClient.IssueToken(ctx, acct.ID, defaultIntegrationAPITokenTimeout, account.IssueTokenRequest{
+		TokenType: app.TokenTypeIntegration, Issuer: intID, CreatedByID: intID,
+	})
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to create integration user: %w", err)
 	}
 
-	res = s.db.WithContext(ctx).
-		Create(&token)
-	if res.Error != nil {
-		return nil, "", fmt.Errorf("unable to create integration user: %w", res.Error)
-	}
-
-	return &token, email, nil
+	return token, acct.Email, nil
 }

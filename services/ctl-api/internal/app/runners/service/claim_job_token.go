@@ -9,29 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
-
-const jobTokenTTL = 6 * time.Hour
-
-type claimConflict struct {
-	err error
-}
-
-func (e claimConflict) Error() string {
-	if e.err == nil {
-		return "job is not available"
-	}
-	return e.err.Error()
-}
-
-func (e claimConflict) Unwrap() error { return e.err }
 
 type ClaimRunnerJobTokenResponse struct {
 	Token     string    `json:"token"`
@@ -81,8 +64,7 @@ func (s *service) ClaimRunnerJobToken(ctx *gin.Context) {
 			ctx.Error(stderr.ErrNotFound{Err: err, Description: "job not found"})
 			return
 		}
-		var conflict claimConflict
-		if errors.As(err, &conflict) || isUniqueViolation(err) {
+		if errors.Is(err, account.ErrJobClaimConflict) || isUniqueViolation(err) {
 			ctx.Error(stderr.ErrConflict{
 				Err:         err,
 				Description: "job is not available",
@@ -99,55 +81,7 @@ func (s *service) ClaimRunnerJobToken(ctx *gin.Context) {
 }
 
 func (s *service) claimRunnerJobToken(ctx *gin.Context, orgID, runnerID, jobID string) (*app.Token, error) {
-	var issued *app.Token
-	err := s.db.WithContext(ctx.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		var job app.RunnerJob
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where(app.RunnerJob{ID: jobID, RunnerID: runnerID}).
-			Take(&job).Error; err != nil {
-			return err
-		}
-		if job.Status != app.RunnerJobStatusAvailable {
-			return claimConflict{err: fmt.Errorf("job %s is %s", jobID, job.Status)}
-		}
-
-		jobAcct, err := account.New(account.Params{DB: tx}).FindAccount(ctx.Request.Context(), account.ServiceAccountEmail(job.ID))
-		if err != nil {
-			return fmt.Errorf("job service account not provisioned: %w", err)
-		}
-
-		now := time.Now()
-		var existing int64
-		if err := tx.Model(&app.Token{}).
-			Where(app.Token{SourceType: app.TokenSourceTypeRunnerJob, SourceID: job.ID, AccountID: jobAcct.ID}).
-			Where("expires_at > ?", now).
-			Count(&existing).Error; err != nil {
-			return fmt.Errorf("check existing job token: %w", err)
-		}
-		if existing > 0 {
-			return claimConflict{err: fmt.Errorf("job %s already has a token", jobID)}
-		}
-
-		token := app.Token{
-			CreatedByID: jobAcct.ID,
-			Token:       domains.NewUserTokenID(),
-			TokenType:   app.TokenTypeNuon,
-			ExpiresAt:   now.Add(jobTokenTTL),
-			IssuedAt:    now,
-			Issuer:      "nuon",
-			AccountID:   jobAcct.ID,
-			OrgID:       orgID,
-			SourceType:  app.TokenSourceTypeRunnerJob,
-			SourceID:    job.ID,
-		}
-		if err := tx.Create(&token).Error; err != nil {
-			return fmt.Errorf("create job token: %w", err)
-		}
-		// Job stays available until CreateJobExecution claims it (available → in_progress).
-		issued = &token
-		return nil
-	})
-	return issued, err
+	return s.acctClient.ClaimRunnerJobToken(ctx.Request.Context(), orgID, runnerID, jobID)
 }
 
 func isUniqueViolation(err error) bool {
