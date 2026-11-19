@@ -33,6 +33,7 @@ type GetLatestAppBranchRunForInstallOutput struct {
 	AppConfigID    string `json:"app_config_id,omitempty"`
 	InstallGroupID string `json:"install_group_id,omitempty"`
 	AlreadyCurrent bool   `json:"already_current"`
+	DesiredOnly    bool   `json:"desired_only"`
 }
 
 // @temporal-gen-v2 activity
@@ -48,6 +49,7 @@ func (a *Activities) GetLatestAppBranchRunForInstall(ctx context.Context, input 
 		AppConfigID:    latest.AppConfigID,
 		InstallGroupID: latest.InstallGroupID,
 		AlreadyCurrent: latest.AlreadyCurrent,
+		DesiredOnly:    latest.DesiredOnly,
 	}, nil
 }
 

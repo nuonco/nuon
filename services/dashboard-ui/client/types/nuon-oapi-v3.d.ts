@@ -2272,7 +2272,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking, config drift, and per-resource sync status for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+     * @description Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
      */
     get: operations["GetInstallOverview"];
   };
@@ -5564,7 +5564,10 @@ export interface components {
     };
     "app.InstallGroupRunInstall": {
       install_id?: string;
-      /** @description Phase is which stage of the group the install is in: "deploy" or "runbook". */
+      /**
+       * @description Phase is which stage of the group the install is in: "deploy", "desired",
+       * or "runbook".
+       */
       phase?: string;
       /** @description ReleaseReason is why the group stopped waiting on this install. */
       release_reason?: string;
@@ -5953,7 +5956,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home" | "runner_job";
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home" | "runner_job" | "runner" | "log_stream";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6467,7 +6470,7 @@ export interface components {
       version?: number;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_identity" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -6597,7 +6600,7 @@ export interface components {
     };
     "app.RunnerGroupSettings": {
       /** @enum {string} */
-      aws_auth_method?: "iid" | "sts";
+      aws_auth_method?: "iid" | "sts" | "sts-bound" | "sts-vendor";
       aws_cloudformation_stack_type?: string;
       /** @description aws runner specifics runner-v2 */
       aws_instance_type?: string;
@@ -10563,7 +10566,7 @@ export interface components {
     };
     "service.UpdateRunnerSettingsRequest": {
       /** @enum {string} */
-      aws_auth_method?: "iid" | "sts";
+      aws_auth_method?: "iid" | "sts" | "sts-bound" | "sts-vendor";
       /** @description Deprecated: no longer used. Instance refresh is handled by a backend cron. */
       aws_max_instance_lifetime?: number;
       binary_version?: string;
@@ -27457,7 +27460,7 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking, config drift, and per-resource sync status for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+   * @description Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
    */
   GetInstallOverview: {
     parameters: {

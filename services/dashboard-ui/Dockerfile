@@ -1,4 +1,4 @@
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.21 AS openapi-spec
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.24 AS openapi-spec
 
 COPY ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
@@ -71,7 +71,7 @@ RUN go build -o /dashboard-server ./services/dashboard-ui/server
 
 # --- Final image ---
 
-FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.21 AS final
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.24 AS final
 
 RUN apk add --no-cache ca-certificates
 

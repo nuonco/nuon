@@ -17,6 +17,7 @@ type GetLatestActiveBranchAppConfigInput struct {
 type GetLatestActiveBranchAppConfigOutput struct {
 	AppConfigID    string `json:"app_config_id,omitempty"`
 	AlreadyCurrent bool   `json:"already_current"`
+	DesiredOnly    bool   `json:"desired_only"`
 }
 
 // @temporal-gen-v2 activity
@@ -34,8 +35,24 @@ func (a *Activities) GetLatestActiveBranchAppConfig(ctx context.Context, input *
 		return nil, err
 	}
 
-	return &GetLatestActiveBranchAppConfigOutput{
+	out := &GetLatestActiveBranchAppConfigOutput{
 		AppConfigID:    run.AppConfigID,
 		AlreadyCurrent: install.DeployedAppConfigID() == run.AppConfigID,
-	}, nil
+	}
+	if out.AlreadyCurrent {
+		return out, nil
+	}
+
+	enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureDesiredConfigRollout)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check desired config rollout feature: %w", err)
+	}
+	if enabled {
+		if install.AppConfigID == run.AppConfigID {
+			out.AlreadyCurrent = true
+			return out, nil
+		}
+		out.DesiredOnly = true
+	}
+	return out, nil
 }

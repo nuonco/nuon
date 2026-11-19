@@ -12,6 +12,7 @@ export type TNotebookRow = {
   name: string
   description: ReactNode
   cellCount: number
+  created?: ReactNode
   lastRun: ReactNode
   lastUpdated: ReactNode
   href: string
@@ -34,8 +35,16 @@ export function parseNotebooksToTableData(
       </div>
     ) : null,
     cellCount: nb.cell_count ?? 0,
+    created: nb.created_at ? (
+      <Time time={nb.created_at} format="relative" variant="subtext" nowrap />
+    ) : null,
     lastRun: nb.latest_run_at ? (
-      <Time time={nb.latest_run_at} format="relative" variant="subtext" nowrap />
+      <Time
+        time={nb.latest_run_at}
+        format="relative"
+        variant="subtext"
+        nowrap
+      />
     ) : null,
     lastUpdated: nb.updated_at ? (
       <Time time={nb.updated_at} format="relative" variant="subtext" nowrap />
@@ -69,14 +78,19 @@ const columns: ColumnDef<TNotebookRow>[] = [
   {
     accessorKey: 'cellCount',
     header: 'Cells',
-    cell: (info) => (
-      <Text variant="subtext">{info.getValue() as number}</Text>
-    ),
+    cell: (info) => <Text variant="subtext">{info.getValue() as number}</Text>,
     enableSorting: true,
   },
   {
     accessorKey: 'lastRun',
     header: 'Last run',
+    cell: (info) => info.getValue() as ReactNode,
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'created',
+    header: 'Created',
+    meta: { defaultHidden: true },
     cell: (info) => info.getValue() as ReactNode,
     enableSorting: false,
   },
@@ -100,6 +114,7 @@ export const NotebooksTable = ({
   pagination,
 }: INotebooksTable) => (
   <Table<TNotebookRow>
+    tableId="notebooks"
     columns={columns}
     data={data}
     isLoading={isLoading}

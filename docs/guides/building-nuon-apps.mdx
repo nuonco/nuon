@@ -43,8 +43,12 @@ branch    = "main"
 runner_type = "aws"
 ```
 
-Then add a [component](/concepts/components) for each Helm chart, Terraform module, or container image you deploy. The
+Then add a [component](/concepts/components) for each Helm chart, Terraform module, or container image you deploy. You
+can point a component at an existing chart or module without rewriting it. The
 [configuration reference](/config-ref) covers every file and field.
+
+An app you install into a customer account also defines the provision, deprovision, and maintenance roles in its
+permissions config. See [Operation Roles](/concepts/operation-roles#required-roles).
 
 ## Validating the Config
 
@@ -74,4 +78,15 @@ nuon apps get                     # get info about the selected app
 nuon apps rename --name=new-name  # rename an app
 ```
 
-Next, ship your config with an app branch. See [Multiple App Configurations](/guides/multiple-app-configurations).
+## Shipping the Config
+
+App config ships through an [app branch](/concepts/app-branches). Commit the config to your repo, add a branch file,
+and sync it once:
+
+```sh
+nuon branches sync --file branch.toml
+```
+
+After that, each push to the tracked git branch builds what changed and rolls it out to your installs. See
+[App Branches](/guides/app-branches) for the branch file, and
+[Multiple App Configurations](/guides/multiple-app-configurations) to run more than one.

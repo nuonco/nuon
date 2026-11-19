@@ -27,6 +27,8 @@ const preferences: IDashboardPreferencesContext = {
   setDiffView: () => {},
   planSections: 'expanded',
   setPlanSections: () => {},
+  tableVersion: 'legacy',
+  setTableVersion: () => {},
   resetPreferences: () => {},
 }
 

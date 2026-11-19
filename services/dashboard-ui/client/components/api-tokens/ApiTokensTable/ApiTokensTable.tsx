@@ -95,6 +95,7 @@ export const ApiTokensTable = ({
 
   return (
     <Table<TToken>
+      tableId="api-tokens"
       columns={columns}
       data={data}
       isLoading={isLoading}
