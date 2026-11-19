@@ -89,7 +89,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	installEntries := groupRun.Installs
 	deployedIDs := make([]string, 0, len(installEntries))
 	for i := range installEntries {
-		if installEntries[i].Status == statusSuccess {
+		if installEntries[i].Status == statusSuccess && installEntries[i].Phase != app.InstallGroupRunPhaseDesired {
 			deployedIDs = append(deployedIDs, installEntries[i].InstallID)
 		}
 	}
@@ -164,7 +164,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 // than adopting the failed one through its idempotency key.
 func seedRunbookPlan(installEntries []app.InstallGroupRunInstall, runbooks []activities.ResolvedPostDeployRunbook) {
 	for i := range installEntries {
-		if installEntries[i].Status != statusSuccess {
+		if installEntries[i].Status != statusSuccess || installEntries[i].Phase == app.InstallGroupRunPhaseDesired {
 			continue
 		}
 

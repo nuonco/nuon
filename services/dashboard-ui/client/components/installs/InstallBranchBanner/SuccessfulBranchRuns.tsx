@@ -38,7 +38,7 @@ export const SuccessfulBranchRuns = ({
   return (
     <div className="flex flex-col gap-4" data-testid="successful-runs">
       {selectedCommit?.sha ? (
-        <LabeledValue label="Selected commit">
+        <LabeledValue label="Desired commit">
           <BranchRunCommit
             displayVariant="inline"
             href={selectedHref}
@@ -52,9 +52,9 @@ export const SuccessfulBranchRuns = ({
         </LabeledValue>
       ) : null}
       <Text variant="subtext" theme="neutral">
-        These successful app branch runs have configurations newer than this
-        install’s selected configuration. Failed, canceled, preview, and
-        no-change runs don’t count. Newest runs are shown first.
+        These app branch runs came after the configuration this install last
+        applied, up to its desired configuration. Failed, canceled, preview,
+        and no-change runs don’t count. Newest runs are shown first.
       </Text>
       {runs.length === 0 ? (
         <EmptyState

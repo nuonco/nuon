@@ -13,7 +13,7 @@ import { useInstallHref } from '@/hooks/use-install-path'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallOverview } from '@/hooks/use-install-overview'
 import { useOrg } from '@/hooks/use-org'
-import { getAppBranch, getBranchWorkflowRuns } from '@/lib'
+import { getAppBranch } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import { vcsRepo } from '@/utils/vcs-urls'
 import { NewInstallHeader } from './NewInstallHeader'
@@ -28,7 +28,7 @@ export const NewInstallHeaderContainer = () => {
 
   const branchId = install?.app_branch?.id
   const tracking = overview?.branch_tracking
-  const selectedCommit = tracking?.selected_commit?.sha
+  const desiredCommit = tracking?.selected_commit?.workflow_id
     ? tracking.selected_commit
     : undefined
 
@@ -44,77 +44,37 @@ export const NewInstallHeaderContainer = () => {
     enabled: !!org?.id && !!install?.app_id && !!branchId,
   })
 
-  const { data: branchRuns, isLoading: isLoadingBranchRuns } = useQuery({
-    queryKey: ['install-header-branch-run', org?.id, install?.app_id, branchId],
-    queryFn: () =>
-      getBranchWorkflowRuns({
-        orgId: org.id,
-        appId: install.app_id!,
-        branchId: branchId!,
-        limit: 1,
-      }),
-    enabled:
-      !!org?.id &&
-      !!install?.app_id &&
-      !!branchId &&
-      !isLoadingOverview &&
-      !selectedCommit,
-  })
-
   if (!install) return null
 
-  const latestWorkflow = branchRuns?.data?.[0]
-  const branchRun = latestWorkflow?.app_branch_runs?.at(0)
-  const commit = branchRun?.vcs_connection_commit
   const repo =
     tracking?.repo ||
-    vcsRepo(branchRun?.app_branch_config) ||
     (branch ? vcsRepo(latestBranchConfig(branch)) : undefined)
-  const latestRunHref =
-    org?.id && install.app_id && branchId && latestWorkflow?.id
-      ? `/${org.id}/apps/${install.app_id}/branches/${branchId}/runs/${latestWorkflow.id}`
-      : undefined
 
   return (
     <NewInstallHeader
       install={install}
       labelColors={labelColors}
       latestCommit={
-        selectedCommit ? (
+        desiredCommit ? (
           <BranchRunCommit
             displayVariant="inline"
-            status={selectedCommit.run_status}
+            status={desiredCommit.run_status}
             href={branchRunHref({
               orgId: org?.id,
               appId: install.app_id,
-              commit: selectedCommit,
+              commit: desiredCommit,
             })}
-            message={selectedCommit.message?.split('\n')[0]}
-            author={selectedCommit.author}
-            sha={selectedCommit.sha}
+            message={desiredCommit.message?.split('\n')[0]}
+            author={desiredCommit.author}
+            sha={desiredCommit.sha}
             repo={repo}
-            createdAt={selectedCommit.created_at}
-            showStatus={false}
-          />
-        ) : branchRun ? (
-          <BranchRunCommit
-            displayVariant="inline"
-            status={branchRun.status}
-            href={latestRunHref}
-            message={commit?.message?.split('\n')[0]}
-            author={commit?.author_name}
-            avatarUrl={commit?.author_avatar_url}
-            sha={commit?.sha ?? branchRun.head_sha}
-            repo={repo}
-            createdAt={branchRun.created_at}
+            createdAt={desiredCommit.created_at}
             showStatus={false}
           />
         ) : undefined
       }
-      latestCommitLabel={
-        selectedCommit ? 'Selected commit' : 'Latest branch run'
-      }
-      latestCommitLoading={isLoadingOverview || isLoadingBranchRuns}
+      latestCommitLabel="Desired commit"
+      latestCommitLoading={isLoadingOverview}
       installPath={installHref({
         installId: install.id,
         appId: install.app_id,

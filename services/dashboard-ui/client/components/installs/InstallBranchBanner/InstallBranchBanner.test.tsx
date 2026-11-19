@@ -25,9 +25,9 @@ test('shows the count and tracked branch with singular copy', () => {
       />
     </MemoryRouter>
   )
-  expect(screen.getByText('1 app branch run behind')).toBeTruthy()
+  expect(screen.getByText('1 app branch run behind its desired config')).toBeTruthy()
   expect(
-    screen.getByRole('link', { name: 'release' }).getAttribute('href')
+    screen.getByRole('link', { name: 'on release' }).getAttribute('href')
   ).toBe('/org-1/apps/app-1/branches/br-1')
 })
 
@@ -81,7 +81,7 @@ test('shows each successful run with its commit and keeps repeated commits disti
       .getAllByRole('link', { name: /^(Commit pushed|Manual run)$/ })
       .map((link) => link.getAttribute('href'))
   ).toEqual(['/runs/newer', '/runs/older'])
-  expect(screen.getByText('Selected commit')).toBeTruthy()
+  expect(screen.getByText('Desired commit')).toBeTruthy()
   expect(screen.getAllByText('Update worker')).toHaveLength(2)
   expect(screen.getAllByText('Completed')).toHaveLength(2)
   expect(screen.getByText('manual')).toBeTruthy()
