@@ -1,22 +1,51 @@
 ---
-title: 045 - Changed-Component Deploys and Private Registries
-description: Branch runs build and deploy only the components a commit changes. Pull private images from ECR, Artifact Registry, and ACR through cloud connections.
+title: 045 - Run More Installs With Less Overhead
+description: Private images pull through cloud connections, with no pull secret to manage. One page shows which installs are current and which need attention.
 boost: 0.3
 ---
 
-_November 13, 2026_
+_November 20, 2026_
 
-## Deploy only what changed
+## Fleet view
 
-- A branch run rebuilds a component only when its config, its source directory, or a file its last build read has changed
-- Each component and the sandbox deploy only when they differ from their last successful apply, including the builds they use from dependencies
-- Each deployment lists the changed files behind it and the commit it built from
+- See every install of an app on one page, grouped by [app branch](/concepts/app-branches) and [install group](/concepts/app-branches#install-groups)
+- Installs that are [unhealthy or degraded](/guides/health-checks#how-component-health-is-determined), or waiting on [approval](/concepts/workflows#workflow-approvals), are called out at the top
+- Each install group shows how many installs are on the branch's latest run, or on any earlier run
+- Switch to a table for each install's config version, [runner](/concepts/runners) status, and pending approvals
 
-Edit one component's Helm template, and the next branch run deploys that component. The sandbox and every other component stay as they are.
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/045-fleet-view.png"
+    alt="The fleet view for an app with 147 installs: 22 installs need attention, 74 have the latest run applied, and each app branch lists its install groups with a bar of installs on and not on the latest run"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
 
-<Note>Builds from earlier releases don't record their source details. The first branch run after this release rebuilds each Git component and the sandbox once, and redeploys components that have dependencies.</Note>
+<Note>Fleet view is in early access. [Contact us](https://nuon.co/contact-us) to turn it on for your org.</Note>
 
-<Card title="What a run rebuilds" icon="code-branch" href="/guides/app-branches#what-a-run-rebuilds" horizontal />
+---
+
+## More efficient customer updates
+
+- [Components](/concepts/components) now rebuild only when their config or source changes
+- Components and the [sandbox](/concepts/sandboxes) deploy only when they, or a build they [depend on](/guides/component-dependencies), differ from the last successful apply
+- Each deployment lists the changed files and the commit behind it
+
+<Tip>Edit one component's [Helm chart](/guides/helm-chart-components) template, and the next branch run deploys that component. The sandbox and every other component stay as they are.</Tip>
 
 ---
 
@@ -24,7 +53,7 @@ Edit one component's Helm template, and the next branch run deploys that compone
 
 - Pull private images from Amazon ECR, Google Artifact Registry, and Azure Container Registry with no credentials in app config
 - Assign each image repository to a verified [cloud connection](/guides/cloud-connections) under **Settings > Image repositories**
-- Each connection comes with generated setup to apply in the cloud account: Terraform or the cloud's CLI, plus CloudFormation on AWS
+- Each connection generates the setup to apply in the cloud account, as Terraform or CLI commands, plus CloudFormation on AWS
 
 Image credentials already in app config keep working.
 
@@ -34,6 +63,66 @@ Image credentials already in app config keep working.
 
 ## Other updates in this release
 
+### EKS access for break-glass roles
+
+Add an [`eks_access`](/config-ref/break-glass) block to an AWS [break-glass](/concepts/break-glass) or [custom role](/concepts/operation-roles#scope-custom-operation-roles-to-a-task). The install stack grants that cluster access when the customer turns the role on and removes it when they turn it off. [CloudFormation install stacks](/guides/provision-stacks-with-cloudformation) only.
+
+### Cloud SQL delete warnings on GCP
+
+When a GCP [break-glass role](/concepts/break-glass#define-a-break-glass-role) holds Cloud SQL delete permissions, config validation warns if any other role can still delete, including through a predefined role such as `roles/editor` or `roles/cloudsql.admin`.
+
 ### Delete action run logs
 
-If an action prints a secret, an org admin can delete that run's logs from the action run page once the run ends. The run and its outputs stay, so a secret in an output needs separate handling.
+If an [action](/concepts/actions) prints a secret, an org admin can delete that run's logs from the action run page once the run ends. Only the logs are deleted. A secret the action also wrote to an output remains in the run's outputs.
+
+### UI preferences in beta
+
+Open the account menu in the top right and choose **Preferences** to turn on two beta views.
+
+**Tables** lets you choose each table's columns or switch it to a card grid.
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/045-new-tables.png"
+    alt="An installs table with the Show columns menu open, listing Status, App, Platform, Region, Branch, Labels, and Updated as columns to show or hide, next to the table and grid view buttons"
+    style={{
+      width: '100%',
+      maxWidth: '680px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+**Plan diff viewer** adds search, collapsible chunks, and a split view. Plan graphs and the attribute tree are only in the current viewer.
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/045-new-diff-viewer.png"
+    alt="The new plan diff viewer showing a deployment.yaml change in split view, with a Find in diff search box and the old and new lines side by side"
+    style={{
+      width: '100%',
+      maxWidth: '680px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
