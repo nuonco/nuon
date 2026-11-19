@@ -85,7 +85,7 @@ build, plan, and apply to a preview install. See [Previews](/guides/app-branches
 
 | Trigger (dashboard / CLI) | What starts it | Branch config |
 | --- | --- | --- |
-| **Commit pushed** | Push to the tracked branch that that passes the `[run]` path filters (fleet run) | `[run] mode = "push"` (default) |
+| **Commit pushed** | Push to the tracked branch that passes the `[run]` path filters (fleet run) | `[run] mode = "push"` (default) |
 | **Pull request** | PR opened or updated against the tracked branch (**preview** only; no install groups) | `[preview]` settings (GitHub App for comments and statuses) |
 | **Manual run** | `nuon branches trigger`, API, or dashboard (fleet run) | Always available |
 | **Tag pushed** | Tag matching `tag_prefix` on that branch's history (fleet run) | `[run] mode = "on_tag"` |

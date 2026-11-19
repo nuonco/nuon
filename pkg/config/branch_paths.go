@@ -1,4 +1,4 @@
-package branchpaths
+package config
 
 import (
 	"fmt"
@@ -10,15 +10,15 @@ import (
 )
 
 const (
-	MaxPatterns      = 100
-	MaxPatternLength = 512
+	maxRunPathPatterns = 100
+	maxRunPathLength   = 512
 
 	maxDoubleStarSegments = 3
 )
 
-type matcher []glob.Glob
+type runPathMatcher []glob.Glob
 
-func (m matcher) Match(p string) bool {
+func (m runPathMatcher) match(p string) bool {
 	for _, g := range m {
 		if g.Match(p) {
 			return true
@@ -27,42 +27,42 @@ func (m matcher) Match(p string) bool {
 	return false
 }
 
-// Filter is either an allow list (paths) or a deny list (paths_ignore), never
-// both.
-type Filter struct {
-	include []matcher
-	ignore  []matcher
+// RunPathFilter is either an allow list (paths) or a deny list (paths_ignore),
+// never both.
+type RunPathFilter struct {
+	include []runPathMatcher
+	ignore  []runPathMatcher
 }
 
-type Decision struct {
+type RunPathDecision struct {
 	Run    bool
 	Reason string
 }
 
-func Validate(paths, pathsIgnore []string) error {
-	_, err := New(paths, pathsIgnore)
+func ValidateRunPaths(paths, pathsIgnore []string) error {
+	_, err := NewRunPathFilter(paths, pathsIgnore)
 	return err
 }
 
-// New returns nil when no filter applies: with neither paths nor paths_ignore
-// set, every change runs.
-func New(paths, pathsIgnore []string) (*Filter, error) {
+// NewRunPathFilter returns nil when no filter applies: with neither paths nor
+// paths_ignore set, every change runs.
+func NewRunPathFilter(paths, pathsIgnore []string) (*RunPathFilter, error) {
 	if len(paths) > 0 && len(pathsIgnore) > 0 {
 		return nil, fmt.Errorf("paths and paths_ignore are mutually exclusive")
 	}
 	if len(paths) == 0 && len(pathsIgnore) == 0 {
 		return nil, nil
 	}
-	if len(paths) > MaxPatterns || len(pathsIgnore) > MaxPatterns {
-		return nil, fmt.Errorf("at most %d path patterns are allowed", MaxPatterns)
+	if len(paths) > maxRunPathPatterns || len(pathsIgnore) > maxRunPathPatterns {
+		return nil, fmt.Errorf("at most %d path patterns are allowed", maxRunPathPatterns)
 	}
 
-	f := &Filter{}
+	f := &RunPathFilter{}
 	for _, p := range paths {
 		if strings.HasPrefix(p, "!") {
 			return nil, fmt.Errorf("paths: pattern %q cannot be negated; use paths_ignore to deny paths", p)
 		}
-		m, err := compilePattern(p)
+		m, err := compileRunPath(p)
 		if err != nil {
 			return nil, fmt.Errorf("paths: %w", err)
 		}
@@ -72,7 +72,7 @@ func New(paths, pathsIgnore []string) (*Filter, error) {
 		if strings.HasPrefix(p, "!") {
 			return nil, fmt.Errorf("paths_ignore: pattern %q cannot be negated", p)
 		}
-		m, err := compilePattern(p)
+		m, err := compileRunPath(p)
 		if err != nil {
 			return nil, fmt.Errorf("paths_ignore: %w", err)
 		}
@@ -81,18 +81,18 @@ func New(paths, pathsIgnore []string) (*Filter, error) {
 	return f, nil
 }
 
-func compilePattern(p string) (matcher, error) {
-	if len(p) > MaxPatternLength {
-		return nil, fmt.Errorf("pattern exceeds %d bytes", MaxPatternLength)
+func compileRunPath(p string) (runPathMatcher, error) {
+	if len(p) > maxRunPathLength {
+		return nil, fmt.Errorf("pattern exceeds %d bytes", maxRunPathLength)
 	}
-	p = strings.TrimPrefix(p, "./")
+	p, _ = strings.CutPrefix(p, "./")
 	if strings.TrimSpace(p) == "" {
 		return nil, fmt.Errorf("pattern cannot be empty")
 	}
-	if strings.HasPrefix(p, "/") || strings.Contains(p, `\`) || strings.Contains(p, "://") || hasDriveLetter(p) {
+	if path.IsAbs(p) || strings.Contains(p, `\`) || strings.Contains(p, "://") || hasDriveLetter(p) {
 		return nil, fmt.Errorf("pattern %q must be relative to the repository root", p)
 	}
-	if hasControlChar(p) {
+	if strings.ContainsFunc(p, unicode.IsControl) {
 		return nil, fmt.Errorf("pattern %q contains control characters", p)
 	}
 	segs := strings.Split(p, "/")
@@ -109,7 +109,7 @@ func compilePattern(p string) (matcher, error) {
 		return nil, fmt.Errorf("pattern %q has more than %d '**/' segments", p, maxDoubleStarSegments)
 	}
 
-	var m matcher
+	var m runPathMatcher
 	for _, variant := range expandDoubleStar(segs) {
 		g, err := glob.Compile(variant, '/')
 		if err != nil {
@@ -121,7 +121,8 @@ func compilePattern(p string) (matcher, error) {
 }
 
 // expandDoubleStar lets each non-trailing "**" segment also match zero
-// directories, which gobwas/glob does not do on its own.
+// directories, which gobwas/glob does not do on its own. path.Match cannot
+// express "**".
 func expandDoubleStar(segs []string) []string {
 	variants := [][]string{{}}
 	for i, seg := range segs {
@@ -142,19 +143,19 @@ func expandDoubleStar(segs []string) []string {
 }
 
 // Paths that cannot be evaluated safely make Match fail open.
-func (f *Filter) Match(files []string) Decision {
+func (f *RunPathFilter) Match(files []string) RunPathDecision {
 	if f == nil {
-		return Decision{Run: true}
+		return RunPathDecision{Run: true}
 	}
 	if len(files) == 0 {
-		return Decision{Reason: "no changed files"}
+		return RunPathDecision{Reason: "no changed files"}
 	}
 
 	cleaned := make([]string, 0, len(files))
 	for _, file := range files {
-		p, ok := normalizePath(file)
+		p, ok := normalizeRunPath(file)
 		if !ok || p == "" {
-			return Decision{Run: true}
+			return RunPathDecision{Run: true}
 		}
 		cleaned = append(cleaned, p)
 	}
@@ -162,44 +163,45 @@ func (f *Filter) Match(files []string) Decision {
 	if len(f.include) > 0 {
 		for _, p := range cleaned {
 			if f.included(p) {
-				return Decision{Run: true}
+				return RunPathDecision{Run: true}
 			}
 		}
-		return Decision{Reason: fmt.Sprintf("no changed files match run.paths (%d files checked)", len(cleaned))}
+		return RunPathDecision{Reason: fmt.Sprintf("no changed files match run.paths (%d files checked)", len(cleaned))}
 	}
 
 	for _, p := range cleaned {
 		if !f.ignored(p) {
-			return Decision{Run: true}
+			return RunPathDecision{Run: true}
 		}
 	}
-	return Decision{Reason: fmt.Sprintf("all %d changed files match run.paths_ignore", len(cleaned))}
+	return RunPathDecision{Reason: fmt.Sprintf("all %d changed files match run.paths_ignore", len(cleaned))}
 }
 
-func (f *Filter) included(p string) bool {
+func (f *RunPathFilter) included(p string) bool {
 	for _, m := range f.include {
-		if m.Match(p) {
+		if m.match(p) {
 			return true
 		}
 	}
 	return false
 }
 
-func (f *Filter) ignored(p string) bool {
+func (f *RunPathFilter) ignored(p string) bool {
 	for _, m := range f.ignore {
-		if m.Match(p) {
+		if m.match(p) {
 			return true
 		}
 	}
 	return false
 }
 
-func normalizePath(p string) (string, bool) {
+func normalizeRunPath(p string) (string, bool) {
 	p = strings.TrimSpace(p)
-	if hasControlChar(p) || strings.Contains(p, `\`) || strings.HasPrefix(p, "/") {
+	if strings.ContainsFunc(p, unicode.IsControl) || strings.Contains(p, `\`) || path.IsAbs(p) {
 		return "", false
 	}
-	p = path.Clean(strings.TrimPrefix(p, "./"))
+	p, _ = strings.CutPrefix(p, "./")
+	p = path.Clean(p)
 	if p == "." {
 		return "", true
 	}
@@ -207,15 +209,6 @@ func normalizePath(p string) (string, bool) {
 		return "", false
 	}
 	return p, true
-}
-
-func hasControlChar(s string) bool {
-	for _, r := range s {
-		if unicode.IsControl(r) {
-			return true
-		}
-	}
-	return false
 }
 
 func hasDriveLetter(p string) bool {

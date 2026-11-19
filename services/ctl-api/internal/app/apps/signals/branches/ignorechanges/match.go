@@ -6,6 +6,13 @@ package ignorechanges
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/nuonco/nuon/pkg/config"
+)
+
+const (
+	regexStatusDescription = "Ignored by app branch changes regex"
+	pathsStatusDescription = "Ignored by app branch run paths"
 )
 
 // Decision is the outcome of evaluating a changed file set against a pattern.
@@ -16,6 +23,16 @@ type Decision struct {
 	// step's description and the commit status, so it says which pattern
 	// matched and how many files it covered.
 	Reason string
+}
+
+// EvaluateRun applies the run path filter first, then ignore_changes_regex, and
+// returns the commit status description that goes with the decision.
+func EvaluateRun(filter *config.RunPathFilter, regex string, paths []string) (Decision, string, error) {
+	if d := filter.Match(paths); !d.Run {
+		return Decision{Ignored: true, Reason: d.Reason}, pathsStatusDescription, nil
+	}
+	decision, err := Evaluate(regex, paths)
+	return decision, regexStatusDescription, err
 }
 
 // Evaluate reports whether every changed path matches pattern.

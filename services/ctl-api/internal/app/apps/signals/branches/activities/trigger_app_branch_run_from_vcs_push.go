@@ -9,7 +9,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/pkg/branchpaths"
+	pkgconfig "github.com/nuonco/nuon/pkg/config"
+	ghrepo "github.com/nuonco/nuon/pkg/github/repo"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -200,7 +201,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 		if runConfig.Mode != app.AppBranchRunModeTagPrefix || !strings.HasPrefix(req.HeadRef, runConfig.TagPrefix) {
 			return metadata, false, nil
 		}
-		if !isSafeGitRef(req.HeadRef) {
+		if !ghrepo.IsSafeGitRef(req.HeadRef) {
 			return metadata, false, nil
 		}
 		metadata.Tag = req.HeadRef
@@ -253,7 +254,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 					metadata.GithubLabel = runConfig.GithubLabel
 					req.PRNumber = pr.Number
 					req.BaseBranch = baseBranch
-					return metadata, true, nil
+					return metadata, a.pushMatchesRunPaths(ctx, config, runConfig, req), nil
 				}
 			}
 			return metadata, false, nil
@@ -266,7 +267,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 }
 
 func (a *Activities) pushMatchesRunPaths(ctx context.Context, config *app.AppBranchConfig, runConfig app.AppBranchRunConfig, req *TriggerAppBranchRunFromVCSPushRequest) bool {
-	filter, err := branchpaths.New(runConfig.Paths, runConfig.PathsIgnore)
+	filter, err := pkgconfig.NewRunPathFilter(runConfig.Paths, runConfig.PathsIgnore)
 	if err != nil {
 		a.l.Warn("invalid app branch run paths, running branch", zap.String("app_branch_config_id", config.ID), zap.Error(err))
 		return true
@@ -292,7 +293,7 @@ func (a *Activities) pushMatchesRunPaths(ctx context.Context, config *app.AppBra
 // pushChangedFiles compares before...after on GitHub because the webhook's
 // per-commit file lists are incomplete for forced and large pushes.
 func (a *Activities) pushChangedFiles(ctx context.Context, config *app.AppBranchConfig, req *TriggerAppBranchRunFromVCSPushRequest) ([]string, bool) {
-	if !isCommitSHA(req.HeadSHA) || !isCommitSHA(req.BaseSHA) || isZeroCommitSHA(req.BaseSHA) {
+	if !ghrepo.IsCommitSHA(req.HeadSHA) || !ghrepo.IsCommitSHA(req.BaseSHA) || ghrepo.IsZeroCommitSHA(req.BaseSHA) {
 		return nil, false
 	}
 	_, vcsConfigID, err := branchVCSIdentity(config)

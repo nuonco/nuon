@@ -5,7 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/branchpaths"
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
@@ -28,7 +28,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	regex := run.AppBranchConfig.IgnoreChangesRegex
-	var pathsFilter *branchpaths.Filter
+	var pathsFilter *config.RunPathFilter
 	if run.RunType == app.AppBranchRunTypeGitPreview {
 		pathsFilter, err = previewPathsFilter(&run.AppBranchConfig)
 		if err != nil {
@@ -71,17 +71,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		paths = changed.Paths
 	}
 
-	statusDescription := "Ignored by app branch changes regex"
-	var decision Decision
-	if d := pathsFilter.Match(paths); !d.Run {
-		decision = Decision{Ignored: true, Reason: d.Reason}
-		statusDescription = "Ignored by app branch run paths"
-	} else if regex != "" {
-		decision, err = Evaluate(regex, paths)
-		if err != nil {
-			logger.Warn("unable to evaluate ignored changes; continuing run", "error", err)
-			return nil
-		}
+	decision, statusDescription, err := EvaluateRun(pathsFilter, regex, paths)
+	if err != nil {
+		logger.Warn("unable to evaluate ignored changes; continuing run", "error", err)
+		return nil
 	}
 	if !decision.Ignored {
 		return nil
@@ -142,11 +135,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-func previewPathsFilter(cfg *app.AppBranchConfig) (*branchpaths.Filter, error) {
+func previewPathsFilter(cfg *app.AppBranchConfig) (*config.RunPathFilter, error) {
 	var paths, pathsIgnore []string
 	if cfg.RunConfig != nil {
 		paths = cfg.RunConfig.Paths
 		pathsIgnore = cfg.RunConfig.PathsIgnore
 	}
-	return branchpaths.New(paths, pathsIgnore)
+	return config.NewRunPathFilter(paths, pathsIgnore)
 }

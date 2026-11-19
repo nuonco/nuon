@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	ghrepo "github.com/nuonco/nuon/pkg/github/repo"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -45,10 +46,10 @@ func TestValidateChangedFilePathsInput(t *testing.T) {
 
 func TestIsSafeGitRef(t *testing.T) {
 	for _, ref := range []string{"v1.2.3", "release/v1", "acme/v0.0.1"} {
-		require.True(t, isSafeGitRef(ref), ref)
+		require.True(t, ghrepo.IsSafeGitRef(ref), ref)
 	}
 	for _, ref := range []string{"", "/v1", "v1/", "../v1", "v1..v2", `a\b`, "v1?x", "v1#x", "v1%2e", "v1 x", "v1\n"} {
-		require.False(t, isSafeGitRef(ref), ref)
+		require.False(t, ghrepo.IsSafeGitRef(ref), ref)
 	}
 }
 
@@ -77,8 +78,7 @@ func TestPushMatchesRunPathsFailsOpenWithoutComparableSHAs(t *testing.T) {
 		})
 	}
 
-	t.Run("no filter at repo root", func(t *testing.T) {
-		root := &app.AppBranchConfig{ConnectedGithubVCSConfig: &app.ConnectedGithubVCSConfig{Directory: "."}}
-		require.True(t, a.pushMatchesRunPaths(context.Background(), root, app.AppBranchRunConfig{Mode: app.AppBranchRunModePush}, &TriggerAppBranchRunFromVCSPushRequest{}))
+	t.Run("no paths or paths_ignore runs", func(t *testing.T) {
+		require.True(t, a.pushMatchesRunPaths(context.Background(), &app.AppBranchConfig{}, app.AppBranchRunConfig{Mode: app.AppBranchRunModePush}, &TriggerAppBranchRunFromVCSPushRequest{}))
 	})
 }

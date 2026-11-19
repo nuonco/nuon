@@ -287,7 +287,7 @@ func diffBranchRun(old, new *AppBranchRunConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("mode"), diff.WithStringDiff(old.Mode, new.Mode)),
 		diff.NewDiff(diff.WithKey("tag_prefix"), diff.WithStringDiff(old.TagPrefix, new.TagPrefix)),
 		diff.NewDiff(diff.WithKey("github_label"), diff.WithStringDiff(old.GithubLabel, new.GithubLabel)),
-		diff.NewDiff(diff.WithKey("paths"), diff.WithOrderedStringSliceDiff(old.Paths, new.Paths)),
+		diff.NewDiff(diff.WithKey("paths"), diff.WithStringSliceDiff(old.Paths, new.Paths)),
 		diff.NewDiff(diff.WithKey("paths_ignore"), diff.WithStringSliceDiff(old.PathsIgnore, new.PathsIgnore)),
 	))
 }

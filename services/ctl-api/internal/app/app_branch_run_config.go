@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	"github.com/nuonco/nuon/pkg/branchpaths"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 type AppBranchRunMode string
@@ -58,5 +58,5 @@ func (c AppBranchRunConfig) Validate() error {
 	default:
 		return fmt.Errorf("unknown app branch run mode %q (valid modes: push, on_tag, on_github_label, manual_only)", c.Mode)
 	}
-	return branchpaths.Validate(c.Paths, c.PathsIgnore)
+	return config.ValidateRunPaths(c.Paths, c.PathsIgnore)
 }

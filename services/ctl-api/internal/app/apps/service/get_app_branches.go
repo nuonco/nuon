@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -150,7 +149,7 @@ func (s *service) attachLatestBranchRuns(ctx context.Context, branches []app.App
 		Model(&app.AppBranchRun{}).
 		Select("DISTINCT ON (app_branch_id) id").
 		Where("app_branch_id IN ?", branchIDs).
-		Scopes(appshelpers.ExcludeIgnoredPreviewRuns).
+		Scopes(scopes.ExcludeIgnoredPreviewRuns).
 		Order("app_branch_id, created_at DESC")
 
 	runs := make([]app.AppBranchRun, 0)

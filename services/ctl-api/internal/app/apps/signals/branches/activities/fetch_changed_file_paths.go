@@ -3,50 +3,24 @@ package activities
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"strings"
-	"unicode"
 
 	"github.com/google/go-github/v50/github"
 	"go.temporal.io/sdk/temporal"
+
+	ghrepo "github.com/nuonco/nuon/pkg/github/repo"
 )
 
 const maxChangedFilePaths = 3000
 const maxComparedFilePaths = 300
 
-var commitSHARegexp = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
-
-func isCommitSHA(s string) bool {
-	return commitSHARegexp.MatchString(s)
-}
-
-func isZeroCommitSHA(s string) bool {
-	return s != "" && strings.Trim(s, "0") == ""
-}
-
-// isSafeGitRef rejects refs that could change the GitHub API URL they are
-// interpolated into.
-func isSafeGitRef(ref string) bool {
-	if ref == "" || strings.HasPrefix(ref, "/") || strings.HasSuffix(ref, "/") ||
-		strings.Contains(ref, "..") || strings.ContainsAny(ref, `\?#%`) {
-		return false
-	}
-	for _, r := range ref {
-		if unicode.IsControl(r) || unicode.IsSpace(r) {
-			return false
-		}
-	}
-	return true
-}
-
 func validateChangedFilePathsInput(input *FetchChangedFilePathsInput) error {
-	if !isCommitSHA(input.CommitSHA) {
+	if !ghrepo.IsCommitSHA(input.CommitSHA) {
 		return fmt.Errorf("commit_sha must be a full commit SHA")
 	}
-	if input.BaseSHA != "" && !isCommitSHA(input.BaseSHA) {
+	if input.BaseSHA != "" && !ghrepo.IsCommitSHA(input.BaseSHA) {
 		return fmt.Errorf("base_sha must be a full commit SHA")
 	}
-	if input.BaseBranch != "" && !isSafeGitRef(input.BaseBranch) {
+	if input.BaseBranch != "" && !ghrepo.IsSafeGitRef(input.BaseBranch) {
 		return fmt.Errorf("base_branch is not a valid git ref")
 	}
 	if input.PRNumber != nil && *input.PRNumber <= 0 {

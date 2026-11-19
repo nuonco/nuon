@@ -6,7 +6,6 @@ import (
 
 	"github.com/invopop/jsonschema"
 
-	"github.com/nuonco/nuon/pkg/branchpaths"
 	"github.com/nuonco/nuon/pkg/labels"
 )
 
@@ -129,7 +128,7 @@ func (c *AppBranchConfig) Validate() error {
 		default:
 			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown run mode %q (valid modes: push, on_tag, on_github_label, manual_only)", c.Name, mode)}
 		}
-		if err := branchpaths.Validate(c.Run.Paths, c.Run.PathsIgnore); err != nil {
+		if err := ValidateRunPaths(c.Run.Paths, c.Run.PathsIgnore); err != nil {
 			return ErrConfig{Description: fmt.Sprintf("branch %q: run: %v", c.Name, err)}
 		}
 	}

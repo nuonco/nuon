@@ -1,4 +1,4 @@
-package branchpaths
+package config
 
 import (
 	"strings"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidate(t *testing.T) {
+func TestValidateRunPaths(t *testing.T) {
 	tests := []struct {
 		name        string
 		paths       []string
@@ -31,13 +31,13 @@ func TestValidate(t *testing.T) {
 		{name: "bare negation", paths: []string{"!"}, wantErr: "cannot be negated"},
 		{name: "negated paths_ignore", pathsIgnore: []string{"!docs/**"}, wantErr: "cannot be negated"},
 		{name: "invalid glob", paths: []string{"apps/[acme"}, wantErr: "invalid pattern"},
-		{name: "too long", paths: []string{strings.Repeat("a", MaxPatternLength+1)}, wantErr: "exceeds"},
+		{name: "too long", paths: []string{strings.Repeat("a", maxRunPathLength+1)}, wantErr: "exceeds"},
 		{name: "too many double stars", paths: []string{"**/a/**/b/**/c/**/d"}, wantErr: "'**/' segments"},
-		{name: "too many patterns", paths: make([]string, MaxPatterns+1), wantErr: "at most"},
+		{name: "too many patterns", paths: make([]string, maxRunPathPatterns+1), wantErr: "at most"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Validate(tt.paths, tt.pathsIgnore)
+			err := ValidateRunPaths(tt.paths, tt.pathsIgnore)
 			if tt.wantErr == "" {
 				require.NoError(t, err)
 				return
@@ -47,7 +47,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-func TestMatch(t *testing.T) {
+func TestRunPathFilterMatch(t *testing.T) {
 	tests := []struct {
 		name        string
 		paths       []string
@@ -74,7 +74,7 @@ func TestMatch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := New(tt.paths, tt.pathsIgnore)
+			f, err := NewRunPathFilter(tt.paths, tt.pathsIgnore)
 			require.NoError(t, err)
 			d := f.Match(tt.files)
 			require.Equal(t, tt.wantRun, d.Run)
