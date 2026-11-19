@@ -84,6 +84,9 @@ const (
 	// sts-vendor auth method, and enabling it runs the vendor role backfill for
 	// every AWS install runner in the org (plans/runner-job-sts-identity.md §4.2.1).
 	OrgFeatureRunnerVendorSTS OrgFeature = "runner-vendor-sts"
+	// OrgFeatureRunnerlessInstalls lets AWS installs with a cloud connection set
+	// use_runner=false, so their jobs run on control-plane install workers.
+	OrgFeatureRunnerlessInstalls OrgFeature = "runnerless-installs"
 )
 
 type OrgTelemetrySettings struct {
@@ -247,6 +250,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeaturePRPreviewUI:             false,
 		OrgFeatureManualBuildSelection:    false,
 		OrgFeatureRunnerVendorSTS:         false,
+		OrgFeatureRunnerlessInstalls:      false,
 	}
 }
 
@@ -269,6 +273,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeaturePRPreviewUI,
 		OrgFeatureManualBuildSelection,
 		OrgFeatureRunnerVendorSTS,
+		OrgFeatureRunnerlessInstalls,
 	}
 }
 
@@ -300,6 +305,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeaturePRPreviewUI:             "Enable the pull request preview page in the dashboard.",
 		OrgFeatureManualBuildSelection:    "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
 		OrgFeatureRunnerVendorSTS:         "Allow this org's runner groups to use the sts-vendor AWS auth method (runner assumes its Nuon-side identity role and authenticates via POST /v1/runner-auth/aws/sts). Enabling it provisions the vendor identity role for every AWS install runner in the org; each runner group is then switched individually.",
+		OrgFeatureRunnerlessInstalls:      "Allow AWS installs with a cloud connection to set use_runner=false. The install stack omits the runner, and the install's jobs run on control-plane install workers that assume the stack's roles through the cloud connection.",
 	}
 }
 
@@ -326,6 +332,7 @@ func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 // infrastructure prerequisites outside the org's control.
 var adminOnlyFeatures = map[OrgFeature]struct{}{
 	OrgFeatureRunnerVendorSTS:     {},
+	OrgFeatureRunnerlessInstalls:  {},
 	OrgFeatureUserManagedFeatures: {},
 	OrgFeaturePhoneHomeAuth:       {},
 }

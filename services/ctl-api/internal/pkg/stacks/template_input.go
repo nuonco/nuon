@@ -72,6 +72,14 @@ type TemplateInput struct {
 	// is what leaves the script unauthenticated for stacks that predate it.
 	PhoneHomeIdentityName string
 
+	// UseRunner is the install's desired runner mode. When false the AWS renderer
+	// omits the runner resources and phones home use_runner=false.
+	UseRunner bool
+
+	// CloudConnectionPrincipalARN is the install's cloud connection role. When set,
+	// the install roles trust it so control-plane workers can assume them.
+	CloudConnectionPrincipalARN string
+
 	// Switches the AWS renderer to custom-stacks-only mode.
 	CustomStacksOnly bool
 

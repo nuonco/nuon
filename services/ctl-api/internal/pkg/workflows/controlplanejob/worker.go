@@ -12,6 +12,8 @@ type WorkerConfig struct {
 	MaxConcurrentActivityTaskPollers   int
 	Interceptors                       []interceptor.WorkerInterceptor
 	WorkflowPanicPolicy                worker.WorkflowPanicPolicy
+	// TaskQueue defaults to the build queue.
+	TaskQueue string
 }
 
 // NewWorker creates a worker that polls the control-plane build task queue on
@@ -25,7 +27,11 @@ type WorkerConfig struct {
 // these workers, otherwise RunJob is scheduled on a task queue with no poller
 // and the build hangs silently until its execution timeout.
 func NewWorker(c tclient.Client, cfg WorkerConfig, activities ...any) worker.Worker {
-	wkr := worker.New(c, TaskQueue, worker.Options{
+	queue := cfg.TaskQueue
+	if queue == "" {
+		queue = TaskQueue
+	}
+	wkr := worker.New(c, queue, worker.Options{
 		MaxConcurrentActivityExecutionSize: cfg.MaxConcurrentActivityExecutionSize,
 		MaxConcurrentActivityTaskPollers:   cfg.MaxConcurrentActivityTaskPollers,
 		Interceptors:                       cfg.Interceptors,
