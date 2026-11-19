@@ -6,7 +6,7 @@
       "date": "November 20, 2026",
       "description": "Private images pull through cloud connections, with no pull secret to manage. One page shows which installs are current and which need attention.",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/045-changed-component-deploys-private-registries",
+      "ctaUrl": "https://docs.nuon.co/updates/045-run-more-installs-with-less-overhead",
       "image": "/images/announcements/nuon-changelog-045.png",
       "imageDark": "/images/announcements/nuon-changelog-045.png",
       "dismissible": false
