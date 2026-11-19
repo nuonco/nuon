@@ -82,7 +82,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 	}
 
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
-		installID,
+		install.ID,
 		app.WorkflowTypeDeployComponents,
 		map[string]string{},
 		req.PlanOnly,
@@ -93,7 +93,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return

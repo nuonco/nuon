@@ -63,7 +63,7 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	installCmps, err := s.helpers.GetInstallComponents(ctx, installID)
+	installCmps, err := s.helpers.GetInstallComponents(ctx, install.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
 		return
@@ -114,7 +114,7 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 	}
 
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
-		installID,
+		install.ID,
 		app.WorkflowTypeTeardownComponents,
 		map[string]string{},
 		req.PlanOnly,
@@ -125,7 +125,7 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
