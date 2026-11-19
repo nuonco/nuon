@@ -9,11 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 const (
@@ -66,42 +65,18 @@ func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.A
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, err
 		}
-
-		acct = &app.Account{
-			Email:       fmt.Sprintf("%s@nuon.co", canaryID),
-			Subject:     canaryID,
-			AccountType: app.AccountTypeCanary,
-		}
-		res := s.db.WithContext(ctx).
-			Clauses(clause.OnConflict{
-				Columns: []clause.Column{
-					{Name: "email"},
-					{Name: "subject"},
-					{Name: "deleted_at"},
-				},
-				UpdateAll: true,
-			}).
-			Create(acct)
-		if res.Error != nil {
-			return nil, nil, fmt.Errorf("unable to create canary account: %w", res.Error)
+		acct, err = s.acctClient.CreateTestAccount(ctx, canaryID, app.AccountTypeCanary)
+		if err != nil {
+			return nil, nil, err
 		}
 	}
 
-	token := app.Token{
-		CreatedByID: canaryID,
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeCanary,
-		ExpiresAt:   time.Now().Add(time.Hour),
-		IssuedAt:    time.Now(),
-		Issuer:      canaryID,
-		AccountID:   acct.ID,
+	token, err := s.acctClient.IssueToken(ctx, acct.ID, time.Hour, account.IssueTokenRequest{
+		TokenType: app.TokenTypeCanary, Issuer: canaryID, CreatedByID: canaryID,
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to create canary user: %w", err)
 	}
 
-	res := s.db.WithContext(ctx).
-		Create(&token)
-	if res.Error != nil {
-		return nil, nil, fmt.Errorf("unable to create canary user: %w", res.Error)
-	}
-
-	return acct, &token, nil
+	return acct, token, nil
 }

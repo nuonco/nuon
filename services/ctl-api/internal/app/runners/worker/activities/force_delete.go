@@ -2,11 +2,12 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 type ForceDeleteRequest struct {
@@ -16,24 +17,13 @@ type ForceDeleteRequest struct {
 // @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) ForceDelete(ctx context.Context, req ForceDeleteRequest) error {
-	res := a.db.WithContext(ctx).
-		Unscoped().
-		Select(clause.Associations).
-		Delete(&app.Runner{
-			ID: req.RunnerID,
-		})
-	if res.Error != nil {
-		return fmt.Errorf("unable to force delete runner: %w", res.Error)
-	}
-	if res := a.db.WithContext(ctx).
-		Unscoped().
-		Where(app.RunnerCloudIdentity{RunnerID: req.RunnerID}).
-		Delete(&app.RunnerCloudIdentity{}); res.Error != nil {
-		return fmt.Errorf("unable to force delete runner cloud identity: %w", res.Error)
-	}
-	if err := a.acctClient.DeleteServiceAccount(ctx, req.RunnerID); err != nil {
-		return fmt.Errorf("delete runner service account: %w", err)
-	}
-
-	return nil
+	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := account.New(account.Params{DB: tx}).DeleteRunnerServiceAccounts(ctx, req.RunnerID); err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Select(clause.Associations).Delete(&app.Runner{ID: req.RunnerID}).Error; err != nil {
+			return err
+		}
+		return tx.Unscoped().Where(app.RunnerCloudIdentity{RunnerID: req.RunnerID}).Delete(&app.RunnerCloudIdentity{}).Error
+	})
 }

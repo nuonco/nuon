@@ -128,6 +128,36 @@ func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() 
 	assert.NoError(s.T(), err)
 }
 
+// A version made ineligible loses its account; becoming eligible again must
+// restore that account rather than fail every later reconcile.
+func (s *InstallsServiceTestSuite) TestEnsurePhoneHomeServiceAccountRestoresDeletedAccount() {
+	install := s.createTestInstall()
+	stackVersion := s.deps.Seeder.CreateInstallStackVersion(
+		s.ctx, s.T(), install.ID, install.InstallStack.ID, install.AppConfigID,
+	)
+	client := account.New(account.Params{
+		DB:          s.deps.DB,
+		AuthzClient: authz.New(authz.Params{DB: s.deps.DB}),
+	})
+	first, err := client.EnsurePhoneHomeServiceAccount(s.ctx, stackVersion.OrgID, stackVersion.InstallStackID, stackVersion.ID)
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), client.DeleteServiceAccount(s.ctx, stackVersion.ID))
+
+	again, err := client.EnsurePhoneHomeServiceAccount(s.ctx, stackVersion.OrgID, stackVersion.InstallStackID, stackVersion.ID)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), first.AccountID, again.AccountID, "the deleted account is restored, not replaced")
+
+	var acct app.Account
+	require.NoError(s.T(), s.deps.DB.Where(app.Account{ID: again.AccountID}).Take(&acct).Error)
+	var binding app.ManagedServiceAccount
+	require.NoError(s.T(), s.deps.DB.Where(app.ManagedServiceAccount{AccountID: again.AccountID}).Take(&binding).Error)
+	require.NotNil(s.T(), binding.PrivateRoleID)
+	var held int64
+	require.NoError(s.T(), s.deps.DB.Model(&app.AccountRole{}).
+		Where(app.AccountRole{AccountID: again.AccountID, RoleID: *binding.PrivateRoleID}).Count(&held).Error)
+	assert.EqualValues(s.T(), 1, held, "the restored account holds a fresh phone-home role")
+}
+
 // The stack's custom resource calls without an org or account, so the route must reach
 // the handler's own authentication instead of the install permission guard.
 func (s *InstallsServiceTestSuite) TestInstallPhoneHomeRouteIsReachableAnonymously() {

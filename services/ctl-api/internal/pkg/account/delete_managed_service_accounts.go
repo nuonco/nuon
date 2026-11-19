@@ -53,16 +53,9 @@ func (c *Client) DeleteInstallServiceAccounts(ctx context.Context, installID str
 			return fmt.Errorf("list runner groups for service account cleanup: %w", err)
 		}
 		if len(runnerGroupIDs) != 0 {
-			var jobIDs []string
-			if err := tx.Unscoped().Model(&app.RunnerJob{}).
-				Where("runner_id IN (?)", tx.Unscoped().Model(&app.Runner{}).
-					Select("id").Where("runner_group_id = ANY(?)", pq.Array(runnerGroupIDs))).
-				Pluck("id", &jobIDs).Error; err != nil {
-				return fmt.Errorf("list runner jobs for service account cleanup: %w", err)
-			}
-			if len(jobIDs) != 0 {
-				query = query.Or(tx.Where(app.ManagedServiceAccount{OwnerType: plugins.TableName(tx, app.RunnerJob{})}).
-					Where("owner_id = ANY(?)", pq.Array(jobIDs)))
+			runners := tx.Unscoped().Model(&app.Runner{}).Select("id").Where("runner_group_id = ANY(?)", pq.Array(runnerGroupIDs))
+			if err := deleteJobCredentials(tx, tx.Unscoped().Model(&app.RunnerJob{}).Select("id").Where("runner_id IN (?)", runners)); err != nil {
+				return err
 			}
 		}
 		if err := deleteManagedServiceAccounts(tx, query); err != nil {
@@ -82,6 +75,18 @@ func (c *Client) DeleteOrgServiceAccounts(ctx context.Context, orgID string) err
 			Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Org{ID: orgID}).Find(&org).Error; err != nil {
 			return fmt.Errorf("lock org for service account cleanup: %w", err)
 		}
+		var runnerIDs []string
+		if err := tx.Unscoped().Model(&app.Runner{}).Where(app.Runner{OrgID: orgID}).Order("id").Pluck("id", &runnerIDs).Error; err != nil {
+			return fmt.Errorf("list org runners for service account cleanup: %w", err)
+		}
+		if err := deleteJobCredentials(tx, tx.Unscoped().Model(&app.RunnerJob{}).Select("id").Where(app.RunnerJob{OrgID: orgID})); err != nil {
+			return err
+		}
+		for _, runnerID := range runnerIDs {
+			if err := c.withDB(tx).DeleteServiceAccount(ctx, runnerID); err != nil {
+				return err
+			}
+		}
 		if err := deleteManagedServiceAccounts(tx, tx.Where(app.ManagedServiceAccount{OrgID: orgID})); err != nil {
 			return err
 		}
@@ -90,8 +95,13 @@ func (c *Client) DeleteOrgServiceAccounts(ctx context.Context, orgID string) err
 			Order("id").Pluck("id", &stackIDs).Error; err != nil {
 			return fmt.Errorf("list org stacks for service account cleanup: %w", err)
 		}
+		var versionIDs []string
+		if err := tx.Unscoped().Model(&app.InstallStackVersion{}).Where(app.InstallStackVersion{OrgID: orgID}).
+			Order("id").Pluck("id", &versionIDs).Error; err != nil {
+			return err
+		}
 		client := New(Params{DB: tx})
-		for _, stackID := range stackIDs {
+		for _, stackID := range append(stackIDs, versionIDs...) {
 			if err := client.DeleteServiceAccount(ctx, stackID); err != nil {
 				return err
 			}
