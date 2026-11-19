@@ -163,14 +163,8 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 		}
 	}
 
-	if res := a.db.WithContext(ctx).Create(&obj); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create cloudformation stack version")
-	}
-
-	// create service account for install stack updates
-	_, err := a.accountsHelpers.CreateServiceAccount(ctx, obj.ID, "")
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create install stack service account")
+	if err := a.accountsHelpers.CreateInstallStackVersion(ctx, &obj); err != nil {
+		return nil, errors.Wrap(err, "unable to create cloudformation stack version and identity")
 	}
 
 	return &obj, nil

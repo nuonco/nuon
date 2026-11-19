@@ -29,6 +29,9 @@ type Client struct {
 }
 
 func New(params Params) *Client {
+	if params.AuthzClient == nil {
+		params.AuthzClient = authz.New(authz.Params{DB: params.DB})
+	}
 	return &Client{
 		v:               params.V,
 		cfg:             params.Cfg,
@@ -36,4 +39,11 @@ func New(params Params) *Client {
 		analyticsClient: params.AnalyticsClient,
 		authzClient:     params.AuthzClient,
 	}
+}
+
+func (c *Client) withDB(db *gorm.DB) *Client {
+	client := *c
+	client.db = db
+	client.authzClient = authz.New(authz.Params{DB: db})
+	return &client
 }
