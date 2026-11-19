@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type AppFleetTargetRun struct {
@@ -261,6 +262,8 @@ WHERE b.org_id = ? AND b.app_id = ? AND b.deleted_at = 0`, orgID, appID).Scan(&l
 
 	var configs []app.AppBranchConfig
 	err = tx.
+		Scopes(scopes.WithDisableViews).
+		Select("id", "app_branch_id").
 		Preload("InstallGroups", func(db *gorm.DB) *gorm.DB {
 			return db.Order("\"order\" ASC")
 		}).
