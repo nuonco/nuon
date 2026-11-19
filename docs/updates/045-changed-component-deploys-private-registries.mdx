@@ -88,15 +88,32 @@ Open the account menu in the top right and choose **Preferences** to turn on two
   padding: '32px 24px',
   borderRadius: '12px',
   display: 'flex',
+  flexWrap: 'wrap',
   justifyContent: 'center',
+  alignItems: 'flex-start',
+  gap: '16px',
   margin: '24px 0'
 }}>
   <img
     src="/images/changelog/045-new-tables.png"
-    alt="An installs table with the Show columns menu open, listing Status, App, Platform, Region, Branch, Labels, and Updated as columns to show or hide, next to the table and grid view buttons"
+    alt="An installs table with the Show columns menu open, listing Status, App, Platform, Region, Branch, Labels, and Updated as columns to show or hide"
     style={{
-      width: '100%',
-      maxWidth: '680px',
+      flex: '1 1 280px',
+      minWidth: 0,
+      maxWidth: '520px',
+      margin: 0,
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+  <img
+    src="/images/changelog/045-new-tables-grid.png"
+    alt="The same installs shown as a card grid, each card listing the install's status, app, platform, region, branch, and last update"
+    style={{
+      flex: '1 1 280px',
+      minWidth: 0,
+      maxWidth: '520px',
+      margin: 0,
       borderRadius: '8px',
       boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
     }}
