@@ -31,17 +31,26 @@ type Loader interface {
 
 type InstallDeploys struct {
 	InstallID string
+	Targets   *app.InstallExecutionTargets
 }
 
 // Failed/cancelled syncs must not count as current: the deploy row is written
 // before the job runs, so treating them as landed would skip retries forever.
 func (d InstallDeploys) DeployedBuild(ctx workflow.Context, componentID string) (string, string, error) {
+	if d.Targets != nil && d.Targets.InstallComponents[componentID] == "" {
+		return "", "", nil
+	}
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   d.InstallID,
 		ComponentID: componentID,
 	})
 	if err != nil {
 		return "", "", errors.Wrapf(err, "unable to get install component for image dep %s", componentID)
+	}
+	if d.Targets != nil {
+		if err := d.Targets.CheckComponent(componentID, installComp); err != nil {
+			return "", "", err
+		}
 	}
 	if installComp == nil {
 		// No install component record yet for this dep — there is no
@@ -62,6 +71,9 @@ func (d InstallDeploys) DeployedBuild(ctx workflow.Context, componentID string) 
 	// build, no sync is needed.
 	latest := installComp.InstallDeploys[0]
 	if syncFailed(latest.Status) {
+		return installComp.ID, "", nil
+	}
+	if d.Targets != nil && latest.AppliedAt == nil && latest.Status != app.InstallDeployStatusActive {
 		return installComp.ID, "", nil
 	}
 	return installComp.ID, latest.ComponentBuildID, nil

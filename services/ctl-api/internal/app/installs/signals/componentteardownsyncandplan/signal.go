@@ -497,6 +497,15 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	if err != nil {
 		return errors.Wrap(err, "unable to get component")
 	}
+	if installDeploy.InstallWorkflow != nil {
+		targets, err := installDeploy.InstallWorkflow.ExecutionTargets()
+		if err != nil {
+			return err
+		}
+		if targets != nil {
+			comp.Type = build.ComponentConfigConnection.Type
+		}
+	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {

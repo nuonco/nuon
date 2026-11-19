@@ -184,6 +184,9 @@ func OnPinnedBranch(build *app.ComponentBuild, branchID string) bool {
 }
 
 func ValidateDeploy(ctx context.Context, db *gorm.DB, deploy *app.InstallDeploy) error {
+	if err := ValidatePreparedDeploy(ctx, db, deploy); err != nil {
+		return err
+	}
 	if deploy.Type == app.InstallDeployTypeTeardown {
 		return nil
 	}
@@ -196,4 +199,78 @@ func ValidateDeploy(ctx context.Context, db *gorm.DB, deploy *app.InstallDeploy)
 		return err
 	}
 	return ValidateComponent(ctx, db, appConfigID, installComponent.ComponentID, deploy.ComponentBuildID)
+}
+
+func ValidatePreparedDeploy(ctx context.Context, db *gorm.DB, deploy *app.InstallDeploy) error {
+	if generics.FromPtrStr(deploy.InstallWorkflowID) == "" {
+		return nil
+	}
+	var flow app.Workflow
+	if err := db.WithContext(ctx).Where(&app.Workflow{ID: *deploy.InstallWorkflowID}).First(&flow).Error; err != nil {
+		return err
+	}
+	var install *app.Install
+	if deploy.InstallComponent != nil {
+		install = deploy.InstallComponent.Install
+	}
+	if _, err := flow.PreparedInstallConfigID(install); err != nil {
+		return err
+	}
+	targets, err := flow.ExecutionTargets()
+	if err != nil || targets == nil {
+		return err
+	}
+	component := deploy.InstallComponent
+	if component == nil {
+		return fmt.Errorf("deploy has no installed component")
+	}
+	if err := targets.CheckComponent(component.ComponentID, component); err != nil {
+		return err
+	}
+	configID := targets.Components[component.ComponentID].ConfigID
+	var build app.ComponentBuild
+	if err := db.WithContext(ctx).Preload("ComponentConfigConnection").Where(&app.ComponentBuild{ID: deploy.ComponentBuildID, OrgID: targets.OrgID}, "ID", "OrgID").First(&build).Error; err != nil {
+		return err
+	}
+	if build.ComponentConfigConnection.ComponentID != component.ComponentID || build.ComponentConfigConnection.OrgID != targets.OrgID {
+		return fmt.Errorf("build does not belong to prepared runbook component")
+	}
+	if component.ComponentID == targets.PrimaryComponentID && build.ID != targets.PrimaryBuildID {
+		return fmt.Errorf("build does not match prepared manual deploy primary target")
+	}
+	if deploy.ID != "" {
+		if deploy.AppConfigID != targets.AppConfigID {
+			return fmt.Errorf("deployment does not belong to prepared runbook app config")
+		}
+		return nil
+	}
+	if deploy.Type == app.InstallDeployTypeTeardown {
+		if configID := targets.TeardownComponents[component.ComponentID].ConfigID; configID != "" && build.ComponentConfigConnectionID == configID {
+			return nil
+		}
+		var count int64
+		if err := db.WithContext(ctx).Model(&app.InstallDeploy{}).
+			Where(&app.InstallDeploy{OrgID: targets.OrgID, InstallWorkflowID: deploy.InstallWorkflowID, InstallComponentID: component.ID, ComponentBuildID: build.ID, Type: app.InstallDeployTypeApply}).
+			Where("status IN ?", app.AppliedDeployStatuses()).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return fmt.Errorf("teardown build does not match prepared runbook target or a deployment applied by this runbook")
+		}
+		return nil
+	}
+	if component.ComponentID == targets.PrimaryComponentID {
+		return nil
+	}
+	if configID == "" {
+		return fmt.Errorf("missing prepared runbook component config")
+	}
+	selected, err := Component(ctx, db, configID)
+	if err != nil {
+		return err
+	}
+	if selected == nil || selected.ID != build.ID {
+		return fmt.Errorf("deploy config does not match prepared runbook target")
+	}
+	return nil
 }

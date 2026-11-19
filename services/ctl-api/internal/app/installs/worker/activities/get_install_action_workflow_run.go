@@ -20,6 +20,7 @@ func (a *Activities) GetInstallActionWorkflowRun(ctx context.Context, req GetIns
 func (a *Activities) getInstallActionWorkflowRun(ctx context.Context, runID string) (*app.InstallActionWorkflowRun, error) {
 	run := app.InstallActionWorkflowRun{}
 	res := a.db.WithContext(ctx).
+		Preload("InstallWorkflow").
 		Preload("Steps").
 		Preload("Steps.Step").
 		Preload("ActionWorkflowConfig").
@@ -34,6 +35,11 @@ func (a *Activities) getInstallActionWorkflowRun(ctx context.Context, runID stri
 		First(&run, "id = ?", runID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+	}
+	if run.InstallWorkflow != nil {
+		if _, err := run.InstallWorkflow.PreparedInstallConfigID(&run.Install); err != nil {
+			return nil, err
+		}
 	}
 
 	return &run, nil
