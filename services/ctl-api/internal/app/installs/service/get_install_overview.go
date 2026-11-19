@@ -11,11 +11,11 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/syncstatus"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-type InstallOverviewCommit = alignment.InstallOverviewCommit
+type InstallOverviewCommit = syncstatus.InstallOverviewCommit
 
 type InstallBranchTracking struct {
 	BranchID       string                  `json:"branch_id,omitempty"`
@@ -53,16 +53,16 @@ type InstallConfigDrift struct {
 }
 
 type InstallOverviewResponse struct {
-	BranchTracking InstallBranchTracking `json:"branch_tracking"`
-	ConfigDrift    InstallConfigDrift    `json:"config_drift"`
-	Alignment      *InstallAlignment     `json:"alignment,omitempty"`
+	BranchTracking     InstallBranchTracking      `json:"branch_tracking"`
+	ConfigDrift        InstallConfigDrift         `json:"config_drift"`
+	ResourceSyncStatus *InstallResourceSyncStatus `json:"resource_sync_status,omitempty"`
 }
 
 // @ID						GetInstallOverview
 // @Summary				install overview
-// @Description			Returns branch tracking, config drift, and per-resource alignment for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+// @Description			Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
 // @Param					install_id	path	string	true	"install ID"
-// @Param                 include_alignment query bool false "include per-resource alignment; set false for branch tracking and config drift only" Default(true)
+// @Param                 include_resource_sync_status query bool false "include per-resource sync status; set false for branch tracking and config drift only" Default(true)
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -82,7 +82,7 @@ func (s *service) GetInstallOverview(ctx *gin.Context) {
 		return
 	}
 
-	overview, err := s.getInstallOverview(ctx, org.ID, ctx.Param("install_id"), ctx.Query("include_alignment") != "false")
+	overview, err := s.getInstallOverview(ctx, org.ID, ctx.Param("install_id"), ctx.Query("include_resource_sync_status") != "false")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install overview: %w", err))
 		return
@@ -115,22 +115,20 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 	if !includeAlignment {
 		return overview, nil
 	}
-	alignment, err := s.alignment.Read(ctx, &install)
+	syncStatus, err := s.syncStatus.Read(ctx, &install)
 	if err != nil {
-		alignment = &InstallAlignment{
-			Error:     "Resource alignment unavailable",
-			Resources: []InstallAlignmentResource{},
+		if !errors.Is(err, context.Canceled) {
+			s.l.Warn("unable to complete resource sync status",
+				zap.String("install_id", install.ID),
+				zap.String("org_id", install.OrgID),
+				zap.Error(err))
 		}
-	} else {
-		err = s.alignmentBranchRunCounts(ctx, &install, tracking.BranchID, alignment)
+		syncStatus = &InstallResourceSyncStatus{
+			Error:     "Resource sync status unavailable",
+			Resources: []InstallResourceSyncStatusResource{},
+		}
 	}
-	if err != nil && !errors.Is(err, context.Canceled) {
-		s.l.Warn("unable to complete install alignment",
-			zap.String("install_id", install.ID),
-			zap.String("org_id", install.OrgID),
-			zap.Error(err))
-	}
-	overview.Alignment = alignment
+	overview.ResourceSyncStatus = syncStatus
 	return overview, nil
 }
 
@@ -390,7 +388,7 @@ func (s *service) appliedBranchRun(ctx context.Context, install *app.Install) (*
 }
 
 func commitFromRun(run *app.AppBranchRun) *InstallOverviewCommit {
-	return alignment.CommitFromRun(run)
+	return syncstatus.CommitFromRun(run)
 }
 
 func isNotFound(err error) bool {

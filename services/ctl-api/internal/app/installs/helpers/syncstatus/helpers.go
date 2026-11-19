@@ -1,4 +1,4 @@
-package alignment
+package syncstatus
 
 import (
 	"errors"
