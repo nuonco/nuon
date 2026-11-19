@@ -120,7 +120,7 @@ export const UnappliedBranchRun = () => (
         showStatus={false}
       />
     }
-    latestCommitLabel="Latest branch run"
+    latestCommitLabel="Desired commit"
     settingsAction={settingsAction}
     statuses={
       <InstallStatusSummary
