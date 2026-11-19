@@ -1,5 +1,5 @@
 ---
-title: "Configuration Files"
+title: "Configure an app template"
 description: "Configure app templates using TOML configuration files"
 keywords: ["TOML config", "app directory structure", "metadata.toml", "sandbox.toml", "inputs.toml", "components directory", "config file reference", "TOML configuration", "app.toml", "config files", "app config", "configuration overview"]
 ---
@@ -55,7 +55,7 @@ Nuon has a Language Server with a [VS Code extension](https://marketplace.visual
 The Language Server is a beta feature and included in [Nuon Labs](https://labs.nuon.co/) so please report any bugs or inconsistencies as a [GitHub issue](https://github.com/nuonco/nuon/issues).
 </Note>
 
-The Language Server requires the [Nuon CLI](./cli) so please download it first. Future versions of the Language Server will include the CLI.
+The Language Server requires the [Nuon CLI](/cli) so please download it first. Future versions of the Language Server will include the CLI.
 
 The Language Server reads the component type from a `#` comment at the top of each Nuon configuration TOML file. The CLI ignores this comment — it reads the `type` field — so the comment is only needed for editor autocompletion and inline validation.
 
@@ -153,7 +153,7 @@ internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
 contents = "./sandbox.tfvars"
 ```
 
-Nuon maintains [managed sandboxes](./concepts/sandboxes#nuon-managed-sandboxes)
+Nuon maintains [managed sandboxes](/concepts/sandboxes#nuon-managed-sandboxes)
 for the platforms we support.
 
 <Note>
