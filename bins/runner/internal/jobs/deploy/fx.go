@@ -3,13 +3,13 @@ package deploy
 import (
 	"go.uber.org/fx"
 
-	helm "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/helm"
 	job "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/job"
-	kubernetesmanifest "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/kubernetes_manifest"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/noop"
 	pulumideploy "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/pulumi"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	helm "github.com/nuonco/nuon/pkg/runner/jobs/deploy/helm"
+	kubernetesmanifest "github.com/nuonco/nuon/pkg/runner/jobs/deploy/kubernetes_manifest"
 	terraform "github.com/nuonco/nuon/pkg/runner/jobs/deploy/terraform"
 )
 
