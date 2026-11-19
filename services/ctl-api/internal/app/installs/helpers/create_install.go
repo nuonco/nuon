@@ -56,6 +56,13 @@ type CreateInstallParams struct {
 	Name              string `json:"name" validate:"required"`
 	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
 
+	// UseRunner sets the install's desired runner mode: nil or true means jobs
+	// run on a runner in the install's cloud account (the default). False means
+	// jobs run on control-plane install workers instead; it requires a
+	// cloud_connection_id, an AWS app, and the org's runnerless-installs
+	// feature.
+	UseRunner *bool `json:"use_runner,omitempty" extensions:"x-nullable"`
+
 	AWSAccount *CreateInstallAWSAccountParams `json:"aws_account"`
 
 	AzureAccount *CreateInstallAzureAccountParams `json:"azure_account"`
@@ -314,6 +321,31 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
+	if req.UseRunner != nil && !*req.UseRunner {
+		if req.CloudConnectionID == "" {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("use_runner=false requires cloud_connection_id"),
+				Description: "use_runner=false requires a cloud_connection_id so control-plane workers can assume the install stack's roles",
+			}
+		}
+		if runnerType.CloudPlatform() != app.CloudPlatformAWS {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("use_runner=false is only supported for AWS installs"),
+				Description: "use_runner=false is only supported for AWS installs",
+			}
+		}
+		runnerlessEnabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunnerlessInstalls)
+		if err != nil {
+			return nil, fmt.Errorf("check runnerless-installs feature: %w", err)
+		}
+		if !runnerlessEnabled {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("runnerless-installs feature is not enabled for this org"),
+				Description: "use_runner=false requires the runnerless-installs feature to be enabled for this org",
+			}
+		}
+	}
+
 	if req.AWSAccount != nil {
 		install.AWSAccount = &app.AWSAccount{
 			Region: req.AWSAccount.Region,
@@ -458,6 +490,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
+	if req.UseRunner != nil {
+		if err := s.setInstallConfigUseRunner(ctx, install.ID, req.UseRunner); err != nil {
+			return nil, fmt.Errorf("unable to set use_runner: %w", err)
+		}
+	}
+
 	// Install components, actions, and runbooks are created asynchronously
 	// by the install-created signal's reconcile activities.
 
@@ -466,6 +504,27 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	return &install, nil
+}
+
+// setInstallConfigUseRunner persists the install's desired use_runner value,
+// creating the install config row if the request didn't already create one
+// via InstallConfig.
+func (s *Helpers) setInstallConfigUseRunner(ctx context.Context, installID string, useRunner *bool) error {
+	res := s.db.WithContext(ctx).Model(&app.InstallConfig{}).
+		Where(app.InstallConfig{InstallID: installID}).
+		Update("use_runner", useRunner)
+	if res.Error != nil {
+		return fmt.Errorf("unable to update install config: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		if err := s.db.WithContext(ctx).Create(&app.InstallConfig{
+			InstallID: installID,
+			UseRunner: useRunner,
+		}).Error; err != nil {
+			return fmt.Errorf("unable to create install config: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *Helpers) EnsureInstallRunner(ctx context.Context, installID string) error {

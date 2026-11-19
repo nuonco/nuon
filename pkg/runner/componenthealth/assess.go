@@ -6,7 +6,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth/gitopshealth"
+	"github.com/nuonco/nuon/pkg/runner/componenthealth/gitopshealth"
 )
 
 const (

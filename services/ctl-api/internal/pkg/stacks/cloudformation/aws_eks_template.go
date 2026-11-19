@@ -50,7 +50,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// PhoneHome resources are always created as the provision workflow depends on
 	// the phone home callback to proceed.
 	telemetryEndpoint := ""
-	if !t.cfg.UseLocalRunners {
+	if t.useRunner(inp) {
 		// NOTE(fd): this uses the configurable nested runner asg cf stack
 		runnerASG, supportsTelemetryIngress, err := t.getRunnerASGNestedStack(inp, tb)
 		if err != nil {

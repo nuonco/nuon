@@ -51,14 +51,13 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install, 
 
 	if gateRunnerHealthy {
 		dg.sg.nextGroupEager()
-		step, err := dg.sg.installSignalStep(ctx, install.ID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-			InstallID: install.ID,
-			Mode:      awaitrunnerhealthy.ModeRequireActive,
-		}, dg.flw.PlanOnly)
+		step, err := maybeRunnerHealthyStep(ctx, dg.sg, install.ID, awaitrunnerhealthy.ModeRequireActive, false, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
-		steps = append(steps, step)
+		if step != nil {
+			steps = append(steps, step)
+		}
 	}
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreTeardownAllComponents)

@@ -2,6 +2,7 @@ package cloudformation
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
@@ -86,10 +87,16 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 	}
 
 	// runner_iam_role_arn references the ASG nested stack output, only available
-	// when not using local runners
-	if !a.cfg.UseLocalRunners {
+	// when the runner is included in the stack.
+	usesRunner := a.useRunner(inp)
+	if usesRunner {
 		lambdaprops["runner_iam_role_arn"] = cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRoleARN")
 	}
+
+	// Always reported, independent of runner_enabled: this is what lets the
+	// mismatch check in updateinstallstackoutputs confirm the applied stack
+	// actually matches the desired use_runner value.
+	lambdaprops["use_runner"] = strconv.FormatBool(usesRunner)
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
 		if secret.AutoGenerate || secret.Required {

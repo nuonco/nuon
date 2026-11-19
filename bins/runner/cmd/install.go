@@ -15,11 +15,11 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/telemetryexport"
+	"github.com/nuonco/nuon/pkg/runner/componenthealth"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )

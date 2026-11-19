@@ -10,7 +10,7 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
+	"github.com/nuonco/nuon/pkg/runner/componenthealth"
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	"github.com/nuonco/nuon/pkg/runner/jobs"

@@ -24,7 +24,8 @@ const (
 
 // skippableRunnerStatuses mirrors the statuses the runner healthcheck never
 // acts on (provisioning lifecycle states, plus runners the install stack
-// disabled, which never report health by design).
+// disabled or that intentionally run without a runner, which never report
+// health by design).
 var skippableRunnerStatuses = []app.RunnerStatus{
 	app.RunnerStatusProvisioning,
 	app.RunnerStatusDeprovisioning,
@@ -32,6 +33,7 @@ var skippableRunnerStatuses = []app.RunnerStatus{
 	app.RunnerStatusDeprovisioned,
 	app.RunnerStatusPending,
 	app.RunnerStatusDisabled,
+	app.RunnerStatusNotUsed,
 }
 
 func isSkippableRunnerStatus(status app.RunnerStatus) bool {
@@ -74,7 +76,7 @@ type runnerHealthDecision struct {
 func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProcessPresence) runnerHealthDecision {
 	var d runnerHealthDecision
 
-	if runner.Status == app.RunnerStatusDisabled {
+	if runner.Status == app.RunnerStatusDisabled || runner.Status == app.RunnerStatusNotUsed {
 		d.Result = runnerHealthResultSkipped
 		if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
 			state := InstallCronsDisabled

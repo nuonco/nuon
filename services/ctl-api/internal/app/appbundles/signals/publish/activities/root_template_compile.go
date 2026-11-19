@@ -65,6 +65,7 @@ func (a *Activities) compileRootTemplate(ctx context.Context, cfg *app.AppConfig
 		VPCNestedStackTemplateURL:    cfg.StackConfig.VPCNestedTemplateURL,
 		RunnerNestedStackTemplateURL: cfg.StackConfig.RunnerNestedTemplateURL,
 		BundleCompile:                true,
+		UseRunner:                    true,
 	}
 
 	template, checksum, err := cloudformation.NewTemplates(cloudformation.Params{Cfg: a.cfg}).Template(input)

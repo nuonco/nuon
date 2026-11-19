@@ -3,7 +3,6 @@ package v2
 import (
 	"strconv"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -32,14 +31,13 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 
 	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
+	step, err := maybeRunnerHealthyStep(ctx, sg, installID, awaitrunnerhealthy.ModeRequireActive, false, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, step)
+	if step != nil {
+		steps = append(steps, step)
+	}
 
 	installDeployID, ok := flw.Metadata["install_deploy_id"]
 	if !ok {

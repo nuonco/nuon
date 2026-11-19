@@ -53,7 +53,7 @@ func (a *Templates) getRolesParamLabels(inp *stacks.TemplateInput) map[string]an
 	return paramLabels
 }
 
-func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, named map[string]app.AppNamedIAMPolicyConfig, t tagBuilder) map[string]cloudformation.Resource {
+func (a *Templates) getRoleResources(inp *stacks.TemplateInput, role app.AppAWSIAMRoleConfig, named map[string]app.AppNamedIAMPolicyConfig, t tagBuilder) map[string]cloudformation.Resource {
 	rsrcs := make(map[string]cloudformation.Resource, 0)
 	managedPolicyARNs := make([]string, 0)
 	for _, policy := range role.Policies {
@@ -73,7 +73,20 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, named map[str
 
 	trustPolicies := make([]map[string]any, 0)
 
-	if !a.cfg.UseLocalRunners {
+	// The cloud connection's role is trusted whenever the install has one,
+	// regardless of use_runner: moving to runnerless must not leave a gap
+	// where neither the runner nor the control plane can assume these roles.
+	if inp.CloudConnectionPrincipalARN != "" {
+		trustPolicies = append(trustPolicies, map[string]any{
+			"Effect": "Allow",
+			"Principal": map[string]any{
+				"AWS": inp.CloudConnectionPrincipalARN,
+			},
+			"Action": "sts:AssumeRole",
+		})
+	}
+
+	if a.useRunner(inp) {
 		trustPolicies = append(trustPolicies, map[string]any{
 			"Effect": "Allow",
 			"Principal": map[string]any{
@@ -140,17 +153,17 @@ func (a *Templates) getRolesResources(inp *stacks.TemplateInput, t tagBuilder) m
 	}
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
-		resources := a.getRoleResources(role, named, t)
+		resources := a.getRoleResources(inp, role, named, t)
 		maps.Copy(rsrcs, resources)
 	}
 
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
-		resources := a.getRoleResources(role, named, t)
+		resources := a.getRoleResources(inp, role, named, t)
 		maps.Copy(rsrcs, resources)
 	}
 
 	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
-		resources := a.getRoleResources(role, named, t)
+		resources := a.getRoleResources(inp, role, named, t)
 		maps.Copy(rsrcs, resources)
 	}
 

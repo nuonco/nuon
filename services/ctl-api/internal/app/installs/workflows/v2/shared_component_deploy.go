@@ -5,11 +5,67 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 // runnerHealthyStepName gates a phase on the install's runner reporting healthy.
 const runnerHealthyStepName = app.RunnerHealthyStepName
+
+// runnerHealthyGateVersion guards the decision to omit the runner-healthy step
+// entirely. In-flight workflow histories that already recorded this step
+// unconditionally must keep recording it on replay.
+const runnerHealthyGateVersion = "runner-healthy-gate-v1"
+
+// shouldGenerateRunnerHealthyStep decides whether to emit the runner-healthy
+// gate for an install.
+//
+//   - appliesStack=true is for workflows that apply the stack (provision,
+//     reprovision_stack, stack-changing branch config updates): a stack apply
+//     can flip whether a runner exists, so the step is included unless BOTH
+//     the desired use_runner AND the actual runner status already agree
+//     there's no runner.
+//   - appliesStack=false is for every other call site: there's no stack
+//     change to wait out, so the step is included unless the actual runner
+//     status is not-used.
+func shouldGenerateRunnerHealthyStep(ctx workflow.Context, installID string, appliesStack bool) (bool, error) {
+	info, err := activities.AwaitGetRunnerHealthyGateInfo(ctx, activities.GetRunnerHealthyGateInfoRequest{
+		InstallID: installID,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	notUsed := info.RunnerStatus == app.RunnerStatusNotUsed
+	if appliesStack {
+		return !(notUsed && !info.UsesRunner), nil
+	}
+	return !notUsed, nil
+}
+
+// maybeRunnerHealthyStep generates the runner-healthy gate step for installID
+// unless shouldGenerateRunnerHealthyStep decides to omit it, in which case it
+// returns a nil step and nil error -- callers should skip appending it. See
+// shouldGenerateRunnerHealthyStep for the appliesStack rule.
+func maybeRunnerHealthyStep(ctx workflow.Context, sg *stepGroup, installID string, mode awaitrunnerhealthy.Mode, appliesStack, planOnly bool) (*app.WorkflowStep, error) {
+	include := true
+	if workflow.GetVersion(ctx, runnerHealthyGateVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		var err error
+		include, err = shouldGenerateRunnerHealthyStep(ctx, installID, appliesStack)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if !include {
+		return nil, nil
+	}
+
+	return sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+		InstallID: installID,
+		Mode:      mode,
+	}, planOnly)
+}
 
 type stepGroup struct {
 	idx          int

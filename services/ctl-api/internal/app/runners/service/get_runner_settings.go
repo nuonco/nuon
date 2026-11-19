@@ -47,7 +47,7 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 	settings.ContainerImageSignatureIssuer = s.cfg.RunnerContainerImageSignatureIssuer
 	settings.ContainerImageSignatureIdentityRegexp = s.cfg.RunnerContainerImageSignatureIdentityRegexp
 	installTable := plugins.TableName(s.db, app.Install{})
-	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
+	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusNotUsed && runner.Status != app.RunnerStatusDeprovisioned {
 		install, err := s.installsHelpers.GetInstallTelemetryConfig(ctx, runner.OrgID, runner.RunnerGroup.OwnerID)
 		if err == nil {
 			orgTelemetry := app.OrgTelemetrySettings{RelayEndpoint: install.OrgRelayEndpoint}

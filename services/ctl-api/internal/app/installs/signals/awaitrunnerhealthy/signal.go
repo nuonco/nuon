@@ -24,6 +24,12 @@ const SignalType signal.SignalType = "await-runner-healthy"
 // activities, so the disabled-runner short circuit must not apply on replay.
 const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
 
+// A not-used runner has no process to ever report healthy -- the install's
+// jobs run in the control plane instead. Same replay-safety concern as
+// skipDisabledRunnerVersion above: existing histories already scheduled
+// their poll activities and must not switch to the short circuit on replay.
+const skipNotUsedRunnerVersion = "await-runner-healthy-skip-not-used-v1"
+
 // Offline or error runners will never become healthy during the poll window.
 // Old histories that already started the poll loop must not be interrupted.
 const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-v1"
@@ -127,6 +133,30 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				},
 			}); err != nil {
 				return errors.Wrap(err, "unable to mark step auto-skipped for disabled runner")
+			}
+		}
+		return nil
+	}
+
+	// A not-used runner means this install's jobs run on control-plane install
+	// workers instead -- there is no runner process that will ever report
+	// healthy, so waiting out the poll window would stall and then fail the
+	// workflow for no reason. This is what makes a switch to runnerless safe:
+	// step generation may still emit this step (see
+	// installs/workflows/v2.shouldGenerateRunnerHealthyStep) while the switch
+	// is in flight, and this auto-skip is what lets it resolve immediately
+	// once the runner actually reaches not-used.
+	skipNotUsed := workflow.GetVersion(ctx, skipNotUsedRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if skipNotUsed && runner.Status == app.RunnerStatusNotUsed {
+		if s.WorkflowStepID != "" {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowStepID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusAutoSkipped,
+					StatusHumanDescription: "this install's jobs run in the control plane; no runner is used",
+				},
+			}); err != nil {
+				return errors.Wrap(err, "unable to mark step auto-skipped for not-used runner")
 			}
 		}
 		return nil

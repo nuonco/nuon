@@ -3,10 +3,10 @@ package pulumi
 import (
 	"time"
 
-	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	pulumiworkspace "github.com/nuonco/nuon/pkg/pulumi/workspace"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
+	pkgplantypes "github.com/nuonco/nuon/pkg/runner/plantypes"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 )
 

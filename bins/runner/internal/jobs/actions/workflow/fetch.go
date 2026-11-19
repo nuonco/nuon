@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	pkgplantypes "github.com/nuonco/nuon/pkg/runner/plantypes"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )

@@ -389,7 +389,7 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		// custom stack has nothing to depend on.
 	default:
 		dependsOn = append(dependsOn, "VPC")
-		if !tpl.cfg.UseLocalRunners {
+		if tpl.useRunner(inp) {
 			dependsOn = append(dependsOn, "RunnerAutoScalingGroup")
 		}
 	}
