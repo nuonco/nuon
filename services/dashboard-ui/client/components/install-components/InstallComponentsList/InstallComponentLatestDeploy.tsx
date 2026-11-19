@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { HealthTimeline } from '@/components/install-health/HealthTimeline'
@@ -13,12 +14,14 @@ import { getInstallComponent } from '@/lib'
 export const InstallComponentLatestDeploy = ({
   componentId,
   heading,
+  live,
   showBuild = true,
   showHealth = false,
   variant = 'deploy',
 }: {
   componentId: string
   heading?: string
+  live?: ReactNode
   showBuild?: boolean
   showHealth?: boolean
   variant?: TLatestDeployCardVariant
@@ -37,7 +40,8 @@ export const InstallComponentLatestDeploy = ({
         componentId,
       }),
     refetchInterval: 20000,
-    enabled: !!org?.id && !!install?.id && !!componentId,
+    enabled:
+      !!org?.id && !!install?.id && !!componentId && (!live || showHealth),
   })
 
   const latestDeploy = installComponent?.install_deploys?.[0]
@@ -47,34 +51,36 @@ export const InstallComponentLatestDeploy = ({
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <Text variant="subtext" weight="strong" theme="neutral">
-          {title}
-        </Text>
-        <LatestDeployCard
-          flush
-          deploy={latestDeploy}
-          isLoading={isLoading}
-          variant={variant}
-          build={build}
-          buildHref={
-            build?.id && install?.app_id
-              ? `/${org?.id}/apps/${install.app_id}/components/${componentId}/builds/${build.id}`
-              : undefined
-          }
-          href={
-            latestDeploy?.id
-              ? installLink({
-                  installId: install?.id,
-                  appId: install?.app_id,
-                  suffix: `/components/${componentId}/deploys/${latestDeploy.id}`,
-                })
-              : undefined
-          }
-        />
-      </div>
+      {live ?? (
+        <div className="flex flex-col gap-2">
+          <Text variant="subtext" weight="strong" theme="neutral">
+            {title}
+          </Text>
+          <LatestDeployCard
+            flush
+            deploy={latestDeploy}
+            isLoading={isLoading}
+            variant={variant}
+            build={build}
+            buildHref={
+              build?.id && install?.app_id
+                ? `/${org?.id}/apps/${install.app_id}/components/${componentId}/builds/${build.id}`
+                : undefined
+            }
+            href={
+              latestDeploy?.id
+                ? installLink({
+                    installId: install?.id,
+                    appId: install?.app_id,
+                    suffix: `/components/${componentId}/deploys/${latestDeploy.id}`,
+                  })
+                : undefined
+            }
+          />
+        </div>
+      )}
 
-      {showHealth && latestDeploy && installComponent?.id ? (
+      {showHealth && (live || latestDeploy) && installComponent?.id ? (
         <div className="flex flex-col gap-2 border-t pt-4">
           <Text variant="subtext" weight="strong" theme="neutral">
             Health

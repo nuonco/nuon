@@ -6,7 +6,7 @@ import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
-import type { TInstallAlignmentResource } from '@/types'
+import type { TInstallResourceSyncStatusResource } from '@/types'
 import { cn } from '@/utils/classnames'
 
 export const OngoingDeployments = ({
@@ -16,8 +16,8 @@ export const OngoingDeployments = ({
   pageSize,
   search,
 }: {
-  resources: TInstallAlignmentResource[]
-  renderCard: (resource: TInstallAlignmentResource) => ReactNode
+  resources: TInstallResourceSyncStatusResource[]
+  renderCard: (resource: TInstallResourceSyncStatusResource) => ReactNode
   view: TCollectionView
   pageSize: number
   search?: string
