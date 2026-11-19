@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '@tanstack/react-form'
 import { Expand } from '@/components/common/Expand'
 import { FormCheckbox } from '@/components/common/form/FormCheckbox'
 import { FormInput } from '@/components/common/form/FormInput'
 import { Text } from '@/components/common/Text'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { FieldRow } from '@/components/installs/forms/InstallForm/FieldRow'
 import { InstallPlatformFields } from '@/components/installs/forms/InstallForm/InstallPlatformFields'
 import { StackOnlyCheckbox } from '@/components/installs/forms/InstallForm/StackOnlyCheckbox'
@@ -45,6 +46,16 @@ export const DetailsStep = ({
   const values = useStore(form.store, (state) => state.values)
   const isValidating = useStore(form.store, (state) => state.isFieldsValidating)
   const [checkingName, setCheckingName] = useState(false)
+  const runnerlessInstallsEnabled = useOrgFeatureFlag('runnerless-installs')
+  const showUseRunnerToggle =
+    platform === 'aws' && runnerlessInstallsEnabled && !!values.cloud_connection_id
+
+  useEffect(() => {
+    if (!values.cloud_connection_id) {
+      form.setFieldValue('useRunner', true)
+    }
+  }, [values.cloud_connection_id, form])
+
   const blocker =
     installDetailsBlocker({
       values,
@@ -126,6 +137,41 @@ export const DetailsStep = ({
         </FieldRow>
 
         <StackOnlyCheckbox form={form} />
+
+        {showUseRunnerToggle ? (
+          <form.Field name="useRunner">
+            {(field) => (
+              <FormCheckbox
+                field={field}
+                labelProps={{
+                  className:
+                    'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
+                  labelText: (
+                    <span className="flex flex-col gap-1">
+                      <Text
+                        variant="base"
+                        weight="stronger"
+                        className="!leading-none"
+                      >
+                        Use a runner
+                      </Text>
+                      <Text
+                        variant="subtext"
+                        theme="neutral"
+                        className="!leading-none"
+                      >
+                        Turn off to run this install&apos;s jobs on Nuon&apos;s
+                        control plane through the cloud connection, with no
+                        runner in the customer account.
+                      </Text>
+                    </span>
+                  ),
+                  labelTextProps: { as: 'div' },
+                }}
+              />
+            )}
+          </form.Field>
+        ) : null}
 
         <LabelsField form={form} isOpen />
 

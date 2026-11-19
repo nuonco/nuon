@@ -5207,6 +5207,11 @@ export interface components {
       sandbox_status?: string;
       sandbox_status_description?: string;
       updated_at?: string;
+      /**
+       * @description UseRunner is the desired runner mode; nil means true. The runner's status
+       * (not-used) reflects what the applied stack actually has.
+       */
+      use_runner?: boolean | null;
       /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
       workflow_id?: string;
       workflows?: components["schemas"]["app.Workflow"][];
@@ -6893,7 +6898,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerProcessType": "mng" | "install" | "build" | "org" | "";
     /** @enum {string} */
-    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "awaiting-heartbeat" | "disabled" | "unknown";
+    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "awaiting-heartbeat" | "disabled" | "not-used" | "unknown";
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     "app.SlackChannelSubscription": {
@@ -9163,6 +9168,14 @@ export interface components {
        * and components stay unprovisioned until the install is provisioned again.
        */
       stack_only?: boolean;
+      /**
+       * @description UseRunner sets the install's desired runner mode: nil or true means jobs
+       * run on a runner in the install's cloud account (the default). False means
+       * jobs run on control-plane install workers instead; it requires a
+       * cloud_connection_id, an AWS app, and the org's runnerless-installs
+       * feature.
+       */
+      use_runner?: boolean | null;
     };
     "service.CreateInstallV2Request": {
       app_branch_group?: string;
@@ -9197,6 +9210,14 @@ export interface components {
        * and components stay unprovisioned until the install is provisioned again.
        */
       stack_only?: boolean;
+      /**
+       * @description UseRunner sets the install's desired runner mode: nil or true means jobs
+       * run on a runner in the install's cloud account (the default). False means
+       * jobs run on control-plane install workers instead; it requires a
+       * cloud_connection_id, an AWS app, and the org's runnerless-installs
+       * feature.
+       */
+      use_runner?: boolean | null;
     };
     "service.CreateJobComponentConfigRequest": {
       app_config_id?: string;

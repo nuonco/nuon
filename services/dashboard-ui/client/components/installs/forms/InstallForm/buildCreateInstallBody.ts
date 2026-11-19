@@ -32,6 +32,7 @@ export const buildCreateInstallBody = (
     metadata: { managed_by: 'nuon/dashboard' },
     ...(values.stackOnly && { stack_only: true }),
     cloud_connection_id: values.cloud_connection_id || undefined,
+    ...(values.useRunner === false && { use_runner: false }),
   }
 
   if (platform === 'aws' && values.region) {

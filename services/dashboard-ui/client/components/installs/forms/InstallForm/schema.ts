@@ -31,6 +31,7 @@ export interface InstallFormValues {
   deployDependents: boolean
   stackOnly: boolean
   inputsOnly: boolean
+  useRunner: boolean
   inputs: Record<string, string | boolean>
 }
 

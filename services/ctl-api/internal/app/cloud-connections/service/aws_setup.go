@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
 func (s *service) awsSetup(connection *app.CloudConnection, existingPrincipal bool, repositories []string) SetupResponse {
@@ -184,12 +185,27 @@ aws iam put-role-policy --role-name "$role_name" --policy-name "$policy_name" --
 }
 
 func awsPermissionsPolicy() map[string]any {
-	return map[string]any{"Version": "2012-10-17", "Statement": []any{map[string]any{
-		"Sid":      "ManageNuonInstallStack",
-		"Effect":   "Allow",
-		"Action":   awsStackActions,
-		"Resource": "*",
-	}}}
+	return map[string]any{"Version": "2012-10-17", "Statement": []any{
+		map[string]any{
+			"Sid":      "ManageNuonInstallStack",
+			"Effect":   "Allow",
+			"Action":   awsStackActions,
+			"Resource": "*",
+		},
+		// AssumeInstallRoles lets runnerless (use_runner = false) installs run
+		// jobs from the control plane: it scopes sts:AssumeRole to roles the
+		// install stack tags as runner-assumable (cloudformation.TagKeyRunnerAssumable),
+		// the same roles a live runner would otherwise be trusted to assume.
+		map[string]any{
+			"Sid":      "AssumeInstallRoles",
+			"Effect":   "Allow",
+			"Action":   []string{"sts:AssumeRole"},
+			"Resource": "arn:aws:iam::*:role/*",
+			"Condition": map[string]any{"StringEquals": map[string]string{
+				"aws:ResourceTag/" + cloudformation.TagKeyRunnerAssumable: "true",
+			}},
+		},
+	}}
 }
 
 func awsECRPermissionsPolicy(repositoryARNs []string) map[string]any {

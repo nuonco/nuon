@@ -8,9 +8,9 @@ import (
 	kubernetesmanifest "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/kubernetes_manifest"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/noop"
 	pulumideploy "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/pulumi"
-	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/terraform"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	terraform "github.com/nuonco/nuon/pkg/runner/jobs/deploy/terraform"
 )
 
 func GetJobs() []fx.Option {

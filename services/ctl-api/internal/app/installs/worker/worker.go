@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
 
 const (
@@ -105,11 +106,29 @@ func buildWorker(params WorkerParams, namespace string, taskQueue string, logNam
 		wkr.RegisterWorkflow(wkflow)
 	}
 
+	// Install jobs dispatched to runners whose status is not-used
+	// (use_runner = false) route through job.ExecuteJob to a
+	// controlplanejob.ExecuteControlPlaneJob child workflow, which runs as a
+	// child of whatever workflow called it and so inherits this namespace. Its
+	// RunJob activity is pinned to the control-plane-installs task queue, so a
+	// worker polling that queue in this namespace is required or those jobs
+	// hang until their execution timeout. See controlplanejob.NewWorker.
+	cpWkr := controlplanejob.NewWorker(client, controlplanejob.WorkerConfig{
+		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalCPBuildMaxConcurrentActivities,
+		MaxConcurrentActivityTaskPollers:   params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
+		Interceptors:                       params.Interceptors,
+		WorkflowPanicPolicy:                panicPolicy,
+		TaskQueue:                          controlplanejob.TaskQueueInstalls,
+	}, params.SharedActs.AllActivities()...)
+
 	params.Lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			params.L.Info("starting " + logName)
 			go func() {
 				wkr.Run(worker.InterruptCh())
+			}()
+			go func() {
+				cpWkr.Run(worker.InterruptCh())
 			}()
 			return nil
 		},

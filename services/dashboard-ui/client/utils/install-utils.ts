@@ -149,6 +149,7 @@ const RUNNER_STATUS_TITLES: TTitleMap = {
   'awaiting-install-stack-run': 'Runner is awaiting install stack run',
   'awaiting-heartbeat': 'Runner is awaiting its first heartbeat',
   disabled: 'Runner is disabled',
+  'not-used': 'Jobs for this install run on the control plane.',
   unknown: 'Runner status is unknown',
 }
 

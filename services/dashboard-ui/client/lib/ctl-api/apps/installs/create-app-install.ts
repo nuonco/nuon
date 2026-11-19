@@ -39,6 +39,7 @@ export type TCreateAppInstallBody = {
   stack_only?: boolean
   app_branch_id?: string
   app_branch_group?: string
+  use_runner?: boolean | null
 }
 
 export const createAppInstall = ({

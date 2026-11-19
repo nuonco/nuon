@@ -17,6 +17,10 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
+
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/runner/componenthealth"
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	runnerctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
@@ -29,6 +33,8 @@ import (
 	pulumibuild "github.com/nuonco/nuon/pkg/runner/jobs/build/pulumi"
 	sandboxbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/sandbox"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
+	deployterraform "github.com/nuonco/nuon/pkg/runner/jobs/deploy/terraform"
+	sandboxterraform "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/terraform"
 	imagemetadatasync "github.com/nuonco/nuon/pkg/runner/jobs/sync/imagemetadata"
 	runnerlog "github.com/nuonco/nuon/pkg/runner/log"
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
@@ -64,23 +70,9 @@ type Executor struct {
 }
 
 func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
+	cfg = cfg.withDefaults()
 	if l == nil {
 		l = zap.NewNop()
-	}
-	if cfg.GitRef == "" {
-		cfg.GitRef = "dev"
-	}
-	if cfg.BundleDir == "" {
-		cfg.BundleDir = "/bundle"
-	}
-	if cfg.RegistryDir == "" {
-		cfg.RegistryDir = "/tmp/runner-registry"
-	}
-	if cfg.RegistryPort == 0 {
-		cfg.RegistryPort = 5001
-	}
-	if cfg.LogLevel == "" {
-		cfg.LogLevel = "INFO"
 	}
 
 	runnerCfg := &runnerconfig.Config{
@@ -96,9 +88,133 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 	}
 	v := validator.New()
 	recorder := errs.NewRecorder(errs.Params{L: l, Settings: &settings.Settings{}, LC: noopLifecycle{}})
+	apiClient := &clientAdapter{Client: client}
+
+	handlers, err := buildHandlers(v, runnerCfg, recorder, apiClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Executor{client: client, l: l, handlers: handlers}, nil
+}
+
+// InstallConfig configures an executor that also runs install job handlers
+// (sandbox and deploy Terraform) against the install's own runner API, using a
+// token minted for the job's runner record. See pkg/runner/controlplane's
+// package doc for how this differs from the build-only executor.
+type InstallConfig struct {
+	Config
+
+	// RunnerAPIURL is ctl-api's runner API endpoint (internal.Config.RunnerAPIURL),
+	// the same URL a real runner would use. The install handlers' Terraform HTTP
+	// state backend talks to it directly, bypassing the Client interface.
+	RunnerAPIURL string
+	// RunnerID is the install's runner record ID (not "control-plane"), so the
+	// state backend and any runner-scoped API calls are attributed correctly.
+	RunnerID string
+	// APIToken is a token minted for RunnerID, scoped per job (see
+	// controlplanejob.newExecutor). It is never cached beyond this executor.
+	APIToken string
+}
+
+// NewInstallExecutor builds an executor for install jobs: every handler
+// NewExecutor registers, plus the sandbox and deploy Terraform handlers moved
+// from bins/runner. Unlike NewExecutor, runnerCfg points at the install's real
+// runner API and carries a per-job token, and apiClient delegates the methods
+// clientAdapter can't satisfy from the database (GetAppConfig,
+// Lock/UnlockTerraformWorkspace, UpdateTerraformStateJSON, ...) to a real
+// nuon-runner-go client built from the same URL, runner ID and token, so the
+// runner API's existing org/app scoping applies unchanged.
+func NewInstallExecutor(client Client, l *zap.Logger, cfg InstallConfig) (*Executor, error) {
+	cfg.Config = cfg.Config.withDefaults()
+	if l == nil {
+		l = zap.NewNop()
+	}
+	if cfg.RunnerAPIURL == "" {
+		return nil, fmt.Errorf("install executor requires a runner API URL")
+	}
+	if cfg.RunnerID == "" {
+		return nil, fmt.Errorf("install executor requires a runner id")
+	}
+
+	runnerCfg := &runnerconfig.Config{
+		GitRef:                   cfg.GitRef,
+		RunnerAPIURL:             cfg.RunnerAPIURL,
+		RunnerID:                 cfg.RunnerID,
+		HostIP:                   "127.0.0.1",
+		LogLevel:                 cfg.LogLevel,
+		BundleDir:                cfg.BundleDir,
+		RegistryDir:              cfg.RegistryDir,
+		RegistryPort:             cfg.RegistryPort,
+		TerraformMirrorPlatforms: cfg.TerraformMirrorPlatforms,
+	}
+	runnerCfg.SetAPIToken(cfg.APIToken)
+
+	v := validator.New()
+	recorder := errs.NewRecorder(errs.Params{L: l, Settings: &settings.Settings{}, LC: noopLifecycle{}})
+
+	installClient, err := nuonrunner.New(
+		nuonrunner.WithURL(cfg.RunnerAPIURL),
+		nuonrunner.WithRunnerID(cfg.RunnerID),
+		nuonrunner.WithAuthToken(cfg.APIToken),
+		nuonrunner.WithValidator(v),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build install runner API client: %w", err)
+	}
+	apiClient := &clientAdapter{Client: client, install: installClient}
+
+	handlers, err := buildHandlers(v, runnerCfg, recorder, apiClient)
+	if err != nil {
+		return nil, err
+	}
+
+	mw, err := metrics.New(v, metrics.WithDisable(true))
+	if err != nil {
+		return nil, fmt.Errorf("unable to build metrics writer: %w", err)
+	}
+	clusterProvider := componenthealth.NewClusterProvider(componenthealth.ProviderParams{APIClient: apiClient, L: l})
+	manifestKinds := componenthealth.NewManifestKindsProvider(componenthealth.ManifestKindsProviderParams{L: l, Cluster: clusterProvider})
+	terraformProvider := componenthealth.NewTerraformProvider(componenthealth.TerraformProviderParams{L: l, Kinds: manifestKinds})
+
+	sandboxTFHandler, err := sandboxterraform.New(sandboxterraform.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder, MW: mw, L: l, ClusterProvider: clusterProvider})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, sandboxTFHandler)
+
+	deployTFHandler, err := deployterraform.New(deployterraform.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder, L: l, TerraformProvider: terraformProvider})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, deployTFHandler)
+
+	return &Executor{client: client, l: l, handlers: handlers}, nil
+}
+
+func (cfg Config) withDefaults() Config {
+	if cfg.GitRef == "" {
+		cfg.GitRef = "dev"
+	}
+	if cfg.BundleDir == "" {
+		cfg.BundleDir = "/bundle"
+	}
+	if cfg.RegistryDir == "" {
+		cfg.RegistryDir = "/tmp/runner-registry"
+	}
+	if cfg.RegistryPort == 0 {
+		cfg.RegistryPort = 5001
+	}
+	if cfg.LogLevel == "" {
+		cfg.LogLevel = "INFO"
+	}
+	return cfg
+}
+
+// buildHandlers registers the build-job handlers shared by every executor.
+func buildHandlers(v *validator.Validate, runnerCfg *runnerconfig.Config, recorder *errs.Recorder, apiClient nuonrunner.Client) ([]jobs.JobHandler, error) {
 	copier := ocicopy.New(ocicopy.CopierParams{V: v, Cfg: runnerCfg})
 	resolver := ociresolve.New(ociresolve.ResolverParams{V: v, Cfg: runnerCfg})
-	apiClient := &clientAdapter{Client: client}
 	fs := afero.NewOsFs()
 
 	handlers := make([]jobs.JobHandler, 0, 8)
@@ -134,7 +250,7 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 		return nil, err
 	}
 
-	return &Executor{client: client, l: l, handlers: handlers}, nil
+	return handlers, nil
 }
 
 func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execution *models.AppRunnerJobExecution) error {

@@ -27,6 +27,7 @@ const values = (overrides: Partial<InstallFormValues> = {}): InstallFormValues =
   deployDependents: true,
   stackOnly: false,
   inputsOnly: false,
+  useRunner: true,
   inputs: {},
   ...overrides,
 })

@@ -11,18 +11,33 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
 )
 
+// clientAdapter satisfies nuonrunner.Client for job handlers running in the
+// control plane. install, when set (by NewInstallExecutor), is a real
+// nuon-runner-go client built from the install's runner API URL, runner ID and
+// a per-job token; it stands in for the methods the control-plane Client
+// above can't serve from the database (app-config reads, Terraform workspace
+// lock/unlock, state updates, ...), so those calls go through the runner API's
+// existing org/app scoping unchanged. It is nil for the build-only executor,
+// where those methods stay unsupported.
 type clientAdapter struct {
 	Client
+	install nuonrunner.Client
 }
 
 var _ nuonrunner.Client = (*clientAdapter)(nil)
 
 func (c *clientAdapter) SetRunnerID(string)  {}
 func (c *clientAdapter) SetAuthToken(string) {}
-func (c *clientAdapter) ForJob(string, string) (nuonrunner.Client, error) {
+func (c *clientAdapter) ForJob(jobID, token string) (nuonrunner.Client, error) {
+	if c.install != nil {
+		return c.install.ForJob(jobID, token)
+	}
 	return nil, unsupported("ForJob")
 }
-func (c *clientAdapter) ClaimJobToken(context.Context, string) (string, error) {
+func (c *clientAdapter) ClaimJobToken(ctx context.Context, jobID string) (string, error) {
+	if c.install != nil {
+		return c.install.ClaimJobToken(ctx, jobID)
+	}
 	return "", unsupported("ClaimJobToken")
 }
 
@@ -40,7 +55,10 @@ func (c *clientAdapter) CreateJobExecutionResult(ctx context.Context, jobID, exe
 	return c.Client.CreateJobExecutionResult(ctx, jobID, executionID, req)
 }
 
-func (c *clientAdapter) GetSettings(context.Context) (*models.AppRunnerGroupSettings, error) {
+func (c *clientAdapter) GetSettings(ctx context.Context) (*models.AppRunnerGroupSettings, error) {
+	if c.install != nil {
+		return c.install.GetSettings(ctx)
+	}
 	return nil, unsupported("GetSettings")
 }
 
@@ -104,23 +122,38 @@ func (c *clientAdapter) GetActionWorkflowConfig(context.Context, string) (*model
 	return nil, unsupported("GetActionWorkflowConfig")
 }
 
-func (c *clientAdapter) GetAppConfig(context.Context, string, string) (*models.AppAppConfig, error) {
+func (c *clientAdapter) GetAppConfig(ctx context.Context, appID, branch string) (*models.AppAppConfig, error) {
+	if c.install != nil {
+		return c.install.GetAppConfig(ctx, appID, branch)
+	}
 	return nil, unsupported("GetAppConfig")
 }
 
-func (c *clientAdapter) GetInstallComponenetLastActivePlan(context.Context, string, string) (*models.ServiceGetInstallComponenetLastActivePlanResponse, error) {
+func (c *clientAdapter) GetInstallComponenetLastActivePlan(ctx context.Context, installID, componentID string) (*models.ServiceGetInstallComponenetLastActivePlanResponse, error) {
+	if c.install != nil {
+		return c.install.GetInstallComponenetLastActivePlan(ctx, installID, componentID)
+	}
 	return nil, unsupported("GetInstallComponenetLastActivePlan")
 }
 
-func (c *clientAdapter) UpdateTerraformStateJSON(context.Context, string, *string, any) (any, error) {
+func (c *clientAdapter) UpdateTerraformStateJSON(ctx context.Context, workspaceID string, lockID *string, state any) (any, error) {
+	if c.install != nil {
+		return c.install.UpdateTerraformStateJSON(ctx, workspaceID, lockID, state)
+	}
 	return nil, unsupported("UpdateTerraformStateJSON")
 }
 
-func (c *clientAdapter) LockTerraformWorkspace(context.Context, string, *string, any) error {
+func (c *clientAdapter) LockTerraformWorkspace(ctx context.Context, workspaceID string, lockID *string, lockInfo any) error {
+	if c.install != nil {
+		return c.install.LockTerraformWorkspace(ctx, workspaceID, lockID, lockInfo)
+	}
 	return unsupported("LockTerraformWorkspace")
 }
 
-func (c *clientAdapter) UnlockTerraformWorkspace(context.Context, string) error {
+func (c *clientAdapter) UnlockTerraformWorkspace(ctx context.Context, workspaceID string) error {
+	if c.install != nil {
+		return c.install.UnlockTerraformWorkspace(ctx, workspaceID)
+	}
 	return unsupported("UnlockTerraformWorkspace")
 }
 
