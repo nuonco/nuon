@@ -48,20 +48,16 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		return
 	}
 
-	awID := ctx.Param("action_id")
-	aw, err := s.findActionWorkflow(ctx, org.ID, awID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get action workflow %s: %w", awID, err))
-		return
-	}
-
 	currentApp, err := applookup.ByRef(ctx, s.db, org.ID, ctx.Param("app_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	if aw.AppID != currentApp.ID {
-		ctx.Error(stderr.ErrNotFound{Err: errors.New("action does not belong to app"), Description: "action not found"})
+
+	awID := ctx.Param("action_id")
+	aw, err := s.findAppActionWorkflow(ctx, org.ID, currentApp.ID, awID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get action workflow %s: %w", awID, err))
 		return
 	}
 

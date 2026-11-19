@@ -324,6 +324,22 @@ func (s *CreateAppActionDeprecatedTestSuite) TestActionWritersPreserveParentAcro
 			configPath := "/v1/apps/" + foreignApp.ID + "/actions/" + action.Name + "/configs"
 			if alias == "action-workflows" {
 				configPath = "/v1/action-workflows/" + action.Name + "/configs"
+			} else {
+				sibling := s.service.Seeder.CreateActionWorkflow(s.ctx, s.T(), decoy.ID)
+				require.NoError(s.T(), s.service.DB.Model(sibling).Update("name", action.Name).Error)
+				siblingConfig := s.service.Seeder.CreateBareAppConfig(s.ctx, s.T(), decoy.ID)
+				siblingReq := req
+				siblingReq.AppConfigID = siblingConfig.ID
+				rr = s.makeRequest(http.MethodPost, "/v1/apps/"+decoy.ID+"/actions/"+action.Name+"/configs", siblingReq)
+				require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+				var siblingCreated app.ActionWorkflowConfig
+				require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &siblingCreated))
+				require.Equal(s.T(), sibling.ID, siblingCreated.ActionWorkflowID)
+				var persistedConfig app.ActionWorkflowConfig
+				require.NoError(s.T(), s.service.DB.First(&persistedConfig, "id = ?", siblingCreated.ID).Error)
+				require.Equal(s.T(), sibling.ID, persistedConfig.ActionWorkflowID)
+				require.Equal(s.T(), decoy.ID, persistedConfig.AppID)
+				require.Equal(s.T(), siblingConfig.ID, persistedConfig.AppConfigID)
 			}
 			rr = s.makeRequest(http.MethodPost, configPath, req)
 			require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
