@@ -29,8 +29,11 @@ func (h *Helpers) Credentials(ctx context.Context, connection *app.CloudConnecti
 	if err != nil {
 		return nil, err
 	}
+	// Chained role sessions (assuming this role, then assuming an install
+	// role from it) are capped by AWS at 1 hour regardless, so request the
+	// max here to give install jobs the longest window.
 	output, err := h.assumeRole(ctx, connection, sts.NewFromConfig(cfg), &sts.AssumeRoleWithWebIdentityInput{
-		RoleArn: &connection.Principal, RoleSessionName: &sessionName, WebIdentityToken: &token, DurationSeconds: aws.Int32(900),
+		RoleArn: &connection.Principal, RoleSessionName: &sessionName, WebIdentityToken: &token, DurationSeconds: aws.Int32(3600),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("assume cloud connection role: %w", err)

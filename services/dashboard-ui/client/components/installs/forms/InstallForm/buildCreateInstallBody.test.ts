@@ -18,6 +18,7 @@ const base: InstallFormValues = {
   deployDependents: true,
   stackOnly: false,
   inputsOnly: false,
+  useRunner: true,
   inputs: { db_url: 'postgres://x', enable_tls: true, replicas: '3' },
 }
 
@@ -114,5 +115,12 @@ describe('buildCreateInstallBody', () => {
     expect(
       buildCreateInstallBody({ ...base, stackOnly: true }, 'aws').stack_only
     ).toBe(true)
+  })
+
+  test('sends use_runner: false only when the runner toggle is off', () => {
+    expect(buildCreateInstallBody(base, 'aws').use_runner).toBeUndefined()
+    expect(
+      buildCreateInstallBody({ ...base, useRunner: false }, 'aws').use_runner
+    ).toBe(false)
   })
 })

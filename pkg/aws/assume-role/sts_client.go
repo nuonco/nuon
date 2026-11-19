@@ -35,12 +35,13 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 		return stsClient, nil
 	}
 
-	if a.TwoStepConfig.IAMRoleARN == "" {
+	hasStaticSrc := a.TwoStepConfig.SrcStaticCredentials.AccessKeyID != ""
+	if a.TwoStepConfig.IAMRoleARN == "" && !hasStaticSrc {
 		return nil, fmt.Errorf("iam role arn must be set to use the two step config")
 	}
 
 	// if the static creds are set, we will create an STS client using them
-	if a.TwoStepConfig.SrcStaticCredentials.AccessKeyID != "" {
+	if hasStaticSrc {
 		credsProvider := credentials.NewStaticCredentialsProvider(
 			a.TwoStepConfig.SrcStaticCredentials.AccessKeyID,
 			a.TwoStepConfig.SrcStaticCredentials.SecretAccessKey,
@@ -49,6 +50,11 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 		cfg := baseCfg.Copy()
 		cfg.Credentials = credsProvider
 		stsClient = sts.NewFromConfig(cfg)
+	}
+
+	// static source creds with no intermediate role assume the final role directly
+	if a.TwoStepConfig.IAMRoleARN == "" && a.TwoStepConfig.SrcIAMRoleARN == "" {
+		return stsClient, nil
 	}
 
 	if a.TwoStepConfig.SrcIAMRoleARN != "" {

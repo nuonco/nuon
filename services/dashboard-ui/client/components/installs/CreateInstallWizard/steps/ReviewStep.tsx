@@ -182,6 +182,11 @@ export const ReviewStep = ({
           {connection ? (
             <LabeledValue label="Cloud connection">{connection.name}</LabeledValue>
           ) : null}
+          {platform === 'aws' && values.cloud_connection_id ? (
+            <LabeledValue label="Use a runner">
+              {values.useRunner === false ? 'Off' : 'On'}
+            </LabeledValue>
+          ) : null}
           <LabeledValue label="Auto-approve changes">
             {values.autoApprove ? 'On' : 'Off'}
           </LabeledValue>
@@ -260,7 +265,8 @@ export const ReviewStep = ({
         <div className="flex flex-col gap-2 border-t pt-5">
           <Text weight="strong">What will happen</Text>
           <Text theme="neutral">
-            Nuon will create the install, provision its stack and runner
+            Nuon will create the install, provision its stack
+            {values.useRunner === false ? '' : ' and runner'}
             {values.stackOnly
               ? ', and stop before provisioning the sandbox and components.'
               : ', then provision the sandbox and deploy the app components.'}

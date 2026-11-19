@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 )
 
@@ -24,6 +25,13 @@ const (
 	pollJobPeriod              time.Duration = time.Second * 10
 	pollJobMaxWorkflowDuration               = time.Minute * 2
 	actionJobTimeoutBuffer                   = 2 * time.Minute
+
+	// controlPlaneDispatchVersion gates routing jobs whose runner status is
+	// not-used (use_runner = false installs) to the control-plane-installs
+	// worker instead of the runner queue/poll path. Versioned so in-flight
+	// workflow histories started before this change keep replaying the old
+	// path.
+	controlPlaneDispatchVersion = "execute-job-control-plane-dispatch-v1"
 )
 
 func ActionWaitTimeout(timeout time.Duration) time.Duration {
@@ -56,6 +64,16 @@ type ExecuteJobRequest struct {
 func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
 	if workflow.GetInfo(ctx).ContinuedExecutionRunID != "" {
 		return w.pollJob(ctx, req)
+	}
+
+	if workflow.GetVersion(ctx, controlPlaneDispatchVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		dispatched, status, err := w.dispatchControlPlaneJob(ctx, req)
+		if err != nil {
+			return app.RunnerJobStatusUnknown, err
+		}
+		if dispatched {
+			return status, nil
+		}
 	}
 
 	cb := callback.New(ctx, req.JobID)
@@ -95,6 +113,51 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 	}
 
 	return job.Status, nil
+}
+
+// dispatchControlPlaneJob routes the job to the control-plane-installs worker
+// instead of the runner queue/poll path when the job's runner has status
+// not-used (use_runner = false installs run their jobs on control-plane
+// workers, not a live runner process). Returns dispatched=false when the
+// runner is not in that state, so the caller falls through to the normal
+// queue/poll dispatch.
+func (w *Workflows) dispatchControlPlaneJob(ctx workflow.Context, req *ExecuteJobRequest) (bool, app.RunnerJobStatus, error) {
+	status, err := activities.AwaitPkgWorkflowsJobGetRunnerStatusByID(ctx, req.RunnerID)
+	if err != nil {
+		return false, app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to get runner status")
+	}
+	if status != app.RunnerStatusNotUsed {
+		return false, app.RunnerJobStatusUnknown, nil
+	}
+
+	cpErr := controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{
+		JobID:     req.JobID,
+		TaskQueue: controlplanejob.TaskQueueInstalls,
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: "control-plane-install-execute-job-" + req.JobID,
+	})
+
+	job, jobErr := activities.AwaitPkgWorkflowsJobGetJobByID(ctx, req.JobID)
+	if jobErr != nil {
+		if cpErr != nil {
+			return true, app.RunnerJobStatusUnknown, errors.Wrap(cpErr, "control-plane job execution failed, and unable to get job to determine status")
+		}
+		return true, app.RunnerJobStatusUnknown, errors.Wrap(jobErr, "unable to get job")
+	}
+
+	if cpErr != nil {
+		return true, job.Status, cpErr
+	}
+
+	if job.Status != app.RunnerJobStatusFinished {
+		msg := "job did not succeed"
+		if job.StatusDescription != "" {
+			msg = fmt.Sprintf("job did not succeed: %s", job.StatusDescription)
+		}
+		return true, job.Status, temporal.NewNonRetryableApplicationError(msg, "api", fmt.Errorf("job did not finish successfully, status %s: %s", job.Status, job.StatusDescription))
+	}
+
+	return true, job.Status, nil
 }
 
 // queueJob dispatches the job for execution. Returns the queue signal ID when the
