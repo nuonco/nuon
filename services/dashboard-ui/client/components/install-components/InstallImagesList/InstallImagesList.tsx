@@ -17,12 +17,12 @@ import { AlignedSections } from '@/components/install-alignment/AlignedSections'
 import { usePagination } from '@/hooks/use-pagination'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { PaginationProvider } from '@/providers/pagination-provider'
-import type { TComponentType, TInstallAlignmentCategory } from '@/types'
+import type { TComponentType, TInstallResourceSyncStatusCategory } from '@/types'
 import { cn } from '@/utils/classnames'
 
 export type TInstallImageListItem = {
   actions?: ReactNode
-  alignment?: TInstallAlignmentCategory
+  alignment?: TInstallResourceSyncStatusCategory
   consumers?: ReactNode
   id: string
   image: ReactNode

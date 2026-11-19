@@ -1,42 +1,16 @@
 import { ACTIVE_DEPLOYMENT_STATUSES } from '@/components/installs/DeploymentDetail/deployment-progress'
 import type {
-  TInstallAlignmentResource,
-  TInstallAlignmentResourceKind,
+  TInstallResourceSyncStatusResource,
+  TInstallResourceSyncStatusResourceKind,
   TInstallOverviewCommit,
 } from '@/types'
-
-export const driftExplanation = (resource: TInstallAlignmentResource) =>
-  resource.explanation?.summary?.trim() ||
-  (resource.category === 'state-drift-detected'
-    ? 'A drift check found differences between live resources and what was last applied.'
-    : 'We couldn’t determine why these changes haven’t taken effect.')
-
-export const explanationEvidence = (
-  resource: TInstallAlignmentResource
-): { workflowId: string; stepId?: string } | undefined => {
-  const explanation = resource.explanation
-  if (explanation?.workflow_id) {
-    return { workflowId: explanation.workflow_id, stepId: explanation.step_id }
-  }
-  if (
-    resource.category === 'state-drift-detected' &&
-    resource.plan?.plan_only &&
-    resource.plan?.workflow_id
-  ) {
-    return {
-      workflowId: resource.plan.workflow_id,
-      stepId: resource.plan.step_id,
-    }
-  }
-  return undefined
-}
 
 export type TDriftFilter =
   | 'all'
   | 'changes-not-applied'
   | 'state-drift-detected'
 
-export const hasOngoingDeployment = (resource?: TInstallAlignmentResource) =>
+export const hasOngoingDeployment = (resource?: TInstallResourceSyncStatusResource) =>
   !!resource?.open_deployment?.id &&
   ACTIVE_DEPLOYMENT_STATUSES.has(resource.open_deployment.status ?? '') &&
   !(
@@ -44,12 +18,12 @@ export const hasOngoingDeployment = (resource?: TInstallAlignmentResource) =>
     resource.open_deployment.status === 'failed-pending-retry'
   )
 
-export const isDrifted = (resource: TInstallAlignmentResource) =>
+export const isDrifted = (resource: TInstallResourceSyncStatusResource) =>
   resource.category === 'changes-not-applied' ||
   resource.category === 'state-drift-detected'
 
 export const matchesSearch = (
-  resource: TInstallAlignmentResource,
+  resource: TInstallResourceSyncStatusResource,
   search?: string
 ) => {
   const query = search?.trim().toLowerCase()
@@ -60,8 +34,8 @@ export const matchesSearch = (
 }
 
 export const resourcesOfKinds = (
-  resources: TInstallAlignmentResource[] | undefined,
-  kinds: TInstallAlignmentResourceKind[]
+  resources: TInstallResourceSyncStatusResource[] | undefined,
+  kinds: TInstallResourceSyncStatusResourceKind[]
 ) =>
   (resources ?? []).filter(
     (resource) => !!resource.kind && kinds.includes(resource.kind)
@@ -70,8 +44,8 @@ export const resourcesOfKinds = (
 // The list endpoint defaults to selected-config members, newest first;
 // overview resources are oldest first and also include removed components.
 export const listedResources = (
-  resources: TInstallAlignmentResource[] | undefined,
-  kinds: TInstallAlignmentResourceKind[],
+  resources: TInstallResourceSyncStatusResource[] | undefined,
+  kinds: TInstallResourceSyncStatusResourceKind[],
   {
     enabled,
     search,
@@ -94,7 +68,7 @@ export const listedResources = (
     .reverse()
 
 export const resourcePage = (
-  resources: TInstallAlignmentResource[],
+  resources: TInstallResourceSyncStatusResource[],
   offset: number,
   limit: number
 ) => {
@@ -107,14 +81,14 @@ export const resourcePage = (
 }
 
 export const filterDrifted = (
-  drifted: TInstallAlignmentResource[],
+  drifted: TInstallResourceSyncStatusResource[],
   driftFilter: TDriftFilter
 ) =>
   drifted.filter(
     (resource) => driftFilter === 'all' || resource.category === driftFilter
   )
 
-export const driftCounts = (drifted: TInstallAlignmentResource[]) => {
+export const driftCounts = (drifted: TInstallResourceSyncStatusResource[]) => {
   const unapplied = drifted.filter(
     (resource) => resource.category === 'changes-not-applied'
   )

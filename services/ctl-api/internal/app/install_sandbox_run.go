@@ -161,6 +161,11 @@ func (i *InstallSandboxRun) BeforeCreate(tx *gorm.DB) error {
 func (i *InstallSandboxRun) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
+			Name:          views.CustomViewName(db, &InstallSandboxRun{}, "live_view_v1"),
+			SQL:           viewsql.InstallSandboxRunsLiveViewV1,
+			AlwaysReapply: true,
+		},
+		{
 			Name:          views.CustomViewName(db, &InstallSandboxRun{}, "state_view_v1"),
 			SQL:           viewsql.InstallSandboxRunsStateViewV1,
 			AlwaysReapply: true,

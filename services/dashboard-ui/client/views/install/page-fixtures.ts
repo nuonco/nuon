@@ -6,6 +6,7 @@ import {
   alignmentResource,
   inputUpdateResource,
   installOverview,
+  liveFields,
   openDeploymentResource,
   stateDriftResource,
   unappliedResource,
@@ -13,7 +14,7 @@ import {
 import { mixedHelmPlan } from '@/lib/fixtures/plan-diffs/helm'
 import { mockPlan as kubernetesPlan } from '@/lib/fixtures/plan-diffs/kubernetes'
 import { securityGroupUpdatePlan } from '@/lib/fixtures/plan-diffs/terraform'
-import type { TInstallAlignmentResource, TInstallOverview } from '@/types'
+import type { TInstallResourceSyncStatusResource, TInstallOverview } from '@/types'
 import {
   APP_CONFIG_ID,
   pendingReply,
@@ -776,11 +777,6 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
         type: 'input_update',
         created_at: new Date(Date.now() - 1_800_000).toISOString(),
       },
-      explanation: {
-        summary: 'These changes are waiting for approval.',
-        status: 'approval-awaiting',
-        workflow_id: 'wf-open-ic-cmp-worker',
-      },
     }),
     stateDriftResource(component('cmp-ledger', 'ledger', 'terraform_module')),
     inputUpdateResource({
@@ -798,33 +794,17 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       expected_config_id: APP_CONFIG_ID,
       applied_build_id: undefined,
       applied_config_id: undefined,
-      last_attempt: {
-        id: 'wf-input-enable-search',
-        workflow_id: 'wf-input-enable-search',
-        type: 'component_enabled',
-        status: 'cancelled',
-        created_at: new Date(Date.now() - 3_600_000).toISOString(),
-      },
-      explanation: {
-        summary:
-          'Enabling this component was cancelled. It hasn’t been deployed.',
-        status: 'cancelled',
-        workflow_id: 'wf-input-enable-search',
-      },
     }),
-    alignmentResource(component('cmp-scheduler', 'scheduler', 'pulumi')),
+    alignmentResource({
+      ...component('cmp-scheduler', 'scheduler', 'pulumi'),
+      ...liveFields('cmp-scheduler'),
+    }),
     openDeploymentResource({
       ...component('cmp-migrate', 'migrate', 'job'),
       open_deployment: {
         id: 'wf-open-ic-cmp-migrate',
         status: 'in-progress',
         created_at: new Date(Date.now() - 900_000).toISOString(),
-      },
-      explanation: {
-        summary:
-          'The deployment is in progress. These changes haven’t taken effect yet.',
-        status: 'in-progress',
-        workflow_id: 'wf-open-ic-cmp-migrate',
       },
     }),
     alignmentResource({
@@ -845,15 +825,10 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
       kind: 'image',
       reason: 'This image version hasn’t been synced.',
       plan: undefined,
-      explanation: {
-        summary:
-          'This install’s configuration specifies an image version that hasn’t been copied to its registry. The latest image sync failed.',
-        status: 'error',
-        workflow_id: 'wf-attempt-ic-cmp-api-image',
-      },
     }),
     alignmentResource({
       ...component('cmp-worker-image', 'worker-image', 'external_image'),
+      ...liveFields('cmp-worker-image'),
       kind: 'image',
     }),
     alignmentResource({
@@ -864,6 +839,7 @@ const driftedAlignment = (inputUpdatesOnly = false) => {
     }),
     alignmentResource({
       ...component('cmp-webhooks-image', 'webhooks-image', 'external_image'),
+      ...liveFields('cmp-webhooks-image'),
       kind: 'image',
     }),
   ]
@@ -910,6 +886,7 @@ const inSyncAlignment = () =>
           component_type: type,
           kind: type === 'external_image' ? 'image' : 'component',
           expected_config_id: APP_CONFIG_ID,
+          ...liveFields(id),
         })
       ),
     ],
@@ -924,7 +901,7 @@ export type TResolveDriftScenario =
 
 type TDriftResolution = {
   id: string
-  resource: TInstallAlignmentResource
+  resource: TInstallResourceSyncStatusResource
   requestId: string
   startedAt: number
   approvedAt?: number
@@ -933,7 +910,7 @@ type TDriftResolution = {
 }
 
 const resourcePlanFixture = (
-  resource: TInstallAlignmentResource,
+  resource: TInstallResourceSyncStatusResource,
   changed = false
 ) => {
   if (resource.component_type === 'helm_chart') {
@@ -1121,19 +1098,13 @@ const resolveDriftFixture = (
     resource.open_deployment = finished
       ? undefined
       : { id, status, created_at: workflow.created_at }
-    if (finished) {
-      resource.last_attempt = {
-        id: `${id}-deploy`,
-        workflow_id: id,
-        status,
-        created_at: workflow.created_at,
-      }
-    }
     if (finished && !denied) {
       resource.category = 'in-sync'
       resource.status = 'active'
+      resource.applied_build_id = resource.expected_build_id
+      resource.applied_deploy_id = `${id}-deploy`
+      resource.applied_deploy_at = new Date(approvedAt! + 2000).toISOString()
       resource.reason = undefined
-      resource.explanation = undefined
       resource.plan = undefined
       const component = components.find(
         (row) => row.component_id === resource.component_id
@@ -1170,7 +1141,7 @@ const resolveDriftFixture = (
             !snapshot(entry).workflow.finished)
       )
       if (existing) return ok({ workflow_id: existing.id })
-      const resource = overview.alignment?.resources?.find(
+      const resource = overview.resource_sync_status?.resources?.find(
         (item) => item.id === body.resource_id
       )
       if (!resource)
@@ -1256,7 +1227,7 @@ export const resourcesFixture = (
   const overview = hasDrift
     ? driftedAlignment(alignment === 'input-updates')
     : inSyncAlignment()
-  for (const resource of overview.alignment?.resources ?? []) {
+  for (const resource of overview.resource_sync_status?.resources ?? []) {
     if (resource.plan) {
       const plan = resourcePlanFixture(resource)
       resource.plan.type = plan.type
@@ -1264,7 +1235,7 @@ export const resourcesFixture = (
     }
   }
   if (alignment === 'unavailable') {
-    overview.alignment = {
+    overview.resource_sync_status = {
       error: 'Resource alignment unavailable',
       resources: [],
     }
@@ -1272,7 +1243,7 @@ export const resourcesFixture = (
     overview.branch_tracking!.commits_behind = 2
   }
   if (alignment === 'inputs-unverified') {
-    const component = overview.alignment?.resources?.find(
+    const component = overview.resource_sync_status?.resources?.find(
       (resource) => resource.id === 'ic-cmp-api'
     )
     if (component) {
@@ -1285,22 +1256,15 @@ export const resourcesFixture = (
     }
   }
   if (alignment === 'image-sync-cancelled') {
-    const image = overview.alignment?.resources?.find(
+    const image = overview.resource_sync_status?.resources?.find(
       (resource) => resource.id === 'ic-cmp-api-image'
     )
     if (image) {
       image.status = 'cancelled'
-      image.last_attempt = { ...image.last_attempt!, status: 'cancelled' }
-      image.explanation = {
-        summary:
-          'The image sync was cancelled before this version was copied to the install’s registry.',
-        status: 'cancelled',
-        workflow_id: image.last_attempt.workflow_id,
-      }
     }
   }
   if (alignment === 'ongoing') {
-    for (const resource of overview.alignment?.resources ?? []) {
+    for (const resource of overview.resource_sync_status?.resources ?? []) {
       if (
         ['ic-cmp-scheduler', 'ic-cmp-worker-image'].includes(resource.id ?? '')
       ) {
@@ -1308,14 +1272,6 @@ export const resourcesFixture = (
           id: `wf-open-${resource.id}`,
           status: 'queued',
           created_at: new Date(Date.now() - 600_000).toISOString(),
-        }
-        resource.explanation = {
-          summary:
-            resource.kind === 'image'
-              ? 'The image sync is queued and hasn’t started yet.'
-              : 'The deployment is queued and hasn’t started yet.',
-          workflow_id: `wf-open-${resource.id}`,
-          status: 'queued',
         }
       }
     }
@@ -1342,9 +1298,6 @@ export const resourcesFixture = (
         reason: 'This component is enabled, but hasn’t been deployed.',
         expected_build_id: 'bld-cmp-api',
         expected_config_id: APP_CONFIG_ID,
-        explanation: {
-          summary: 'No deployment has started for this component.',
-        },
       }),
       alignmentResource({
         id: 'ic-cmp-worker',
@@ -1367,8 +1320,8 @@ export const resourcesFixture = (
         expected_config_id: APP_CONFIG_ID,
       }),
     ]
-    overview.alignment!.resources = [
-      ...overview.alignment!.resources!.filter(
+    overview.resource_sync_status!.resources = [
+      ...overview.resource_sync_status!.resources!.filter(
         (resource) => resource.kind !== 'component'
       ),
       ...resources,
@@ -1426,7 +1379,7 @@ export const resourcesFixture = (
       const id = `cmp-service-${String(index + 1).padStart(2, '0')}`
       return [id, `service-${String(index + 1).padStart(2, '0')}`] as const
     })
-    overview.alignment!.resources!.push(
+    overview.resource_sync_status!.resources!.push(
       ...extras.map(([id, name]) =>
         alignmentResource({
           id: `ic-${id}`,
@@ -1456,7 +1409,7 @@ export const resourcesFixture = (
     components.reverse()
   }
   if (alignment === 'torn-down') {
-    for (const resource of overview.alignment?.resources ?? []) {
+    for (const resource of overview.resource_sync_status?.resources ?? []) {
       if (resource.component_id === 'cmp-ledger-image') {
         resource.category = 'torn-down'
         resource.status = 'inactive'
@@ -1576,7 +1529,7 @@ export const resourcesFixture = (
       return ok({ ...deploymentRecord('in-progress'), id: openWorkflowId })
     }
     if (path.includes('/approvals/') && path.endsWith('/contents')) {
-      const resource = overview.alignment?.resources?.find((item) =>
+      const resource = overview.resource_sync_status?.resources?.find((item) =>
         path.includes(`/approvals/${item.plan?.approval_id}/`)
       )
       if (resource)
@@ -1683,7 +1636,7 @@ export const resourcesFixture = (
     if (path === '/v1/builds') {
       const id = url.searchParams.get('component_id')
       if (alignment === 'component-history') {
-        const resource = overview.alignment?.resources?.find(
+        const resource = overview.resource_sync_status?.resources?.find(
           (resource) => resource.component_id === id
         )
         return ok(

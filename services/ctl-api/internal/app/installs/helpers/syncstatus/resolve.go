@@ -1,4 +1,4 @@
-package alignment
+package syncstatus
 
 import (
 	"context"
@@ -26,7 +26,7 @@ type ResolveRequest struct {
 type ResolveResult struct {
 	WorkflowID       string
 	Created          bool
-	Resource         InstallAlignmentResource
+	Resource         InstallResourceSyncStatusResource
 	Deploy           *app.InstallDeploy
 	Approval         *app.WorkflowStepApproval
 	ApprovalResponse *app.WorkflowStepApprovalResponse
@@ -41,12 +41,12 @@ func (e *openDeploymentExistsError) Error() string {
 }
 
 type resolveDriftTarget struct {
-	resource InstallAlignmentResource
+	resource InstallResourceSyncStatusResource
 	ic       *app.InstallComponent
 }
 
-func (s *Helpers) loadResolveDriftTarget(ctx context.Context, install *app.Install, resourceID string) (*installAlignmentState, *resolveDriftTarget, error) {
-	st, err := s.loadInstallAlignmentState(ctx, install)
+func (s *Helpers) loadResolveDriftTarget(ctx context.Context, install *app.Install, resourceID string) (*installResourceSyncStatusState, *resolveDriftTarget, error) {
+	st, err := s.loadInstallResourceSyncStatusState(ctx, install)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -96,17 +96,13 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 		return nil, err
 	}
 	res := &target.resource
-	open, err := s.openDeployments(ctx, st)
-	if err != nil {
-		return nil, err
-	}
-	if existing := open[res.ID]; existing != nil {
+	if existing := st.openDeployments()[res.ID]; existing != nil {
 		return &ResolveResult{WorkflowID: existing.ID}, nil
 	}
 	if err := validateResolvable(res); err != nil {
 		return nil, err
 	}
-	var reuse *alignmentApproval
+	var reuse *syncStatusApproval
 	if req.ApprovedPlanID != "" {
 		reuse, err = s.validateResolvePlan(ctx, st, res, req.ApprovedPlanID, true)
 	} else {
@@ -125,7 +121,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 	}
 	var workflowType app.WorkflowType
 	switch res.Kind {
-	case InstallAlignmentResourceKindComponent, InstallAlignmentResourceKindImage:
+	case InstallResourceSyncStatusResourceKindComponent, InstallResourceSyncStatusResourceKindImage:
 		workflowType = app.WorkflowTypeManualDeploy
 		metadata[app.WorkflowMetadataKeyWorkflowNameSuffix] = res.Name
 		metadata["deploy_dependents"] = strconv.FormatBool(false)
@@ -133,19 +129,19 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 		selected := st.targets[target.ic.ComponentID]
 		resolution.ComponentID = target.ic.ComponentID
 		resolution.BuildAppConfigID = selected.Build.ComponentConfigConnection.AppConfigID
-		if res.Kind == InstallAlignmentResourceKindComponent {
+		if res.Kind == InstallResourceSyncStatusResourceKindComponent {
 			resolution.InputNames = installhelpers.ComponentInputNames(selected.Config, st.desiredInputs(resolution.BuildAppConfigID))
-			if len(resolution.InputNames) > 0 && res.Category == InstallAlignmentCategoryChangesNotApplied {
+			if len(resolution.InputNames) > 0 && res.Category == InstallResourceSyncStatusCategoryChangesNotApplied {
 				workflowType = app.WorkflowTypeInputUpdate
 				metadata["inputs"] = strings.Join(resolution.InputNames, ",")
 				metadata["resolve_drift_component_id"] = target.ic.ComponentID
 			}
 		}
-	case InstallAlignmentResourceKindSandbox:
+	case InstallResourceSyncStatusResourceKindSandbox:
 		workflowType = app.WorkflowTypeReprovisionSandbox
 		metadata["skip_components"] = "true"
 		resolution.InputNames = installhelpers.InputNames(st.expectedSandbox.Refs)
-	case InstallAlignmentResourceKindStack:
+	case InstallResourceSyncStatusResourceKindStack:
 		workflowType = app.WorkflowTypeReprovisionStack
 		for _, input := range st.appConfigs[install.AppConfigID].InputConfig.AppInputs {
 			resolution.InputNames = append(resolution.InputNames, input.Name)
@@ -187,11 +183,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 			if freshTarget.resource.ExpectedBuildID != res.ExpectedBuildID {
 				return nil, stderr.ErrConflict{Err: fmt.Errorf("resolution build changed"), Description: "the selected build changed; reload Resources and try again"}
 			}
-			open, err := scoped.openDeployments(ctx, fresh)
-			if err != nil {
-				return nil, err
-			}
-			if existing := open[res.ID]; existing != nil {
+			if existing := fresh.openDeployments()[res.ID]; existing != nil {
 				return nil, &openDeploymentExistsError{workflowID: existing.ID}
 			}
 			ref, err := driftresolution.AppliedRef(ctx, tx, resolution)
@@ -239,7 +231,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 			if createdDeploy == nil {
 				return nil
 			}
-			return tx.WithContext(ctx).Model(&app.InstallDeploy{}).Where(app.InstallDeploy{ID: createdDeploy.ID}).Update("install_workflow_id", wf.ID).Error
+			return tx.WithContext(ctx).Model(&app.InstallDeploy{}).Where(app.InstallDeploy{ID: createdDeploy.ID}).Updates(map[string]any{"install_workflow_id": wf.ID, "plan_only": wf.PlanOnly}).Error
 		},
 	})
 	if err != nil {
@@ -259,7 +251,7 @@ func (s *Helpers) Resolve(ctx context.Context, orgID, installID string, req *Res
 	return result, nil
 }
 
-func (st *installAlignmentState) resolveDriftTarget(resourceID string) (*resolveDriftTarget, error) {
+func (st *installResourceSyncStatusState) resolveDriftTarget(resourceID string) (*resolveDriftTarget, error) {
 	if st.stack != nil && st.stack.ID == resourceID {
 		return &resolveDriftTarget{resource: *st.stackResource()}, nil
 	}
@@ -274,23 +266,23 @@ func (st *installAlignmentState) resolveDriftTarget(resourceID string) (*resolve
 	return nil, stderr.ErrNotFound{Err: fmt.Errorf("resource %s not found on install %s", resourceID, st.install.ID), Description: "resource not found on this install"}
 }
 
-func validateResolvable(res *InstallAlignmentResource) error {
+func validateResolvable(res *InstallResourceSyncStatusResource) error {
 	switch res.Category {
-	case InstallAlignmentCategoryChangesNotApplied, InstallAlignmentCategoryStateDriftDetected:
-	case InstallAlignmentCategoryTornDown:
+	case InstallResourceSyncStatusCategoryChangesNotApplied, InstallResourceSyncStatusCategoryStateDriftDetected:
+	case InstallResourceSyncStatusCategoryTornDown:
 		return stderr.ErrUser{Err: fmt.Errorf("resource %s is torn down", res.ID), Description: "this component was explicitly torn down and is not considered drifted"}
-	case InstallAlignmentCategoryDisabled:
+	case InstallResourceSyncStatusCategoryDisabled:
 		return stderr.ErrUser{Err: fmt.Errorf("resource %s is disabled", res.ID), Description: "this resource is disabled on the install"}
-	case InstallAlignmentCategoryInSync:
+	case InstallResourceSyncStatusCategoryInSync:
 		return stderr.ErrUser{Err: fmt.Errorf("resource %s is in sync", res.ID), Description: "this resource is already in sync with the install's selected config"}
 	default:
-		description := "this resource's alignment is unknown"
+		description := "this resource's sync status is unknown"
 		if res.Reason != "" {
 			description = res.Reason
 		}
-		return stderr.ErrUser{Err: fmt.Errorf("resource %s alignment is %s", res.ID, res.Category), Description: description}
+		return stderr.ErrUser{Err: fmt.Errorf("resource %s sync status is %s", res.ID, res.Category), Description: description}
 	}
-	if (res.Kind == InstallAlignmentResourceKindComponent || res.Kind == InstallAlignmentResourceKindImage) && res.ExpectedBuildID == "" {
+	if (res.Kind == InstallResourceSyncStatusResourceKindComponent || res.Kind == InstallResourceSyncStatusResourceKindImage) && res.ExpectedBuildID == "" {
 		return stderr.ErrUser{Err: fmt.Errorf("resource %s has no deployable build", res.ID), Description: "no active build exists for the selected component config"}
 	}
 	if res.ExpectedConfigID == "" {

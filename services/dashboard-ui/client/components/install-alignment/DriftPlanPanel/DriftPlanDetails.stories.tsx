@@ -13,7 +13,7 @@ import {
 import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { securityGroupUpdatePlan } from '@/lib/fixtures/plan-diffs/terraform'
-import type { TInstallAlignmentResource, TWorkflowStep } from '@/types'
+import type { TInstallResourceSyncStatusResource, TWorkflowStep } from '@/types'
 import { DriftPlanDetails, type IDriftPlanDetails } from './DriftPlanDetails'
 
 const step = {
@@ -25,7 +25,7 @@ const step = {
 } as TWorkflowStep
 
 const details = (
-  resource: TInstallAlignmentResource,
+  resource: TInstallResourceSyncStatusResource,
   props: Partial<IDriftPlanDetails> = {}
 ) => (
   <DriftPlanDetails
