@@ -8,7 +8,7 @@ import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useQueryApprovalPlan } from '@/hooks/use-query-approval-plan'
 import { useResolveInstallDrift } from '@/hooks/use-resolve-install-drift'
-import type { TInstallAlignmentPlan, TWorkflowStep } from '@/types'
+import type { TInstallResourceSyncStatusPlan, TWorkflowStep } from '@/types'
 import { branchRunHref, isDrifted } from '../alignment-utils'
 import { DriftPlanDetails } from './DriftPlanDetails'
 
@@ -19,7 +19,7 @@ const PREVIEWABLE_PLAN_TYPES = new Set([
   'pulumi_plan',
 ])
 
-const planStep = (plan: TInstallAlignmentPlan) =>
+const planStep = (plan: TInstallResourceSyncStatusPlan) =>
   ({
     id: plan.step_id,
     install_workflow_id: plan.workflow_id,
@@ -36,7 +36,7 @@ export const DriftPlanPanel = ({
   const { install } = useInstall()
   const installLink = useInstallLink()
   const { data: overview } = useInstallOverview()
-  const resource = overview?.alignment?.resources?.find(
+  const resource = overview?.resource_sync_status?.resources?.find(
     (item) => item.id === resourceId
   )
   const plan = resource?.plan
@@ -75,7 +75,7 @@ export const DriftPlanPanel = ({
           variant="table"
           emptyTitle="Plan unavailable"
           emptyMessage={
-            overview?.alignment?.error
+            overview?.resource_sync_status?.error
               ? 'Resource alignment is unavailable. Close this panel and try again.'
               : 'This resource no longer has a recorded plan. Close this panel to see its latest state.'
           }

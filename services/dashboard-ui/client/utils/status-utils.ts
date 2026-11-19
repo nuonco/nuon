@@ -78,6 +78,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   progressing: 'info',
 
   noop: 'neutral',
+  'policy-skipped': 'neutral',
   'shut-down': 'neutral',
   unknown: 'neutral',
   inactive: 'neutral',
@@ -160,6 +161,7 @@ const STATUS_ICON_MAP: Record<string, TStatusIconVariant> = {
 
   'auto-skipped': 'MinusCircleIcon',
   'user-skipped': 'MinusCircleIcon',
+  'policy-skipped': 'MinusCircleIcon',
   retried: 'RepeatIcon',
 
   special: 'ProhibitIcon',

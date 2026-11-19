@@ -13,5 +13,5 @@ export const getInstallOverview = ({
 }) =>
   api<TInstallOverview>({
     orgId,
-    path: `installs/${installId}/overview${buildQueryParams({ include_alignment: includeAlignment })}`,
+    path: `installs/${installId}/overview${buildQueryParams({ include_resource_sync_status: includeAlignment })}`,
   })

@@ -4,17 +4,21 @@ export default {
 
 import {
   causeResources,
+  manualOrigin,
   openDeploymentResource,
   stateDriftResource,
   unappliedResource,
 } from '@/components/__fixtures__/install-alignment'
-import { explanationEvidence } from '../alignment-utils'
+import type { TInstallResourceSyncStatusOrigin } from '@/types'
 import { DriftResourceCard } from './DriftResourceCard'
 
 const links = {
-  branchRunHref: '#branch-run',
-  explanationHref: '#evidence',
-  lastAttemptHref: '#last-attempt',
+  originHref: (origin?: TInstallResourceSyncStatusOrigin) =>
+    origin?.run
+      ? `#run-${origin.run.run_id}`
+      : `#workflow-${origin?.workflow_id}`,
+  driftCheckHref: '#drift-check',
+  historyHref: '#deploy-history',
   deploymentHref: '#deployment',
   nameHref: '#component',
   onResolve: () => {},
@@ -42,8 +46,48 @@ export const ResolveError = () => (
   />
 )
 
+export const LiveFromManualDeploy = () => (
+  <DriftResourceCard
+    {...links}
+    resource={unappliedResource({ applied_by: manualOrigin })}
+  />
+)
+
 export const OpenDeployment = () => (
   <DriftResourceCard {...links} resource={openDeploymentResource()} />
+)
+
+export const FirstImageSync = () => (
+  <DriftResourceCard
+    {...links}
+    onViewPlan={undefined}
+    resource={openDeploymentResource({
+      kind: 'image',
+      component_type: 'external_image',
+      applied_build_id: undefined,
+      applied_by: undefined,
+      applied_deploy_at: undefined,
+      plan: undefined,
+      open_deployment: { id: 'wf-first-sync', status: 'in-progress' },
+    })}
+  />
+)
+
+export const SandboxAwaitingApproval = () => (
+  <DriftResourceCard
+    {...links}
+    resource={openDeploymentResource({
+      kind: 'sandbox',
+      name: 'sandbox',
+      component_id: undefined,
+      component_type: undefined,
+      open_deployment: {
+        id: 'wf-sandbox',
+        status: 'approval-awaiting',
+        type: 'reprovision',
+      },
+    })}
+  />
 )
 
 export const StateDriftDetected = () => (
@@ -55,20 +99,6 @@ export const StateDriftDetected = () => (
       name: 'sandbox',
       component_id: undefined,
       component_type: undefined,
-    })}
-  />
-)
-
-export const NeverAttempted = () => (
-  <DriftResourceCard
-    {...links}
-    explanationHref={undefined}
-    onViewPlan={undefined}
-    resource={unappliedResource({
-      last_attempt: undefined,
-      plan: undefined,
-      newer_branch_runs: null,
-      explanation: { summary: 'No deployment has started for these changes.' },
     })}
   />
 )
@@ -86,9 +116,7 @@ const causeCard = (view: 'list' | 'grid') => {
           {...links}
           view={view}
           resource={resource}
-          explanationHref={
-            explanationEvidence(resource) ? '#evidence' : undefined
-          }
+          driftCheckHref={resource.plan?.plan_only ? '#drift-check' : undefined}
           onViewPlan={resource.plan ? () => {} : undefined}
         />
       ))}
