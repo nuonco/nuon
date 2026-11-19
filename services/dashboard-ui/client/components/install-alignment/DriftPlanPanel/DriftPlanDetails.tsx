@@ -10,7 +10,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type {
   TAPIError,
-  TInstallAlignmentResource,
+  TInstallResourceSyncStatusResource,
   TInstallOverviewCommit,
 } from '@/types'
 import { shortSha } from '../alignment-utils'
@@ -23,7 +23,7 @@ export interface IDriftPlanDetails {
   resolveDisabled?: boolean
   resolveError?: TAPIError | null
   resolving?: boolean
-  resource: TInstallAlignmentResource
+  resource: TInstallResourceSyncStatusResource
   selectedCommit?: TInstallOverviewCommit
   selectedCommitHref?: string
 }
