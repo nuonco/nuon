@@ -7,6 +7,7 @@ import (
 	job "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/job"
 	kubernetesmanifest "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/kubernetes_manifest"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/noop"
+	opentofu "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/opentofu"
 	pulumideploy "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/pulumi"
 	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/terraform"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -20,6 +21,7 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobs.AsJobHandler("deploys", job.New)),
 		fx.Provide(jobs.AsJobHandler("deploys", noop.New)),
 		fx.Provide(jobs.AsJobHandler("deploys", terraform.New)),
+		fx.Provide(jobs.AsJobHandler("deploys", opentofu.New)),
 		fx.Provide(jobs.AsJobHandler("deploys", pulumideploy.New)),
 		fx.Provide(jobs.AsJobHandler("deploys", kubernetesmanifest.New)),
 	}

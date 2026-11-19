@@ -105,6 +105,7 @@ const (
 	RunnerJobTypeHelmChartBuild          RunnerJobType = "helm-chart-build"
 	RunnerJobTypeKubernetesManifestBuild RunnerJobType = "kubernetes-manifest-build"
 	RunnerJobTypePulumiBuild             RunnerJobType = "pulumi-build"
+	RunnerJobTypeOpentofuModuleBuild     RunnerJobType = "opentofu-module-build"
 	RunnerJobTypeNOOPBuild               RunnerJobType = "noop-build"
 	RunnerJobTypeSandboxBuild            RunnerJobType = "sandbox-build"
 
@@ -119,6 +120,7 @@ const (
 	RunnerJobTypeJobDeploy                RunnerJobType = "job-deploy"
 	RunnerJobTypeKubrenetesManifestDeploy RunnerJobType = "kubernetes-manifest-deploy"
 	RunnerJobTypePulumiDeploy             RunnerJobType = "pulumi-deploy"
+	RunnerJobTypeOpentofuDeploy           RunnerJobType = "opentofu-deploy"
 	RunnerJobTypeJobNOOPDeploy            RunnerJobType = "noop-deploy"
 
 	// operations job types
@@ -139,6 +141,7 @@ const (
 	RunnerJobTypeSandboxTerraform     RunnerJobType = "sandbox-terraform"
 	RunnerJobTypeSandboxTerraformPlan RunnerJobType = "sandbox-terraform-plan"
 	RunnerJobTypeSandboxPulumi        RunnerJobType = "sandbox-pulumi"
+	RunnerJobTypeSandboxOpentofu      RunnerJobType = "sandbox-opentofu"
 	RunnerJobTypeSandboxSyncSecrets   RunnerJobType = "sandbox-sync-secrets"
 
 	// runner job types
@@ -163,7 +166,8 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypeHelmChartBuild,
 		RunnerJobTypeKubernetesManifestBuild,
 		RunnerJobTypeSandboxBuild,
-		RunnerJobTypePulumiBuild:
+		RunnerJobTypePulumiBuild,
+		RunnerJobTypeOpentofuModuleBuild:
 		return RunnerJobGroupBuild
 
 		// syncing
@@ -178,7 +182,8 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypeJobDeploy,
 		RunnerJobTypeKubrenetesManifestDeploy,
 		RunnerJobTypeJobNOOPDeploy,
-		RunnerJobTypePulumiDeploy:
+		RunnerJobTypePulumiDeploy,
+		RunnerJobTypeOpentofuDeploy:
 		return RunnerJobGroupDeploy
 
 		// runners
@@ -189,6 +194,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 	case RunnerJobTypeSandboxTerraform,
 		RunnerJobTypeSandboxTerraformPlan,
 		RunnerJobTypeSandboxPulumi,
+		RunnerJobTypeSandboxOpentofu,
 		RunnerJobTypeSandboxSyncSecrets:
 		return RunnerJobGroupSandbox
 

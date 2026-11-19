@@ -111,8 +111,11 @@ func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 
 		// preload all terraform configs
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnections.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnections.OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnections.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 
 		// preload all helm configs
 		Preload("ComponentConfigConnections.HelmComponentConfig").
@@ -139,8 +142,11 @@ func PreloadComponentConfigConnections(db *gorm.DB) *gorm.DB {
 	return db.
 		// preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 
 		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").

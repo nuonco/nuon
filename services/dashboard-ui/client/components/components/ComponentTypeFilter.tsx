@@ -11,6 +11,7 @@ export type TComponentConfigTypeText =
   | 'external_image'
   | 'helm_chart'
   | 'terraform_module'
+  | 'opentofu_module'
   | 'kubernetes_manifest'
   | 'pulumi'
 
@@ -18,6 +19,7 @@ const FILTER_OPTIONS: Array<TComponentConfigTypeText> = [
   'external_image',
   'helm_chart',
   'terraform_module',
+  'opentofu_module',
   'kubernetes_manifest',
   'pulumi',
 ]
@@ -34,6 +36,10 @@ const groupClasses = {
   terraform_module: [
     'group/warn',
     'group-hover/warn:block group-hover/warn:opacity-100',
+  ],
+  opentofu_module: [
+    'group/opentofu',
+    'group-hover/opentofu:block group-hover/opentofu:opacity-100',
   ],
   kubernetes_manifest: [
     'group/error',

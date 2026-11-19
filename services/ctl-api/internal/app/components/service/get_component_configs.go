@@ -96,9 +96,13 @@ func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.Com
 
 		// preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").

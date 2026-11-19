@@ -163,6 +163,15 @@ func ComponentConnectionInputFromConfig(comp *config.Component, componentID, app
 		in.AutoApproveOnPoliciesPassing = obj.AutoApproveOnPoliciesPassing
 		in.DriftSchedule = obj.DriftSchedule
 		in.Teardown = obj.Teardown
+	case comp.OpentofuModule != nil:
+		obj := comp.OpentofuModule
+		in.BuildTimeout = obj.BuildTimeout
+		in.DeployTimeout = obj.DeployTimeout
+		in.MaxAutoRetries = obj.MaxAutoRetries
+		in.SkipNoops = obj.SkipNoops
+		in.AutoApproveOnPoliciesPassing = obj.AutoApproveOnPoliciesPassing
+		in.DriftSchedule = obj.DriftSchedule
+		in.Teardown = obj.Teardown
 	case comp.KubernetesManifest != nil:
 		obj := comp.KubernetesManifest
 		in.BuildTimeout = obj.BuildTimeout

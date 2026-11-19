@@ -82,9 +82,13 @@ func (s *service) getComponentConfig(ctx *gin.Context, cmpID, cfgID string) (*ap
 	res := s.db.WithContext(ctx).
 		// preload all terraform configs
 		Preload("TerraformModuleComponentConfig").
+		Preload("OpentofuModuleComponentConfig").
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+		Preload("OpentofuModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all helm configs
 		Preload("HelmComponentConfig").

@@ -17,6 +17,7 @@ function getApprovalPlanDiff(step: TWorkflowStep, plan: any): ReactNode {
     helm_approval: <HelmDiff plan={plan} />,
     kubernetes_manifest_approval: <KubernetesDiff plan={plan?.plan} />,
     terraform_plan: <TerraformDiff plan={plan} />,
+    opentofu_plan: <TerraformDiff plan={plan} />,
     pulumi_plan: <PulumiDiff plan={plan} />,
     app_branch_plan: null,
     install_creation: null,

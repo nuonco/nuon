@@ -146,7 +146,8 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		PolicyIDs:        policyIDs,
 		InputCount:       len(policyInputs),
 		AllowSkipApply: (!policyContext.IsSandbox && policyContext.ComponentType == app.ComponentTypeTerraformModule && approvalPlan.RunnerJobType == app.RunnerJobTypeTerraformDeploy) ||
-			(policyContext.IsSandbox && (approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraform || approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraformPlan)),
+			(!policyContext.IsSandbox && policyContext.ComponentType == app.ComponentTypeOpentofuModule && approvalPlan.RunnerJobType == app.RunnerJobTypeOpentofuDeploy) ||
+			(policyContext.IsSandbox && (approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraform || approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxTerraformPlan || approvalPlan.RunnerJobType == app.RunnerJobTypeSandboxOpentofu)),
 		AppConfigID:          policyContext.AppConfigID,
 		RunnerJobID:          approvalPlan.RunnerJobID,
 		RunnerJobExecutionID: approvalPlan.RunnerJobExecutionID,
@@ -309,6 +310,8 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 	switch ct {
 	case app.ComponentTypeTerraformModule:
 		return config.AppPolicyTypeTerraformModule
+	case app.ComponentTypeOpentofuModule:
+		return config.AppPolicyTypeOpentofuModule
 	case app.ComponentTypeHelmChart:
 		return config.AppPolicyTypeHelmChart
 	case app.ComponentTypeKubernetesManifest:
@@ -326,7 +329,7 @@ func (a *Activities) preparePolicyInputs(planContentsJSON []byte, pctx *policyCo
 	switch {
 	case pctx.IsSandbox && pctx.SandboxType == config.AppSandboxTypePulumi, pctx.ComponentType == app.ComponentTypePulumi:
 		return a.preparePulumiPolicyInputs(planContentsJSON, pctx)
-	case pctx.IsSandbox, pctx.ComponentType == app.ComponentTypeTerraformModule:
+	case pctx.IsSandbox, pctx.ComponentType == app.ComponentTypeTerraformModule, pctx.ComponentType == app.ComponentTypeOpentofuModule:
 		return a.prepareTerraformPolicyInputs(planContentsJSON, pctx)
 	case pctx.ComponentType == app.ComponentTypeHelmChart:
 		return a.prepareHelmPolicyInputs(planContentsJSON)

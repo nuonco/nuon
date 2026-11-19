@@ -69,6 +69,14 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 		}
 		plan.TerraformBuildPlan = tfPlan
 
+	case app.ComponentTypeOpentofuModule:
+		l.Info("generating opentofu build plan")
+		tfPlan, err := p.createOpentofuBuildPlan(ctx, build)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create opentofu build plan")
+		}
+		plan.OpentofuBuildPlan = tfPlan
+
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
 

@@ -99,6 +99,20 @@ function getConfigItems(config: TComponentConfig): TContextTooltipItem[] {
       )
       break
 
+    case 'opentofu_module':
+      items.push(
+        {
+          id: `config-opentofu-version`,
+          title: 'OpenTofu version',
+          subtitle: config?.opentofu_module?.version,
+        },
+        ...getConfigVCSItems(
+          config?.opentofu_module?.connected_github_vcs_config ||
+            config?.opentofu_module?.public_git_vcs_config
+        )
+      )
+      break
+
     case 'pulumi':
       items.push(
         {

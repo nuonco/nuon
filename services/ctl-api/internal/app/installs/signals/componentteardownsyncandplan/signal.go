@@ -610,6 +610,8 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		approvalTyp = app.HelmApprovalApprovalType
 	case app.ComponentTypeTerraformModule:
 		approvalTyp = app.TerraformPlanApprovalType
+	case app.ComponentTypeOpentofuModule:
+		approvalTyp = app.OpentofuPlanApprovalType
 	case app.ComponentTypeKubernetesManifest:
 		approvalTyp = app.KubernetesManifestApprovalType
 	case app.ComponentTypePulumi:

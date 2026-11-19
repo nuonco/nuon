@@ -12,6 +12,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/sourceidentity"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
 func ComponentInputs(c *app.ComponentConfigConnection) (*plantypes.BuildPlan, error) {
@@ -25,6 +26,11 @@ func ComponentInputs(c *app.ComponentConfigConnection) (*plantypes.BuildPlan, er
 		plan.TerraformBuildPlan = &plantypes.TerraformBuildPlan{
 			VendorProviders:  true,
 			TerraformVersion: sourceidentity.TerraformVersion(c.TerraformModuleComponentConfig.Version),
+		}
+	case c.OpentofuModuleComponentConfig != nil:
+		plan.OpentofuBuildPlan = &plantypes.OpentofuBuildPlan{
+			VendorProviders: true,
+			OpenTofuVersion: opentofuVersion(c.OpentofuModuleComponentConfig.Version),
 		}
 	case c.HelmComponentConfig != nil:
 		cfg := c.HelmComponentConfig.HelmConfig
@@ -84,6 +90,13 @@ func ComponentInputs(c *app.ComponentConfigConnection) (*plantypes.BuildPlan, er
 	return plan, nil
 }
 
+func opentofuVersion(version string) string {
+	if version == "" {
+		return build.DefaultOpentofuVersion
+	}
+	return version
+}
+
 func ComponentChecksum(c *app.ComponentConfigConnection) (string, error) {
 	plan, err := ComponentInputs(c)
 	if err != nil {
@@ -97,11 +110,31 @@ func ComponentChecksum(c *app.ComponentConfigConnection) (string, error) {
 	return hex.EncodeToString(sum[:]), nil
 }
 
-func SandboxInputs(c *app.AppSandboxConfig) *plantypes.TerraformBuildPlan {
-	return &plantypes.TerraformBuildPlan{
-		VendorProviders:  true,
-		TerraformVersion: sourceidentity.TerraformVersion(c.TerraformVersion),
+func SandboxInputs(c *app.AppSandboxConfig) *plantypes.BuildPlan {
+	plan := &plantypes.BuildPlan{}
+	switch c.Type {
+	case config.AppSandboxTypeOpentofu:
+		plan.OpentofuBuildPlan = &plantypes.OpentofuBuildPlan{
+			VendorProviders: true,
+			OpenTofuVersion: opentofuVersion(c.OpenTofuVersion),
+		}
+	default:
+		plan.TerraformBuildPlan = &plantypes.TerraformBuildPlan{
+			VendorProviders:  true,
+			TerraformVersion: sourceidentity.TerraformVersion(c.TerraformVersion),
+		}
 	}
+	return plan
+}
+
+func SandboxPlan(c *app.AppSandboxConfig, labels map[string]string) *plantypes.BuildPlan {
+	plan := SandboxInputs(c)
+	if plan.TerraformBuildPlan != nil {
+		plan.TerraformBuildPlan.Labels = labels
+	} else if plan.OpentofuBuildPlan != nil {
+		plan.OpentofuBuildPlan.Labels = labels
+	}
+	return plan
 }
 
 func SandboxChecksum(c *app.AppSandboxConfig) string {

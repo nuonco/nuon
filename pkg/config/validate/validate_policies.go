@@ -25,8 +25,8 @@ func ValidateOPAPolicyForType(contents string, policyType config.AppPolicyType) 
 		return err
 	}
 	for _, check := range policy.Checks {
-		if check.Action == "skip_apply" && policyType != config.AppPolicyTypeTerraformModule && policyType != config.AppPolicyTypeSandbox {
-			return fmt.Errorf("check %s: skip_apply is only supported for terraform_module and sandbox policies", check.ID)
+		if check.Action == "skip_apply" && policyType != config.AppPolicyTypeTerraformModule && policyType != config.AppPolicyTypeOpentofuModule && policyType != config.AppPolicyTypeSandbox {
+			return fmt.Errorf("check %s: skip_apply is only supported for terraform_module, opentofu_module and sandbox policies", check.ID)
 		}
 	}
 	return nil
@@ -141,6 +141,7 @@ func validatePolicyType(policyType config.AppPolicyType) error {
 		config.AppPolicyTypeKubernetesManifest,
 		config.AppPolicyTypeContainerImage,
 		config.AppPolicyTypePulumi,
+		config.AppPolicyTypeOpentofuModule,
 		config.AppPolicyTypeSandbox:
 		return nil
 	default:
@@ -179,6 +180,7 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 		config.AppPolicyTypeKubernetesManifest,
 		config.AppPolicyTypeContainerImage,
 		config.AppPolicyTypePulumi,
+		config.AppPolicyTypeOpentofuModule,
 		config.AppPolicyTypeSandbox:
 		// component-based and sandbox policy types only support OPA engine
 		if engine != config.AppPolicyEngineOPA {
@@ -198,7 +200,8 @@ func ComponentScopedPolicyType(policyType config.AppPolicyType) bool {
 		config.AppPolicyTypeHelmChart,
 		config.AppPolicyTypeKubernetesManifest,
 		config.AppPolicyTypeContainerImage,
-		config.AppPolicyTypePulumi:
+		config.AppPolicyTypePulumi,
+		config.AppPolicyTypeOpentofuModule:
 		return true
 	default:
 		return false
@@ -234,6 +237,7 @@ func teardownEvaluatedPolicyType(policyType config.AppPolicyType) bool {
 		config.AppPolicyTypeHelmChart,
 		config.AppPolicyTypeKubernetesManifest,
 		config.AppPolicyTypePulumi,
+		config.AppPolicyTypeOpentofuModule,
 		config.AppPolicyTypeSandbox:
 		return true
 	default:

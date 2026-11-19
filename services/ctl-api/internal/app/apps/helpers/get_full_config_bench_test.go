@@ -73,7 +73,7 @@ func fullConfigBenchmarkHelper(t testing.TB, actions int) *appshelpers.Helpers {
 		data.rows = append(data.rows, values)
 		tables[table] = data
 	}
-	add("app_configs_view_v3", "id app_id component_ids status version", "config", "app", "{helm,terraform,kubernetes,image,job,pulumi}", "active", int64(1))
+	add("app_configs_view_v3", "id app_id component_ids status version", "config", "app", "{helm,terraform,opentofu,kubernetes,image,job,pulumi}", "active", int64(1))
 	for _, table := range []string{"app_runner_configs", "app_stack_configs", "app_input_configs", "app_secrets_configs", "app_permissions_configs", "app_break_glass_configs", "app_policies_configs", "app_operation_role_configs", "app_kubernetes_contexts_configs", "app_sandbox_configs"} {
 		add(table, "app_config_id id", "config", table)
 	}
@@ -97,6 +97,7 @@ func fullConfigBenchmarkHelper(t testing.TB, actions int) *appshelpers.Helpers {
 		typ app.ComponentType
 	}{
 		{"helm", app.ComponentTypeHelmChart}, {"terraform", app.ComponentTypeTerraformModule},
+		{"opentofu", app.ComponentTypeOpentofuModule},
 		{"kubernetes", app.ComponentTypeKubernetesManifest},
 		{"image", app.ComponentTypeExternalImage}, {"job", app.ComponentTypeJob}, {"pulumi", app.ComponentTypePulumi},
 	} {
@@ -105,11 +106,12 @@ func fullConfigBenchmarkHelper(t testing.TB, actions int) *appshelpers.Helpers {
 	}
 	add("helm_component_configs", "component_config_connection_id id chart_name", "helm-connection", "helm-config", "my-chart")
 	add("terraform_module_component_configs", "component_config_connection_id id version", "terraform-connection", "terraform-config", "latest")
+	add("opentofu_module_component_configs", "component_config_connection_id id version", "opentofu-connection", "opentofu-config", "1.13.9")
 	add("kubernetes_manifest_component_configs", "component_config_connection_id id manifest", "kubernetes-connection", "kubernetes-config", "apiVersion: v1\nkind: ConfigMap\n")
 	add("external_image_component_configs", "component_config_connection_id id image_url", "image-connection", "image-config", "nginx")
 	add("job_component_configs", "component_config_connection_id id image_url", "job-connection", "job-config", "ubuntu")
 	add("pulumi_component_configs", "component_config_connection_id id runtime", "pulumi-connection", "pulumi-config", "go")
-	for _, source := range []string{"app_sandbox_configs", "helm-config", "terraform-config", "pulumi-config"} {
+	for _, source := range []string{"app_sandbox_configs", "helm-config", "terraform-config", "opentofu-config", "pulumi-config"} {
 		add("public_git_vcs_configs", "component_config_id id repo branch", source, source+"-vcs", "https://example.com/config", "main")
 	}
 	tables["connected_github_vcs_configs"] = fullConfigTable{columns: []string{"component_config_id", "id"}}
@@ -221,8 +223,8 @@ func checkFullConfigBenchmark(b testing.TB, got *app.AppConfig, configID, compon
 	require.NotNil(b, got.KubernetesContextsConfig)
 	require.Len(b, got.KubernetesContextsConfig.Contexts, 1)
 	require.Equal(b, "primary", got.KubernetesContextsConfig.Contexts[0].Name)
-	require.Len(b, got.ComponentIDs, 6)
-	require.Len(b, got.ComponentConfigConnections, 6)
+	require.Len(b, got.ComponentIDs, 7)
+	require.Len(b, got.ComponentConfigConnections, 7)
 	seen := make(map[app.ComponentType]bool)
 	for _, c := range got.ComponentConfigConnections {
 		require.Equal(b, c.ComponentID, c.Component.ID)
@@ -237,6 +239,10 @@ func checkFullConfigBenchmark(b testing.TB, got *app.AppConfig, configID, compon
 		case app.ComponentTypeTerraformModule:
 			require.NotNil(b, c.TerraformModuleComponentConfig)
 			require.NotNil(b, c.TerraformModuleComponentConfig.PublicGitVCSConfig)
+		case app.ComponentTypeOpentofuModule:
+			require.NotNil(b, c.OpentofuModuleComponentConfig)
+			require.NotNil(b, c.OpentofuModuleComponentConfig.PublicGitVCSConfig)
+			require.Equal(b, "1.13.9", c.OpentofuModuleComponentConfig.Version)
 		case app.ComponentTypeKubernetesManifest:
 			require.NotNil(b, c.KubernetesManifestComponentConfig)
 			require.Contains(b, c.KubernetesManifestComponentConfig.Manifest, "ConfigMap")

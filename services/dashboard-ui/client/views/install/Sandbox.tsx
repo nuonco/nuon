@@ -23,6 +23,7 @@ export const Sandbox = () => {
 
   const sandboxConfig = configResult?.sandbox
   const isPulumi = sandboxConfig?.type === 'pulumi'
+  const isOpenTofu = sandboxConfig?.type === 'opentofu'
 
   const latestSandboxRunId = install?.install_sandbox_runs?.at(0)?.id
   const driftedObject = install?.drifted_objects?.find(
@@ -83,7 +84,9 @@ export const Sandbox = () => {
         <SandboxConfigCard config={sandboxConfig} loading={!sandboxConfig} />
 
         <TerraformWorkspaceCard
-          componentType={isPulumi ? 'pulumi' : 'terraform_module'}
+          componentType={
+            isPulumi ? 'pulumi' : isOpenTofu ? 'opentofu_module' : 'terraform_module'
+          }
         />
       </DetailPage>
     </>

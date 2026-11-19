@@ -159,13 +159,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	install := app.Install{
-		AppID:              appID,
-		OrgID:              orgID,
-		Name:               req.Name,
-		SandboxMode:        pkggenerics.NewNullBool(req.SandboxMode),
-		AppSandboxConfigID: sandboxConfigID,
-		AppRunnerConfigID:  runnerConfigID,
-		AppConfigID:        pin.AppConfig.ID,
+		AppID:             appID,
+		OrgID:             orgID,
+		Name:              req.Name,
+		SandboxMode:       pkggenerics.NewNullBool(req.SandboxMode),
+		AppRunnerConfigID: runnerConfigID,
+		AppConfigID:       pin.AppConfig.ID,
 		InstallSandbox: app.InstallSandbox{
 			Status: app.InstallSandboxStatusQueued,
 			TerraformWorkspace: app.TerraformWorkspace{

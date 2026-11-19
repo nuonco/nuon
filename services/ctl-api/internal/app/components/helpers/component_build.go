@@ -87,6 +87,7 @@ func (s *Helpers) createComponentBuild(ctx context.Context, buildID, cmpID, comp
 func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, cmp *app.Component, componentConfigConnectionID string) (*app.ComponentConfigConnection, error) {
 	query := s.db.WithContext(ctx).
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
 		Preload("KubernetesManifestComponentConfig.PublicGitVCSConfig").
 		Preload("PulumiComponentConfig.PublicGitVCSConfig").

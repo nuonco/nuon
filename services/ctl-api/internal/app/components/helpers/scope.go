@@ -19,8 +19,11 @@ func PreloadLatestConfig(db *gorm.DB) *gorm.DB {
 
 		// preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 
 		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").
@@ -49,9 +52,13 @@ func PreloadComponentBuildConfig(db *gorm.DB) *gorm.DB {
 	return db.
 		// preload all terraform configs
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnection.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnection.OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+		Preload("ComponentConfigConnection.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all helm configs
 		Preload("ComponentConfigConnection.HelmComponentConfig").

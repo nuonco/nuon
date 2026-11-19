@@ -51,6 +51,7 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.JobComponentConfig{},
 		&app.KubernetesManifestComponentConfig{},
 		&app.TerraformModuleComponentConfig{},
+		&app.OpentofuModuleComponentConfig{},
 		&app.HelmComponentConfig{},
 		&app.InstallActionWorkflowRunStep{},
 		&app.InstallActionWorkflowRun{},

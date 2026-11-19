@@ -97,6 +97,19 @@ func (c *cli) persistentPreRunE(cmd *cobra.Command, args []string) error {
 	return err
 }
 
+// localInitPreRunE serves the local-only `apps init` commands, which override
+// the root persistent pre-run to skip auth: Cobra runs only the closest
+// PersistentPreRunE, so deps must be populated here too.
+func (c *cli) localInitPreRunE(cmd *cobra.Command, _ []string) error {
+	if err := c.resolveOutput(cmd); err != nil {
+		return err
+	}
+	if err := c.initConfig(); err != nil {
+		return err
+	}
+	return c.populateDeps()
+}
+
 // resolveOutput determines the output format from flags and env, then enables
 // json/agent modes accordingly. Precedence: --output, --json, NUON_OUTPUT,
 // NUON_AGENT, default (table).

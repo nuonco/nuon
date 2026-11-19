@@ -26,10 +26,10 @@ export const UnlockTerraformWorkspaceModal = ({
         <div className="flex flex-col gap-2">
           <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="LockOpenIcon" size="24" />
-            Unlock Terraform workspace?
+            Unlock Terraform/OpenTofu workspace?
           </Text>
           <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">
-            Force unlock the Terraform state for {description}
+            Force unlock the Terraform/OpenTofu state for {description}
           </Text>
         </div>
       }
@@ -55,7 +55,7 @@ export const UnlockTerraformWorkspaceModal = ({
       <div className="flex flex-col gap-6">
         {(error as any)?.error ? (
           <Banner theme="error">
-            {(error as any)?.error || 'Unable to unlock Terraform workspace'}
+            {(error as any)?.error || 'Unable to unlock Terraform/OpenTofu workspace'}
           </Banner>
         ) : null}
 

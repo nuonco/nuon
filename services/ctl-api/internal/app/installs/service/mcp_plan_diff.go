@@ -44,7 +44,7 @@ func buildApprovalPlanDiff(approvalType app.WorkflowStepApprovalType, contents, 
 	var changes []mcpPlanDiffChange
 	var err error
 	switch approvalType {
-	case app.TerraformPlanApprovalType:
+	case app.TerraformPlanApprovalType, app.OpentofuPlanApprovalType:
 		changes, err = terraformPlanDiffs(contents)
 	case app.PulumiApprovalType:
 		changes, err = pulumiPlanDiffs(contents)
@@ -86,6 +86,7 @@ func pagePlanDiffs(changes []mcpPlanDiffChange, limit, offset int) ([]mcpPlanDif
 func planDiffSupported(approvalType app.WorkflowStepApprovalType) bool {
 	switch approvalType {
 	case app.TerraformPlanApprovalType,
+		app.OpentofuPlanApprovalType,
 		app.PulumiApprovalType,
 		app.HelmApprovalApprovalType,
 		app.KubernetesManifestApprovalType,

@@ -35,6 +35,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/oci/imageref"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -106,8 +107,11 @@ func Sandbox(ctx context.Context, db *gorm.DB, vcs *vcshelpers.Helpers, b *app.A
 	}
 	c := &b.AppSandboxConfig
 	i := sourceidentity.New("terraform", SandboxChecksum(c))
-	if c.Type == "pulumi" {
+	switch c.Type {
+	case config.AppSandboxTypePulumi:
 		i.Kind = "pulumi"
+	case config.AppSandboxTypeOpentofu:
+		i.Kind = "opentofu"
 	}
 	ref := ""
 	if b.VCSConnectionCommit != nil {
@@ -284,7 +288,7 @@ func normalizeRepo(repo string) string {
 }
 
 func PreloadConnection(db *gorm.DB) *gorm.DB {
-	for _, kind := range []string{"TerraformModuleComponentConfig", "HelmComponentConfig", "KubernetesManifestComponentConfig", "PulumiComponentConfig"} {
+	for _, kind := range []string{"TerraformModuleComponentConfig", "OpentofuModuleComponentConfig", "HelmComponentConfig", "KubernetesManifestComponentConfig", "PulumiComponentConfig"} {
 		db = db.Preload(kind).Preload(kind + ".PublicGitVCSConfig").Preload(kind + ".ConnectedGithubVCSConfig").Preload(kind + ".ConnectedGithubVCSConfig.VCSConnection")
 	}
 	return db.Preload("ExternalImageComponentConfig")

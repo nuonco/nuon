@@ -127,6 +127,12 @@ func (h *Helpers) connectionIDFromTypedComponentConfig(ctx context.Context, orgI
 			return "", res.Error
 		}
 		return cfg.ComponentConfigConnectionID, nil
+	case models.AppComponentTypeOpentofuModule:
+		var cfg app.OpentofuModuleComponentConfig
+		if res := db.Where(app.OpentofuModuleComponentConfig{ID: component.ConfigID, OrgID: orgID}).First(&cfg); res.Error != nil {
+			return "", res.Error
+		}
+		return cfg.ComponentConfigConnectionID, nil
 	case models.AppComponentTypeHelmChart:
 		var cfg app.HelmComponentConfig
 		if res := db.Where(app.HelmComponentConfig{ID: component.ConfigID, OrgID: orgID}).First(&cfg); res.Error != nil {
@@ -165,8 +171,11 @@ func PreloadComponentConfigConnection(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("Component").
 		Preload("TerraformModuleComponentConfig").
+		Preload("OpentofuModuleComponentConfig").
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("HelmComponentConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig").

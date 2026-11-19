@@ -29,13 +29,14 @@ type nestedFieldContract struct {
 }
 
 var nestedFieldContracts = []nestedFieldContract{
-	{reflect.TypeFor[Component](), "Source:ingress Type:constrained-type Name:identity SourceFile:provenance VarName:var_name Labels:labels Dependencies:dependencies OperationRoles:nested Toggleable:toggleable DefaultEnabled:default_enabled KubernetesContext:kubernetes_context HelmChart:nested TerraformModule:nested Job:nested ExternalImage:nested KubernetesManifest:nested Pulumi:nested References:derived Checksum:derived"},
+	{reflect.TypeFor[Component](), "Source:ingress Type:constrained-type Name:identity SourceFile:provenance VarName:var_name Labels:labels Dependencies:dependencies OperationRoles:nested Toggleable:toggleable DefaultEnabled:default_enabled KubernetesContext:kubernetes_context HelmChart:nested TerraformModule:nested Job:nested ExternalImage:nested KubernetesManifest:nested Pulumi:nested OpentofuModule:nested References:derived Checksum:derived"},
 	{reflect.TypeFor[HelmChartComponentConfig](), "ChartName:chart_name ValuesMap:values ValuesFiles:nested PublicRepo:nested ConnectedRepo:nested HelmRepo:nested Namespace:namespace StorageDriver:storage_driver TakeOwnership:take_ownership SkipCRDs:skip_crds DriftSchedule:drift_schedule Health:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing Values:legacy-rejected"},
 	{reflect.TypeFor[TerraformModuleComponentConfig](), "TerraformVersion:terraform_version EnvVarMap:env_vars VarsMap:vars VariablesFiles:nested PublicRepo:nested ConnectedRepo:nested DriftSchedule:drift_schedule BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing Teardown:nested Variables:legacy-rejected EnvVars:legacy-rejected"},
 	{reflect.TypeFor[ExternalImageComponentConfig](), "AWSECRImageConfig:nested GCPGARImageConfig:nested AzureACRImageConfig:nested PublicImageConfig:nested Verification:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout"},
 	{reflect.TypeFor[KubernetesManifestComponentConfig](), "Manifest:manifest Kustomize:nested PublicRepo:nested ConnectedRepo:nested Namespace:namespace DriftSchedule:drift_schedule Health:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing"},
 	{reflect.TypeFor[JobComponentConfig](), "ImageURL:image_url Tag:tag Cmd:cmd EnvVarMap:env_vars Args:args BuildTimeout:build_timeout DeployTimeout:deploy_timeout EnvVars:legacy-rejected"},
 	{reflect.TypeFor[PulumiComponentConfig](), "Runtime:runtime PulumiVersion:pulumi_version ConfigMap:config EnvVarMap:env_vars PublicRepo:nested ConnectedRepo:nested DriftSchedule:drift_schedule BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing"},
+	{reflect.TypeFor[OpentofuModuleComponentConfig](), "OpenTofuVersion:open_tofu_version EnvVarMap:env_vars VarsMap:vars VariablesFiles:nested PublicRepo:nested ConnectedRepo:nested DriftSchedule:drift_schedule BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing Teardown:nested"},
 	{reflect.TypeFor[HelmValuesFile](), "Source:legacy-alias Contents:contents Path:path"},
 	{reflect.TypeFor[TerraformVariablesFile](), "Contents:contents"},
 	{reflect.TypeFor[HelmRepoConfig](), "RepoURL:repo_url Chart:chart Version:version"},
@@ -51,7 +52,7 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[PublicImageConfig](), "ImageURL:image_url Tag:tag UpdatePolicy:update_policy"},
 	{reflect.TypeFor[signature.Verification](), "RequireSignature:require_signature Authorities:nested"},
 	{reflect.TypeFor[signature.Authority](), "Type:constrained-type Issuer:issuer Subject:subject SubjectRegexp:subject_regexp PublicKey:public_key"},
-	{reflect.TypeFor[AppSandboxConfig](), "Source:ingress Type:type TerraformVersion:terraform_version Runtime:runtime PulumiVersion:pulumi_version PulumiConfig:pulumi_config ConnectedRepo:nested PublicRepo:nested DriftSchedule:drift_schedule EnvVarMap:env_vars VarsMap:vars VariablesFiles:nested OperationRoles:nested MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing References:derived"},
+	{reflect.TypeFor[AppSandboxConfig](), "Source:ingress Type:type TerraformVersion:terraform_version Runtime:runtime PulumiVersion:pulumi_version PulumiConfig:pulumi_config OpenTofuVersion:open_tofu_version ConnectedRepo:nested PublicRepo:nested DriftSchedule:drift_schedule EnvVarMap:env_vars VarsMap:vars VariablesFiles:nested OperationRoles:nested MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing References:derived"},
 	{reflect.TypeFor[AppRunnerConfig](), "Source:ingress RunnerType:runner_type EnvVarMap:env_vars HelmDriver:helm_driver InitScriptURL:init_script_url PhoneHomeScriptURL:phone_home_script_url InstanceType:instance_type ImageAutoUpdate:image_auto_update ImageID:image_id RunnerAPIURL:runner_api_url PublicAPIURL:public_api_url EnvVars:legacy-rejected"},
 	{reflect.TypeFor[AppInputConfig](), "Inputs:nested Groups:nested Source:ingress Sources:ingress"},
 	{reflect.TypeFor[AppInput](), "Name:identity DisplayName:display_name Description:description Group:group Default:default Required:required Sensitive:sensitive Type:type Internal:legacy-ignored UserConfigurable:user_configurable"},
@@ -101,6 +102,9 @@ func nestedDiffFixtures() []nestedDiffFixture {
 		{"Components.0.HelmChart.HelmRepo", "components/component.helm/helm_repo"},
 		{"Components.1.TerraformModule.VariablesFiles.0", "components/component.terraform/var_file/var_file[0]"},
 		{"Components.1.TerraformModule.Teardown", "components/component.terraform/teardown"},
+		{"Components.6.OpentofuModule.VariablesFiles.0", "components/component.opentofu/var_file/var_file[0]"},
+		{"Components.6.OpentofuModule.Teardown", "components/component.opentofu/teardown"},
+		{"Components.6.OpentofuModule", "components/component.opentofu"},
 		{"Components.3.KubernetesManifest.Kustomize", "components/component.manifest/kustomize"},
 		{"Components.2.ExternalImage.AWSECRImageConfig", "components/component.image/aws_ecr"},
 		{"Components.2.ExternalImage.GCPGARImageConfig", "components/component.image/gcp_gar"},
@@ -130,6 +134,7 @@ func nestedDiffFixtures() []nestedDiffFixture {
 		{"Components.1.TerraformModule", "components/component.terraform"},
 		{"Components.3.KubernetesManifest", "components/component.manifest"},
 		{"Components.5.Pulumi", "components/component.pulumi"},
+		{"Components.6.OpentofuModule", "components/component.opentofu"},
 		{"Sandbox", "sandbox"}, {"Actions.0.Steps.0", "actions/action.inspect/step.inspect"},
 		{"Branch", "branch"}, {"Branches.0", "branches/branch.stable"},
 	} {
@@ -182,6 +187,7 @@ func nestedBaseline() *AppConfig {
 			{Name: "manifest", Type: KubernetesManifestComponentType, KubernetesManifest: &KubernetesManifestComponentConfig{Namespace: "default", Kustomize: &KustomizeConfig{Path: "overlays/prod"}, PublicRepo: repo(), Health: health()}},
 			{Name: "job", Type: JobComponentType, Job: &JobComponentConfig{ImageURL: "docker.io/acme/job", Tag: "1.0.0", Cmd: []string{"echo"}, Args: []string{"ready"}}},
 			{Name: "pulumi", Type: PulumiComponentType, Pulumi: &PulumiComponentConfig{Runtime: "go", PulumiVersion: "3.100.0", PublicRepo: repo()}},
+			{Name: "opentofu", Type: OpentofuModuleComponentType, OpentofuModule: &OpentofuModuleComponentConfig{OpenTofuVersion: "1.9.0", PublicRepo: repo(), VariablesFiles: []TerraformVariablesFile{{Contents: "region = \"us-east-1\""}}, Teardown: &ComponentTeardownConfig{Retain: []string{"aws_s3_bucket.data"}}}},
 		},
 		Sandbox:        &AppSandboxConfig{Type: "terraform", TerraformVersion: "1.6.0", Runtime: "go", PublicRepo: repo(), VariablesFiles: []TerraformVariablesFile{{Contents: "region = \"us-east-1\""}}, OperationRoles: []EntityOperationRole{{Operation: OperationProvision, RoleName: "provision"}}},
 		Runner:         &AppRunnerConfig{RunnerType: "aws", HelmDriver: "secret"},
@@ -424,6 +430,8 @@ func nestedEditValue(v reflect.Value, typ reflect.Type, field, word string, numb
 			value = "1.7." + strconv.Itoa(number)
 		case "PulumiVersion":
 			value = "3.101." + strconv.Itoa(number)
+		case "OpenTofuVersion":
+			value = "1.14." + strconv.Itoa(number)
 		case "BuildTimeout", "DeployTimeout", "Timeout", "StabilizationWindow":
 			value = strconv.Itoa(number+10) + "m"
 		case "DriftSchedule", "CronSchedule":

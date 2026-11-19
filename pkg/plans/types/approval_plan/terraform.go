@@ -27,38 +27,36 @@ func terraformPlanNoop(planJSON []byte) (bool, error) {
 		return false, err
 	}
 
-	// Check for resource changes, output changes, and action invocations.
-	noResourceChanges := len(plan.ResourceChanges) == 0
-	noOutputChanges := len(plan.OutputChanges) == 0
-
 	// Deferred changes are not considered current changes. If there are deferred changes,
 	// infrastructure is not up to date.
-	noDeferredChanges := len(plan.DeferredChanges) == 0
-
-	// If all are empty, infra is up to date.
-	if noResourceChanges && noOutputChanges && noDeferredChanges {
+	if len(plan.ResourceChanges) == 0 && len(plan.OutputChanges) == 0 && len(plan.DeferredChanges) == 0 {
 		return true, nil
 	}
 
-	// Check each resource change for no-op actions
+	// A change is a no-op only when its sole action is no-op; anything else
+	// (create, delete, or a replace's ["delete","create"]) is a real change.
 	for _, rc := range plan.ResourceChanges {
-		if rc.Change != nil && len(rc.Change.Actions) == 1 && rc.Change.Actions[0] != tfjson.ActionNoop {
-			return false, nil
+		if rc.Change != nil && len(rc.Change.Actions) == 1 && rc.Change.Actions[0] == tfjson.ActionNoop {
+			continue
 		}
+		return false, nil
 	}
 
-	// Check each output change for no-op actions
 	for _, oc := range plan.OutputChanges {
-		if oc != nil && len(oc.Actions) == 1 && oc.Actions[0] != tfjson.ActionNoop {
-			return false, nil
+		if oc != nil && len(oc.Actions) == 1 && oc.Actions[0] == tfjson.ActionNoop {
+			continue
 		}
+		return false, nil
 	}
 
-	// Check each drift change for no-op actions
-	for _, oc := range plan.ResourceDrift {
-		if oc != nil && len(oc.Change.Actions) == 1 && oc.Change.Actions[0] != tfjson.ActionNoop {
-			return false, nil
+	for _, rd := range plan.ResourceDrift {
+		if rd == nil || rd.Change == nil {
+			continue
 		}
+		if len(rd.Change.Actions) == 1 && rd.Change.Actions[0] == tfjson.ActionNoop {
+			continue
+		}
+		return false, nil
 	}
 
 	return true, nil

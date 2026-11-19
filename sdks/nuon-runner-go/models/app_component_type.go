@@ -48,6 +48,9 @@ const (
 	// AppComponentTypePulumi captures enum value "pulumi"
 	AppComponentTypePulumi AppComponentType = "pulumi"
 
+	// AppComponentTypeOpentofuModule captures enum value "opentofu_module"
+	AppComponentTypeOpentofuModule AppComponentType = "opentofu_module"
+
 	// AppComponentTypeUnknown captures enum value "unknown"
 	AppComponentTypeUnknown AppComponentType = "unknown"
 )
@@ -57,7 +60,7 @@ var appComponentTypeEnum []any
 
 func init() {
 	var res []AppComponentType
-	if err := json.Unmarshal([]byte(`["terraform_module","helm_chart","external_image","job","kubernetes_manifest","pulumi","unknown"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["terraform_module","helm_chart","external_image","job","kubernetes_manifest","pulumi","opentofu_module","unknown"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

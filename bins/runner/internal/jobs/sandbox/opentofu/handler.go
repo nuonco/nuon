@@ -1,0 +1,61 @@
+package opentofu
+
+import (
+	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
+
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
+	"github.com/nuonco/nuon/pkg/metrics"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+)
+
+// handler is the handler implementation
+type handler struct {
+	v               *validator.Validate
+	apiClient       nuonrunner.Client
+	errRecorder     *errs.Recorder
+	cfg             *runnerconfig.Config
+	mw              metrics.Writer
+	l               *zap.Logger
+	clusterProvider *componenthealth.ClusterProvider
+
+	// created on initialization of the plugin struct
+	state *handlerState
+}
+
+var _ jobs.JobHandler = (*handler)(nil)
+
+type HandlerParams struct {
+	fx.In
+
+	V               *validator.Validate
+	APIClient       nuonrunner.Client
+	Config          *runnerconfig.Config
+	ErrRecorder     *errs.Recorder
+	MW              metrics.Writer
+	L               *zap.Logger
+	ClusterProvider *componenthealth.ClusterProvider
+}
+
+func New(params HandlerParams) (*handler, error) {
+	return &handler{
+		v:               params.V,
+		apiClient:       params.APIClient,
+		cfg:             params.Config,
+		errRecorder:     params.ErrRecorder,
+		mw:              params.MW,
+		l:               params.L,
+		clusterProvider: params.ClusterProvider,
+	}, nil
+}
+
+func (h *handler) SetAPIClient(c nuonrunner.Client) nuonrunner.Client {
+	prev := h.apiClient
+	h.apiClient = c
+	return prev
+}

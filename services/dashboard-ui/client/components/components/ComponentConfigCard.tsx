@@ -111,6 +111,41 @@ export const useComponentConfigButtons = (config?: TComponentConfig) => {
       }
       break
 
+    case 'opentofu_module':
+      if (
+        config.opentofu_module?.variables &&
+        Object.keys(config.opentofu_module.variables).length > 0
+      ) {
+        buttons.push({
+          label: 'View variables',
+          onClick: () => {
+            const modal = (
+              <TerraformVariablesModal
+                variables={config.opentofu_module!.variables!}
+              />
+            )
+            addModal(modal)
+          },
+        })
+      }
+      if (
+        config.opentofu_module?.variables_files &&
+        config.opentofu_module.variables_files.length > 0
+      ) {
+        buttons.push({
+          label: 'View variables files',
+          onClick: () => {
+            const modal = (
+              <TerraformVariablesFilesModal
+                variablesFiles={config.opentofu_module!.variables_files!}
+              />
+            )
+            addModal(modal)
+          },
+        })
+      }
+      break
+
     case 'kubernetes_manifest':
       if (config.kubernetes_manifest?.manifest) {
         buttons.push({

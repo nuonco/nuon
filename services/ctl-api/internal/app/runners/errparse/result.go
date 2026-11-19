@@ -87,6 +87,10 @@ func ToolForRunnerJob(runnerJob *app.RunnerJob) Tool {
 		app.RunnerJobTypeSandboxTerraformPlan,
 		app.RunnerJobTypeRunnerTerraform:
 		return ToolTerraform
+	case app.RunnerJobTypeOpentofuDeploy,
+		app.RunnerJobTypeOpentofuModuleBuild,
+		app.RunnerJobTypeSandboxOpentofu:
+		return ToolOpentofu
 	case app.RunnerJobTypeHelmChartDeploy,
 		app.RunnerJobTypeHelmChartBuild,
 		app.RunnerJobTypeRunnerHelm:

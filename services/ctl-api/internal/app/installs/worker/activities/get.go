@@ -26,12 +26,12 @@ func (a *Activities) get(ctx context.Context, installID string) (*app.Install, e
 		Preload("Org.RunnerGroup.Runners").
 		Preload("App").
 		Preload("AppConfig").
+		Preload("AppConfig.SandboxConfig").
 		Preload("App.Org").
 		Preload("CloudConnection").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
-		Preload("AppSandboxConfig").
 		Preload("InstallSandbox").
 		Preload("InstallSandbox.TerraformWorkspace").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
@@ -47,11 +47,11 @@ func (a *Activities) get(ctx context.Context, installID string) (*app.Install, e
 		Preload("InstallConfig").
 
 		// load connected github
-		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
-		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
+		Preload("AppConfig.SandboxConfig.ConnectedGithubVCSConfig").
+		Preload("AppConfig.SandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// load public git
-		Preload("AppSandboxConfig.PublicGitVCSConfig").
+		Preload("AppConfig.SandboxConfig.PublicGitVCSConfig").
 
 		// load runners
 		Preload("RunnerGroup").

@@ -62,8 +62,15 @@ type Config struct {
 
 	// TerraformMirrorPlatforms overrides the `<os>_<arch>` platform set
 	// the build runner vendors providers for via `terraform providers
-	// mirror`. When empty, the build runner defaults to the runner's own
-	// runtime platform (one entry, runtime.GOOS_runtime.GOARCH).
+	// mirror` or `tofu providers mirror`. When empty, the build runner
+	// defaults to the runner's own runtime platform (one entry,
+	// runtime.GOOS_runtime.GOARCH).
+	//
+	// Despite the historical name, the knob is engine-agnostic: the
+	// platform list is arch-based, and the terraform and opentofu build
+	// handlers both consume it. Renaming it to a shared name would churn
+	// every runner config for no functional gain, so the name is kept and
+	// documented here instead.
 	//
 	// Set via env var TERRAFORM_MIRROR_PLATFORMS as a comma-separated
 	// list, e.g. `linux_amd64,linux_arm64,darwin_arm64`. Useful when

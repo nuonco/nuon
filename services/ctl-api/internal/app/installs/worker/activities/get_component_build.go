@@ -26,6 +26,7 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnection.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigConnection.HelmComponentConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig").

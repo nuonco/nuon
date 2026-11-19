@@ -310,7 +310,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
-		JobType:   install.AppSandboxConfig.JobType(),
+		JobType:   install.AppConfig.SandboxConfig.JobType(),
 		Op:        op,
 		Metadata: map[string]string{
 			"install_id":       install.ID,
@@ -394,7 +394,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	}
 
 	approvalType := app.TerraformPlanApprovalType
-	if install.AppSandboxConfig.Type == config.AppSandboxTypePulumi {
+	if install.AppConfig.SandboxConfig.Type == config.AppSandboxTypePulumi {
 		approvalType = app.PulumiApprovalType
 	}
 

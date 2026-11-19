@@ -12,6 +12,7 @@ export const PLAN_TYPE_META: Record<
   { icon: TIconVariant; label: string }
 > = {
   terraform_plan: { icon: 'Terraform', label: 'Terraform' },
+  opentofu_plan: { icon: 'Terraform', label: 'OpenTofu' },
   pulumi_plan: { icon: 'Pulumi', label: 'Pulumi' },
   helm_approval: { icon: 'Helm', label: 'Helm' },
   kubernetes_manifest_approval: { icon: 'Kubernetes', label: 'Kubernetes' },

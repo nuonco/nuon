@@ -156,7 +156,7 @@ contents   = "./policies/require-resource-limits.rego"
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `type` | Yes | Policy type: `container_image`, `helm_chart`, `kubernetes_manifest`, `terraform_module`, `kubernetes_cluster`, or `sandbox` |
+| `type` | Yes | Policy type: `container_image`, `helm_chart`, `kubernetes_manifest`, `terraform_module`, `opentofu_module`, `kubernetes_cluster`, or `sandbox` |
 | `engine` | No | Policy engine: `opa` or `kyverno` (default) |
 | `name` | No | Human-readable name. If not specified, derived from the filename |
 | `components` | No | Names of the components this policy applies to. Omit to apply to all components of the specified type. See [Scoping policies to components](/concepts/policies#scoping-policies-to-components) |

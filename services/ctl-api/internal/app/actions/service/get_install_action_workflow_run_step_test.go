@@ -133,7 +133,7 @@ func (s *GetInstallActionWorkflowRunStepTestSuite) createInstall(appID string) *
 	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
 	ctx = cctx.SetOrgContext(ctx, s.testOrg)
 	res := s.service.DB.WithContext(ctx).
-		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+		Omit("app_config_id", "app_runner_config_id").
 		Create(install)
 	require.NoError(s.T(), res.Error)
 	return install

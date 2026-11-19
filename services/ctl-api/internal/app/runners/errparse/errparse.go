@@ -50,6 +50,7 @@ const (
 	ToolUnknown    Tool = ""
 	ToolAction     Tool = "action"
 	ToolTerraform  Tool = "terraform"
+	ToolOpentofu   Tool = "opentofu"
 	ToolHelm       Tool = "helm"
 	ToolPulumi     Tool = "pulumi"
 	ToolKubernetes Tool = "kubernetes"

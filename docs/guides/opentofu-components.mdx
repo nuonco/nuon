@@ -1,0 +1,106 @@
+---
+title: "OpenTofu Components"
+description:
+  "OpenTofu components allow you to provision infrastructure in your customer's
+  cloud account to power your install."
+keywords: ["components", "OpenTofu", "OpenTofu guide", "opentofu_module type", "tofu", "tfvars", "provision infrastructure", "OpenTofu version", "OpenTofu variables"]
+---
+
+OpenTofu components allow you to deploy OpenTofu from a public or connected
+repo, to provision infrastructure resources in customer installs.
+
+To learn more about components, see the [Components](/concepts/components) concept page.
+
+## Configuring an OpenTofu component
+
+To configure an OpenTofu component, specify a repo, the required configuration
+values, and the version of OpenTofu to run it with.
+
+```toml components/<your-component>.toml
+# opentofu
+name             = "certificate_wildcard_public"
+type             = "opentofu_module"
+open_tofu_version = "1.13.9"
+
+[public_repo]
+repo      = "nuonco/byoc"
+directory = "byoc-nuon/src/components/certificate"
+branch    = "main"
+
+[vars]
+install_id  = "{{ .nuon.install.id }}"
+region      = "{{ .nuon.install_stack.outputs.region }}"
+zone_id     = "{{ .nuon.sandbox.outputs.nuon_dns.public_domain.zone_id }}"
+domain_name = "*.{{ .nuon.sandbox.outputs.nuon_dns.public_domain.name }}"
+```
+
+You can configure OpenTofu components to use either a public repo (using a
+`public_repo` block) or a private GitHub repo (using a `connected_repo` block).
+Read more about VCS configuration [here](/guides/vcs).
+
+You can also put the OpenTofu source inside of the same repo as your app config, and point to it.
+
+<Note>
+If you include the OpenTofu source in the app config repo, push the source along with the rest of the repo. A branch run rebuilds a component when its config changes, so a push that changes only the OpenTofu source does not rebuild it. After that push, run `nuon branches trigger --branch-id <branch> --force`, or build the component manually in the dashboard or CLI.
+</Note>
+
+OpenTofu components require OpenTofu 1.13 or newer. If you omit
+`open_tofu_version`, Nuon uses a default pinned version (v1.13.9). To pin a
+specific version, set `open_tofu_version`.
+
+```toml components/<your-component>.toml
+# opentofu
+name              = "dynamodb_table"
+type              = "opentofu_module"
+open_tofu_version = "1.13.9"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "aws-lambda/src/components/dynamodb-table"
+branch    = "main"
+
+[vars]
+name       = "widgets-{{.nuon.install.id}}"
+hash_key   = "ID"
+install_id = "{{.nuon.install.id}}"
+region     = "{{.nuon.install_stack.outputs.region}}"
+```
+
+## Configuring OpenTofu Vars
+
+You can configure OpenTofu variables for a component using
+[component variables](/guides/using-variables).
+
+These variables can access inputs, other Components, the sandbox, and details on
+the install itself using templating.
+
+Use the `[env_vars]` block to pass environment variables into the OpenTofu
+execution environment.
+
+## State Management
+
+All OpenTofu state is managed by the Nuon data plane through the Nuon
+http-based API. State is stored per install component, so an OpenTofu
+component never reads or writes Terraform component state, and the two can
+coexist in the same app.
+
+Each execution of an OpenTofu component in an install is visible in the plan and apply steps in the dashboard.
+
+The Enterprise edition has two additional features including requiring approvals of the plan and apply steps and showing diffs from previous runs.
+
+## Execution and Permissions
+
+The [runner](/concepts/runners) is responsible for executing OpenTofu, and is
+provisioned as part of the initial Install Stack. e.g., in AWS, the
+CloudFormation stack creates a VPC, networking, ASG and an EC2 instance to start
+the runner. The runner is separate from the Install's infrastructure e.g.,
+Kubernetes cluster.
+
+To learn more about the runner, read the
+[Nuon Runner Architecture](https://nuon.co/blog/the-nuon-runner-architecture/#nuons-runner-model)
+blog post.
+
+## Per-install variable overrides
+
+To override an OpenTofu module's variables for a single install without changing your app config, use
+[component overrides](/guides/component-overrides).

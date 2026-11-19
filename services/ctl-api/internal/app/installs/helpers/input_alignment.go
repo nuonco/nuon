@@ -35,6 +35,8 @@ func ComponentInputNames(cfg *app.ComponentConfigConnection, inputs *state.Input
 		names = append(names, config.HelmValuesOverrideInputName(name))
 	case cfg.Type == app.ComponentTypeTerraformModule || cfg.Component.Type == app.ComponentTypeTerraformModule:
 		names = append(names, config.TFVarsOverrideInputName(name))
+	case cfg.Type == app.ComponentTypeOpentofuModule || cfg.Component.Type == app.ComponentTypeOpentofuModule:
+		names = append(names, config.TFVarsOverrideInputName(name))
 	}
 	if inputs != nil {
 		for _, override := range []string{config.HelmValuesOverrideInputName(name), config.TFVarsOverrideInputName(name)} {

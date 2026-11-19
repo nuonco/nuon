@@ -203,6 +203,8 @@ func policyType(componentType ComponentType) AppPolicyType {
 		return AppPolicyTypeContainerImage
 	case PulumiComponentType:
 		return AppPolicyTypePulumi
+	case OpentofuModuleComponentType:
+		return AppPolicyTypeOpentofuModule
 	default:
 		return ""
 	}

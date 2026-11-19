@@ -28,6 +28,8 @@ const (
 	KubernetesManifestComponentType ComponentType = "kubernetes_manifest"
 	// PulumiComponentType is the type for a pulumi component
 	PulumiComponentType ComponentType = "pulumi"
+	// OpentofuModuleComponentType is the type for an opentofu module component
+	OpentofuModuleComponentType ComponentType = "opentofu_module"
 
 	ComponentTypeUnknown ComponentType = ""
 )
@@ -46,6 +48,8 @@ func (c ComponentType) APIType() models.AppComponentType {
 		return models.AppComponentTypeKubernetesManifest
 	case PulumiComponentType:
 		return models.AppComponentTypePulumi
+	case OpentofuModuleComponentType:
+		return models.AppComponentTypeOpentofuModule
 	}
 
 	return models.AppComponentTypeUnknown
@@ -79,6 +83,7 @@ type Component struct {
 	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" toml:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
 	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
 	Pulumi             *PulumiComponentConfig             `mapstructure:"pulumi,omitempty" toml:"pulumi,omitempty" jsonschema:"oneof_required=pulumi" nuonhash:"omitempty"`
+	OpentofuModule     *OpentofuModuleComponentConfig     `mapstructure:"opentofu_module,omitempty" toml:"opentofu_module,omitempty" jsonschema:"oneof_required=opentofu_module" nuonhash:"omitempty"`
 
 	// created during parsing
 	// WARNING: properties below should not be hashed with nuonhash
@@ -117,6 +122,12 @@ func (c *Component) parse(cfg ParseOptions) error {
 
 	if c.Pulumi != nil {
 		if err := c.Pulumi.Parse(); err != nil {
+			return err
+		}
+	}
+
+	if c.OpentofuModule != nil {
+		if err := c.OpentofuModule.Parse(); err != nil {
 			return err
 		}
 	}
@@ -162,18 +173,23 @@ func (a *Component) Validate() error {
 		return a.Pulumi.Validate()
 	}
 
+	if a.OpentofuModule != nil {
+		return a.OpentofuModule.Validate()
+	}
+
 	return nil
 }
 
 func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("type").Short("component type").Required().
-		Long("Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, container_image, kubernetes_manifest, or job)").
+		Long("Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, opentofu_module, container_image, kubernetes_manifest, or job)").
 		Example("terraform_module").
 		Example("helm_chart").
 		Example("container_image").
 		Example("kubernetes_manifest").
 		Example("pulumi").
+		Example("opentofu_module").
 		Field("name").Short("component name").Required().
 		Long("Unique identifier for the component within the app. Used for referencing in dependencies and templates").
 		Example("database").
@@ -206,7 +222,9 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("job").Short("job component configuration").OneOfRequired("job").Deprecated("").
 		Long("Configuration for job/batch components. Required when type is 'job'").
 		Field("pulumi").Short("pulumi component configuration").OneOfRequired("pulumi").
-		Long("Configuration for Pulumi deployments. Required when type is 'pulumi'")
+		Long("Configuration for Pulumi deployments. Required when type is 'pulumi'").
+		Field("opentofu_module").Short("opentofu module component configuration").OneOfRequired("opentofu_module").
+		Long("Configuration for OpenTofu module deployments. Required when type is 'opentofu_module'")
 }
 
 func (c *Component) AddDependency(val string) {
@@ -242,6 +260,14 @@ func (c *Component) AllVars() []string {
 			vars = append(vars, v)
 		}
 		for _, v := range c.Pulumi.EnvVarMap {
+			vars = append(vars, v)
+		}
+	}
+	if c.OpentofuModule != nil {
+		for _, v := range c.OpentofuModule.VarsMap {
+			vars = append(vars, v)
+		}
+		for _, v := range c.OpentofuModule.EnvVarMap {
 			vars = append(vars, v)
 		}
 	}

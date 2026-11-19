@@ -26,6 +26,7 @@ import (
 	helmbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/helm"
 	kubernetesmanifestbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/kubernetes_manifest"
 	noopbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/noop"
+	opentofubuild "github.com/nuonco/nuon/pkg/runner/jobs/build/opentofu"
 	pulumibuild "github.com/nuonco/nuon/pkg/runner/jobs/build/pulumi"
 	sandboxbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/sandbox"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
@@ -119,6 +120,9 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 		return nil, err
 	}
 	if err := add(terraformbuild.New(terraformbuild.Params{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {
+		return nil, err
+	}
+	if err := add(opentofubuild.New(opentofubuild.Params{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {
 		return nil, err
 	}
 	if err := add(pulumibuild.New(pulumibuild.Params{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder, FS: fs})); err != nil {

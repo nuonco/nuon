@@ -39,6 +39,9 @@ type ServiceCreateAppSandboxConfigRequest struct {
 	// max auto retries
 	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 
+	// open tofu version
+	OpenTofuVersion string `json:"open_tofu_version,omitempty"`
+
 	// operation roles
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 

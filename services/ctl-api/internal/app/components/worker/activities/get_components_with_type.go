@@ -25,8 +25,11 @@ func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponent
 			return db.Order(views.TableOrViewName(a.db, &app.ComponentConfigConnection{}, ".created_at DESC")).Limit(1)
 		}). // preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 
 		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").

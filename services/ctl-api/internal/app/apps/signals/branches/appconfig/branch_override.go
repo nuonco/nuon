@@ -34,6 +34,9 @@ func overrideComponentBranch(comp *config.Component, branchRepo, branchName stri
 	if comp.TerraformModule != nil {
 		overrideRepoConfigs(comp.TerraformModule.ConnectedRepo, comp.TerraformModule.PublicRepo, branchRepo, branchName)
 	}
+	if comp.OpentofuModule != nil {
+		overrideRepoConfigs(comp.OpentofuModule.ConnectedRepo, comp.OpentofuModule.PublicRepo, branchRepo, branchName)
+	}
 	if comp.HelmChart != nil {
 		overrideRepoConfigs(comp.HelmChart.ConnectedRepo, comp.HelmChart.PublicRepo, branchRepo, branchName)
 	}

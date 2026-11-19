@@ -68,6 +68,7 @@ func Counts(approvalType app.WorkflowStepApprovalType, plan string) (app.StepCha
 func Supported(approvalType app.WorkflowStepApprovalType) bool {
 	switch approvalType {
 	case app.TerraformPlanApprovalType,
+		app.OpentofuPlanApprovalType,
 		app.PulumiApprovalType,
 		app.HelmApprovalApprovalType,
 		app.KubernetesManifestApprovalType:
@@ -79,7 +80,7 @@ func Supported(approvalType app.WorkflowStepApprovalType) bool {
 
 func parse(approvalType app.WorkflowStepApprovalType, r io.Reader) (app.StepChangeCounts, error) {
 	switch approvalType {
-	case app.TerraformPlanApprovalType:
+	case app.TerraformPlanApprovalType, app.OpentofuPlanApprovalType:
 		return terraformCounts(r)
 	case app.PulumiApprovalType:
 		return pulumiCounts(r)

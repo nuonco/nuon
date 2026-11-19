@@ -22,6 +22,11 @@ const APPROVAL_BANNER_COPY: Record<
     message:
       'This Terraform plan is ready for your review. Inspect the proposed infrastructure changes before applying them.',
   },
+  opentofu_plan: {
+    title: 'OpenTofu plan requires review',
+    message:
+      'This OpenTofu plan is ready for your review. Inspect the proposed infrastructure changes before applying them.',
+  },
   helm_approval: {
     title: 'Helm chart plan requires review',
     message:

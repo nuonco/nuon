@@ -130,6 +130,7 @@ func AllModels() []any {
 		&app.ComponentConfigConnection{},
 		&app.HelmComponentConfig{},
 		&app.TerraformModuleComponentConfig{},
+		&app.OpentofuModuleComponentConfig{},
 		&app.JobComponentConfig{},
 		&app.KubernetesManifestComponentConfig{},
 		&app.PulumiComponentConfig{},

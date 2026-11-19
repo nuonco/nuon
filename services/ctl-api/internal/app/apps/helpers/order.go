@@ -22,6 +22,7 @@ func (h *Helpers) getDeployOrderFromGraph(ctx context.Context, grph graph.Graph[
 		typeOrder := map[app.ComponentType]int{
 			"external_image":   0,
 			"terraform_module": 1,
+			"opentofu_module":  1,
 			"helm_chart":       2,
 			"job":              3,
 		}

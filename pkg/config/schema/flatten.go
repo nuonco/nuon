@@ -23,6 +23,7 @@ var componentNestedConfigKeys = map[string]struct{}{
 	"external_image":      {},
 	"kubernetes_manifest": {},
 	"pulumi":              {},
+	"opentofu_module":     {},
 }
 
 // flattenedComponentSchema builds the schema for a single-type component file

@@ -78,7 +78,9 @@ export const InstallComponentLayout = () => {
 
   const basePath = href(`/components/${componentId}`)
   const hasState =
-    component?.type === 'terraform_module' || component?.type === 'pulumi'
+    component?.type === 'terraform_module' ||
+    component?.type === 'opentofu_module' ||
+    component?.type === 'pulumi'
 
   const tabs: TNavLink[] = [
     { path: '/', text: 'Overview' },

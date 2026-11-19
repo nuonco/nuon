@@ -12,5 +12,5 @@ title: 'Kubernetes Context'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`name`**<br/>string | context name Unique name for this kubernetes context within the app. Components reference this name via the top-level kubernetes_context field | **✅ Required** | `"data-cluster"`, `"shared-prod"` |
-| **`component`**<br/>string | source peer component Name of the peer component that produces cluster connection details. Must be a terraform_module or pulumi component, and must expose a `cluster` output object | **✅ Required** | `"data-eks"`, `"shared-aks"` |
+| **`component`**<br/>string | source peer component Name of the peer component that produces cluster connection details. Must be a terraform_module, opentofu_module, or pulumi component, and must expose a `cluster` output object | **✅ Required** | `"data-eks"`, `"shared-aks"` |
 

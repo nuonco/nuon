@@ -56,8 +56,13 @@ export const InstallSandboxContainer = () => {
   )
   const sandboxConfig = appConfig?.sandbox
   const isPulumi = sandboxConfig?.type === 'pulumi'
+  const isOpenTofu = sandboxConfig?.type === 'opentofu'
   const workspaceId = install?.sandbox?.terraform_workspace?.id
-  const stateTitle = isPulumi ? 'Pulumi state' : 'Terraform state'
+  const stateTitle = isPulumi
+    ? 'Pulumi state'
+    : isOpenTofu
+      ? 'OpenTofu state'
+      : 'Terraform state'
 
   return (
     <InstallSandbox
@@ -84,7 +89,13 @@ export const InstallSandboxContainer = () => {
               }}
             >
               <TerraformWorkspaceCard
-                componentType={isPulumi ? 'pulumi' : 'terraform_module'}
+                componentType={
+                  isPulumi
+                    ? 'pulumi'
+                    : isOpenTofu
+                      ? 'opentofu_module'
+                      : 'terraform_module'
+                }
                 description="the sandbox"
                 hideHeading
               />

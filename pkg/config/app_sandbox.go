@@ -19,6 +19,7 @@ type AppSandboxConfig struct {
 	Runtime          string               `mapstructure:"runtime,omitempty" toml:"runtime,omitempty"`
 	PulumiVersion    string               `mapstructure:"pulumi_version,omitempty" toml:"pulumi_version,omitempty"`
 	PulumiConfig     map[string]string    `mapstructure:"pulumi_config,omitempty" toml:"pulumi_config,omitempty"`
+	OpenTofuVersion  string               `mapstructure:"open_tofu_version,omitempty" toml:"open_tofu_version,omitempty"`
 	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 	DriftSchedule    *string              `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty"`
@@ -38,6 +39,7 @@ type AppSandboxConfig struct {
 const (
 	AppSandboxTypeTerraform = "terraform"
 	AppSandboxTypePulumi    = "pulumi"
+	AppSandboxTypeOpentofu  = "opentofu"
 )
 
 var ValidPulumiRuntimes = []string{"go", "nodejs", "python"}
@@ -47,9 +49,10 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("source").Short("external configuration source").
 		Long("Path to an external file containing sandbox configuration (YAML, JSON, or TOML)").
 		Field("type").Short("sandbox IaC type").
-		Long("IaC type for this sandbox: 'terraform' (default) or 'pulumi'.").
+		Long("IaC type for this sandbox: 'terraform' (default), 'pulumi', or 'opentofu'.").
 		Example("terraform").
 		Example("pulumi").
+		Example("opentofu").
 		Field("terraform_version").Short("Terraform version").
 		Long("Version of Terraform to use for deployments. Required when type=terraform").
 		Example("1.5.0").
@@ -65,6 +68,10 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("3.100.0").
 		Field("pulumi_config").Short("Pulumi stack config").
 		Long("Map of Pulumi stack configuration values as key-value pairs. Keys use the format 'namespace:key' (e.g., 'gcp:project'). Supports templating").
+		Field("open_tofu_version").Short("OpenTofu version").
+		Long("Version of OpenTofu to use. Required when type=opentofu").
+		Example("1.13.9").
+		Example("1.14.0").
 		Field("connected_repo").Short("connected repository configuration").
 		Long("Configuration for a private repository connected to the Nuon platform").
 		Field("public_repo").Short("public repository configuration").

@@ -569,6 +569,13 @@ export interface paths {
      */
     get: operations["GetAppComponentLatestConfig"];
   };
+  "/v1/apps/{app_id}/components/{component_id}/configs/opentofu-module": {
+    /**
+     * create an opentofu component config
+     * @description Create an opentofu component config.
+     */
+    post: operations["CreateAppOpentofuModuleComponentConfig"];
+  };
   "/v1/apps/{app_id}/components/{component_id}/configs/pulumi": {
     /** create a pulumi component config */
     post: operations["CreateAppPulumiComponentConfig"];
@@ -727,6 +734,20 @@ export interface paths {
   "/v1/apps/{app_id}/configs/{config_id}/update-installs": {
     /** @description Update app configuration across multiple installs. */
     post: operations["UpdateAppConfigInstallsV2"];
+  };
+  "/v1/apps/{app_id}/fleet": {
+    /**
+     * app fleet summary, branches, and install groups
+     * @description Returns the app's installs grouped by app branch and install group, with counts per lane and the first installs of each group. Filters apply to counts and to the returned installs. Rollout compares each install's applied app config against the target run of its branch.
+     */
+    get: operations["GetAppFleet"];
+  };
+  "/v1/apps/{app_id}/fleet/installs": {
+    /**
+     * paginated installs for an app fleet
+     * @description Returns the app's installs matching the fleet filters, ordered by rollout, health severity, then name. Pass app_branch_id and app_branch_group to page through one install group, for example when a lane card's panel is opened.
+     */
+    get: operations["GetAppFleetInstalls"];
   };
   "/v1/apps/{app_id}/input-config": {
     /**
@@ -4442,6 +4463,7 @@ export interface components {
       };
       id?: string;
       max_auto_retries?: number;
+      open_tofu_version?: string;
       /** @description Operation roles map: operation type -> role name */
       operation_roles?: {
         [key: string]: string;
@@ -4800,6 +4822,7 @@ export interface components {
       kubernetes_manifest?: components["schemas"]["app.KubernetesManifestComponentConfig"];
       latest_build_id?: string;
       max_auto_retries?: number;
+      opentofu_module?: components["schemas"]["app.OpentofuModuleComponentConfig"];
       /** @description Operation roles map: operation type -> role name */
       operation_roles?: {
         [key: string]: string;
@@ -4865,7 +4888,7 @@ export interface components {
       retain?: string[];
     };
     /** @enum {string} */
-    "app.ComponentType": "terraform_module" | "helm_chart" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
+    "app.ComponentType": "terraform_module" | "helm_chart" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "opentofu_module" | "unknown";
     "app.CompositeStatus": {
       /**
        * @description CompositeError is the parsed, structured cause of a failure status. The
@@ -5098,7 +5121,6 @@ export interface components {
       };
       app_id?: string;
       app_runner_config?: components["schemas"]["app.AppRunnerConfig"];
-      app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       aws_account?: components["schemas"]["app.AWSAccount"];
       azure_account?: components["schemas"]["app.AzureAccount"];
       cloud_connection?: components["schemas"]["app.CloudConnection"];
@@ -6127,6 +6149,24 @@ export interface components {
       updated_at?: string;
       workflow_id?: string;
     };
+    "app.OpentofuModuleComponentConfig": {
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      updated_at?: string;
+      variables?: {
+        [key: string]: string;
+      };
+      variables_files?: string[];
+      version?: string;
+    };
     /** @enum {string} */
     "app.OperationStatus": "started" | "finished" | "noop" | "failed";
     /** @enum {string} */
@@ -6826,7 +6866,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobStatus": "queued" | "available" | "in-progress" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobType": "health-check" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "pulumi-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "pulumi-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-pulumi" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
+    "app.RunnerJobType": "health-check" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "pulumi-build" | "opentofu-module-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "pulumi-deploy" | "opentofu-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-pulumi" | "sandbox-opentofu" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
     "app.RunnerOperation": {
       created_at?: string;
       created_by_id?: string;
@@ -7392,7 +7432,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan" | "app_branch_plan" | "install_creation";
+    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "opentofu_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan" | "app_branch_plan" | "install_creation";
     /** @enum {string} */
     "app.WorkflowStepExecutionType": "system" | "user" | "approval" | "skipped" | "hidden";
     "app.WorkflowStepGroup": {
@@ -7543,7 +7583,7 @@ export interface components {
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */
-    "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "container_image" | "pulumi" | "sandbox";
+    "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "container_image" | "pulumi" | "opentofu_module" | "sandbox";
     "config.CustomNestedStack": {
       contents?: string;
       contents_hash?: string;
@@ -7979,6 +8019,7 @@ export interface components {
       git_source?: components["schemas"]["plantypes.GitSource"];
       helm_build_plan?: components["schemas"]["plantypes.HelmBuildPlan"];
       kubernetes_manifest_build_plan?: components["schemas"]["plantypes.KubernetesManifestBuildPlan"];
+      opentofu_build_plan?: components["schemas"]["plantypes.OpentofuBuildPlan"];
       pulumi_build_plan?: components["schemas"]["plantypes.PulumiBuildPlan"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       source_identity?: components["schemas"]["sourceidentity.Identity"];
@@ -8033,6 +8074,7 @@ export interface components {
       install_id?: string;
       kubernetes_manifest?: components["schemas"]["plantypes.KubernetesManifestDeployPlan"];
       noop?: components["schemas"]["plantypes.NoopDeployPlan"];
+      opentofu?: components["schemas"]["plantypes.OpentofuDeployPlan"];
       pulumi?: components["schemas"]["plantypes.PulumiDeployPlan"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       /**
@@ -8208,6 +8250,46 @@ export interface components {
     "plantypes.OCISource": {
       registry?: components["schemas"]["configs.OCIRegistryRepository"];
       tag?: string;
+    };
+    "plantypes.OpentofuBuildPlan": {
+      labels?: {
+        [key: string]: string;
+      };
+      /**
+       * @description OpenTofuVersion is the version of the OpenTofu CLI the build runner
+       * should install in order to vendor providers via
+       * `tofu providers mirror`. When empty the build runner falls back
+       * to a sane default. Should mirror the version configured for the
+       * component's deploy plan so init resolves the same provider bytes the
+       * build vendored. Only consulted when VendorProviders is true.
+       */
+      open_tofu_version?: string;
+      /**
+       * @description VendorProviders enables build-time vendoring of OpenTofu providers
+       * via `tofu providers mirror`. The install runner auto-detects
+       * whether a mirror is present in the OCI artifact.
+       */
+      vendor_providers?: boolean;
+    };
+    "plantypes.OpentofuDeployPlan": {
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      env_vars?: {
+        [key: string]: string;
+      };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
+      opentofu_backend?: components["schemas"]["plantypes.TerraformBackend"];
+      plan_json?: number[];
+      policies?: {
+        [key: string]: string;
+      };
+      state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+      vars?: {
+        [key: string]: unknown;
+      };
+      vars_files?: string[];
     };
     "plantypes.PulumiBackend": {
       config?: {
@@ -8477,6 +8559,56 @@ export interface components {
     };
     /** @enum {string} */
     "service.AppConfigTemplateType": "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "job" | "container-image" | "ecr-container-image";
+    "service.AppFleetBranch": {
+      counts?: components["schemas"]["service.AppFleetCounts"];
+      groups?: components["schemas"]["service.AppFleetGroup"][];
+      id?: string;
+      name?: string;
+      target_run?: components["schemas"]["service.AppFleetTargetRun"];
+    };
+    "service.AppFleetCounts": {
+      applied?: number;
+      behind?: number;
+      matched?: number;
+      total?: number;
+      unknown?: number;
+    };
+    "service.AppFleetGroup": {
+      counts?: components["schemas"]["service.AppFleetCounts"];
+      has_more?: boolean;
+      installs?: components["schemas"]["service.AppFleetInstall"][];
+      match_labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      name?: string;
+      order?: number;
+    };
+    "service.AppFleetInstall": {
+      app_branch_group?: string;
+      app_branch_id?: string;
+      app_config_id?: string;
+      applied_config_id?: string;
+      health?: string;
+      id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      name?: string;
+      rollout?: string;
+      runner_status?: string;
+    };
+    "service.AppFleetResponse": {
+      branches?: components["schemas"]["service.AppFleetBranch"][];
+      summary?: components["schemas"]["service.AppFleetSummary"];
+    };
+    "service.AppFleetSummary": {
+      applied?: number;
+      behind?: number;
+      matched?: number;
+      runner_not_active?: number;
+      total?: number;
+      unknown?: number;
+    };
+    "service.AppFleetTargetRun": {
+      app_config_id?: string;
+      id?: string;
+    };
     "service.AppGroupRequest": {
       description: string;
       display_name: string;
@@ -8922,6 +9054,7 @@ export interface components {
         [key: string]: string;
       };
       max_auto_retries?: number;
+      open_tofu_version?: string;
       operation_roles?: {
         [key: string]: string;
       };
@@ -9283,6 +9416,37 @@ export interface components {
       role?: string;
       /** @description lifetime of exchanged tokens in seconds. defaults to 3600, max 86400. */
       token_duration_seconds?: number;
+    };
+    "service.CreateOpentofuModuleComponentConfigRequest": {
+      app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
+      /** @description Duration string for build operations (e.g., "10m", "30m") */
+      build_timeout?: string;
+      checksum?: string;
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      default_enabled?: boolean;
+      dependencies?: string[];
+      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
+      deploy_timeout?: string;
+      drift_schedule?: string;
+      env_vars: {
+        [key: string]: string;
+      };
+      kubernetes_context?: string;
+      max_auto_retries?: number;
+      open_tofu_version?: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      references?: string[];
+      skip_noops?: boolean;
+      teardown?: components["schemas"]["service.ComponentTeardownRequest"];
+      toggleable?: boolean;
+      variables: {
+        [key: string]: string;
+      };
+      variables_files?: string[];
     };
     "service.CreateOrgInviteRequest": {
       email: string;
@@ -15349,6 +15513,70 @@ export interface operations {
       };
     };
   };
+  /**
+   * create an opentofu component config
+   * @description Create an opentofu component config.
+   */
+  CreateAppOpentofuModuleComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOpentofuModuleComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.OpentofuModuleComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /** create a pulumi component config */
   CreateAppPulumiComponentConfig: {
     parameters: {
@@ -16596,6 +16824,146 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.EmptyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * app fleet summary, branches, and install groups
+   * @description Returns the app's installs grouped by app branch and install group, with counts per lane and the first installs of each group. Filters apply to counts and to the returned installs. Rollout compares each install's applied app config against the target run of its branch.
+   */
+  GetAppFleet: {
+    parameters: {
+      query?: {
+        /** @description search by install name or ID */
+        q?: string;
+        /** @description label filter (key:value,key:value; value * matches key presence) */
+        labels?: string;
+        /** @description comma-separated health: unhealthy,degraded,unknown,progressing,healthy,no-signal */
+        health?: string;
+        /** @description runner filter: active or not-active */
+        runner_status?: string;
+        /** @description rollout filter: applied, behind, or unknown */
+        rollout?: string;
+        /** @description limit to one branch; __none__ for installs without a branch */
+        app_branch_id?: string;
+        /** @description limit to one install group; __none__ for installs without a group */
+        app_branch_group?: string;
+        /** @description installs returned per group */
+        per_group?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppFleetResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * paginated installs for an app fleet
+   * @description Returns the app's installs matching the fleet filters, ordered by rollout, health severity, then name. Pass app_branch_id and app_branch_group to page through one install group, for example when a lane card's panel is opened.
+   */
+  GetAppFleetInstalls: {
+    parameters: {
+      query?: {
+        /** @description search by install name or ID */
+        q?: string;
+        /** @description label filter (key:value,key:value; value * matches key presence) */
+        labels?: string;
+        /** @description comma-separated health: unhealthy,degraded,unknown,progressing,healthy,no-signal */
+        health?: string;
+        /** @description runner filter: active or not-active */
+        runner_status?: string;
+        /** @description rollout filter: applied, behind, or unknown */
+        rollout?: string;
+        /** @description limit to one branch; __none__ for installs without a branch */
+        app_branch_id?: string;
+        /** @description limit to one install group; __none__ for installs without a group */
+        app_branch_group?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppFleetInstall"][];
         };
       };
       /** @description Bad Request */

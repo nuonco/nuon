@@ -26,9 +26,13 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 
 		// preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+		Preload("ComponentConfigs.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").

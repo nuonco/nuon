@@ -319,8 +319,8 @@ func (s *InstallStateIntegrationSuite) TestSharedSourceCommitReachesConcurrentNe
 
 			created := &app.Install{
 				Name: "concurrent-" + name, AppID: s.install.AppID, AppConfigID: s.install.AppConfigID,
-				AppRunnerConfigID: s.install.AppRunnerConfigID, AppSandboxConfigID: s.install.AppSandboxConfigID,
-				AWSAccount: &app.AWSAccount{Region: "us-east-1"},
+				AppRunnerConfigID: s.install.AppRunnerConfigID,
+				AWSAccount:        &app.AWSAccount{Region: "us-east-1"},
 				InstallInputs: []app.InstallInputs{{
 					AppInputConfigID: s.inputCfg.ID, Values: pgtype.Hstore{"region": generics.ToPtr("")},
 				}},

@@ -95,7 +95,6 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 	}
 
 	tx = tx.Where(table+".app_id = ? AND "+table+".org_id = ?", appID, orgID).
-		Preload("AppSandboxConfig").
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
 			return db.Order("active DESC, created_at DESC, id DESC")
 		}).

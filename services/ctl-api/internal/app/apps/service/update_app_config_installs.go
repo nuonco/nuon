@@ -151,6 +151,8 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}
 
+	updates := map[string]interface{}{"app_config_id": appConfigID}
+
 	// update install app_config_id
 	res := tx.Model(&app.Install{}).
 		Where(app.Install{AppID: appID})
@@ -159,7 +161,7 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		res = res.Where("id in ?", req.InstallIDs)
 	}
 
-	if err := res.Updates(app.Install{AppConfigID: appConfigID}).Error; err != nil {
+	if err := res.Updates(updates).Error; err != nil {
 		tx.Rollback()
 		return stderr.ErrSystem{
 			Err:         fmt.Errorf("unable to update installs: %w", err),

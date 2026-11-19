@@ -84,7 +84,7 @@ func Qualify(cfg *app.AppConfig, platform string) QualificationReport {
 	}
 	if cfg.SandboxConfig.Type == "pulumi" {
 		add("sandbox.pulumi_unsupported", "sandbox", "Pulumi sandboxes are not supported")
-	} else if cfg.SandboxConfig.Type != "terraform" {
+	} else if cfg.SandboxConfig.Type != "terraform" && cfg.SandboxConfig.Type != "opentofu" {
 		add("sandbox.type_unsupported", "sandbox", fmt.Sprintf("sandbox type %q is unsupported", cfg.SandboxConfig.Type))
 	}
 
@@ -166,7 +166,7 @@ func Qualify(cfg *app.AppConfig, platform string) QualificationReport {
 
 func qualifyComponent(c *app.ComponentConfigConnection, member string, add, warn func(string, string, string)) {
 	surfaces := 0
-	for _, present := range []bool{c.TerraformModuleComponentConfig != nil, c.HelmComponentConfig != nil, c.ExternalImageComponentConfig != nil, c.JobComponentConfig != nil, c.KubernetesManifestComponentConfig != nil, c.PulumiComponentConfig != nil} {
+	for _, present := range []bool{c.TerraformModuleComponentConfig != nil, c.OpentofuModuleComponentConfig != nil, c.HelmComponentConfig != nil, c.ExternalImageComponentConfig != nil, c.JobComponentConfig != nil, c.KubernetesManifestComponentConfig != nil, c.PulumiComponentConfig != nil} {
 		if present {
 			surfaces++
 		}
@@ -178,6 +178,10 @@ func qualifyComponent(c *app.ComponentConfigConnection, member string, add, warn
 	case app.ComponentTypeTerraformModule:
 		if c.TerraformModuleComponentConfig == nil {
 			add("component.source_config_mismatch", member, "terraform component source config is missing")
+		}
+	case app.ComponentTypeOpentofuModule:
+		if c.OpentofuModuleComponentConfig == nil {
+			add("component.source_config_mismatch", member, "opentofu component source config is missing")
 		}
 	case app.ComponentTypeHelmChart:
 		if c.HelmComponentConfig == nil {

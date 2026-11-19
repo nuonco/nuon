@@ -6,6 +6,14 @@ import (
 )
 
 func clearTerraformPlanArtifacts(plan json.RawMessage) (json.RawMessage, error) {
+	return clearToolPlanArtifacts(plan, "terraform")
+}
+
+func clearOpentofuPlanArtifacts(plan json.RawMessage) (json.RawMessage, error) {
+	return clearToolPlanArtifacts(plan, "opentofu")
+}
+
+func clearToolPlanArtifacts(plan json.RawMessage, planKey string) (json.RawMessage, error) {
 	var composite map[string]any
 	if err := json.Unmarshal(plan, &composite); err != nil {
 		return nil, err
@@ -16,9 +24,9 @@ func clearTerraformPlanArtifacts(plan json.RawMessage) (json.RawMessage, error) 
 	}
 	deploy["apply_plan_contents"] = ""
 	deploy["apply_plan_display"] = ""
-	terraformPlan, ok := deploy["terraform"].(map[string]any)
+	terraformPlan, ok := deploy[planKey].(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("deploy plan has no terraform plan")
+		return nil, fmt.Errorf("deploy plan has no %s plan", planKey)
 	}
 	terraformPlan["plan_json"] = nil
 	return json.Marshal(composite)

@@ -89,8 +89,7 @@ func (s *service) loadInstall(ctx context.Context, installID string, orgID *stri
 			return db.Order("install_sandbox_runs.created_at DESC").Limit(1)
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
-		Preload("App.Org").
-		Preload("AppSandboxConfig")
+		Preload("App.Org")
 	if orgID != nil {
 		resolved, err := installlookup.ByRef(ctx, q, *orgID, installID)
 		if err != nil {

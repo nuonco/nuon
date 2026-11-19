@@ -84,7 +84,7 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 					AppID: testApp.ID,
 				}
 				err = s.service.DB.WithContext(ctx).
-					Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+					Omit("app_config_id", "app_runner_config_id").
 					Create(install).Error
 				require.NoError(s.T(), err)
 
@@ -144,7 +144,7 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 					AppID: testApp.ID,
 				}
 				err = s.service.DB.WithContext(ctx).
-					Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+					Omit("app_config_id", "app_runner_config_id").
 					Create(install).Error
 				require.NoError(s.T(), err)
 

@@ -61,6 +61,9 @@ func (cp *CompositePlan) pruneEmptyClusterInfo() {
 		if dp.PulumiDeployPlan != nil {
 			dp.PulumiDeployPlan.ClusterInfo = pruneClusterInfo(dp.PulumiDeployPlan.ClusterInfo)
 		}
+		if dp.OpentofuDeployPlan != nil {
+			dp.OpentofuDeployPlan.ClusterInfo = pruneClusterInfo(dp.OpentofuDeployPlan.ClusterInfo)
+		}
 	}
 	if cp.ActionWorkflowRunPlan != nil {
 		cp.ActionWorkflowRunPlan.ClusterInfo = pruneClusterInfo(cp.ActionWorkflowRunPlan.ClusterInfo)

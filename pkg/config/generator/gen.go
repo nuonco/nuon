@@ -82,6 +82,10 @@ func componentTypeSchemaSlug(t config.ComponentType) string {
 	switch t {
 	case config.TerraformModuleComponentType:
 		return "terraform"
+	case config.PulumiComponentType:
+		return "pulumi"
+	case config.OpentofuModuleComponentType:
+		return "opentofu"
 	case config.HelmChartComponentType:
 		return "helm"
 	case config.ContainerImageComponentType, config.ExternalImageComponentType:
@@ -113,6 +117,7 @@ var IgnoredProperties = []string{
 	"external_image",
 	"kubernetes_manifest",
 	"pulumi",
+	"opentofu_module",
 	"slack_webhook_url",
 }
 

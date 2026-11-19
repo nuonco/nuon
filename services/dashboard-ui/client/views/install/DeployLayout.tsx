@@ -27,6 +27,7 @@ function getTabsForComponentType(
 
   switch (type) {
     case 'terraform_module':
+    case 'opentofu_module':
       tabs.push(
         { path: '/plan', text: 'Plan' },
         { path: '/variables', text: 'Variables' },

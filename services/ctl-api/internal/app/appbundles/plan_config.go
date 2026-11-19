@@ -94,8 +94,11 @@ func exportComponentConfigConnections(ctx context.Context, db *gorm.DB, appConfi
 			).
 			Preload("Component").
 			Preload("TerraformModuleComponentConfig").
+			Preload("OpentofuModuleComponentConfig").
 			Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
+			Preload("OpentofuModuleComponentConfig.PublicGitVCSConfig").
 			Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+			Preload("OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 			Preload("HelmComponentConfig").
 			Preload("HelmComponentConfig.PublicGitVCSConfig").
 			Preload("HelmComponentConfig.ConnectedGithubVCSConfig").

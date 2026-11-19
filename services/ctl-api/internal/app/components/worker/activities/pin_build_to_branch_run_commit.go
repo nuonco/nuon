@@ -244,6 +244,8 @@ func buildVCSConfigs(build *app.ComponentBuild) (*app.ConnectedGithubVCSConfig, 
 	switch {
 	case ccc.TerraformModuleComponentConfig != nil:
 		return ccc.TerraformModuleComponentConfig.ConnectedGithubVCSConfig, ccc.TerraformModuleComponentConfig.PublicGitVCSConfig
+	case ccc.OpentofuModuleComponentConfig != nil:
+		return ccc.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig, ccc.OpentofuModuleComponentConfig.PublicGitVCSConfig
 	case ccc.HelmComponentConfig != nil:
 		return ccc.HelmComponentConfig.ConnectedGithubVCSConfig, ccc.HelmComponentConfig.PublicGitVCSConfig
 	case ccc.KubernetesManifestComponentConfig != nil:

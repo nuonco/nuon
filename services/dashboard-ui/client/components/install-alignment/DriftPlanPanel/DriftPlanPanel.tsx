@@ -14,6 +14,7 @@ import { DriftPlanDetails } from './DriftPlanDetails'
 
 const PREVIEWABLE_PLAN_TYPES = new Set([
   'terraform_plan',
+  'opentofu_plan',
   'helm_approval',
   'kubernetes_manifest_approval',
   'pulumi_plan',

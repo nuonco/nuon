@@ -806,7 +806,7 @@ export type TInstallDeployPlan = {
   }
 }
 
-export type TSandboxType = 'terraform' | 'pulumi'
+export type TSandboxType = 'terraform' | 'pulumi' | 'opentofu'
 export type TPulumiRuntime = 'go' | 'nodejs' | 'python'
 
 export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {

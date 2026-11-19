@@ -48,7 +48,7 @@ func (c *cli) initCmd() *cobra.Command {
 		Short:             "Initialize app configuration",
 		Long:              "Generate app configuration files. Use subcommands to generate specific config files, or run without subcommands to generate all files.",
 		Annotations:       tuiAnnotation(TUIContextual),
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil }, // Skip auth for local init
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.apps
 			params := apps.InitParams{
@@ -134,7 +134,7 @@ func (c *cli) initCmd() *cobra.Command {
 	// 		Use:               commandName,
 	// 		Short:             fmt.Sprintf("Initialize %s", description),
 	// 		Long:              fmt.Sprintf("Generate the %s configuration file", configFileName),
-	// 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+	// 		PersistentPreRunE: c.localInitPreRunE,
 	// 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 	// 			svc := c.apps
 	// 			return svc.InitConfigFile(cmd.Context(), initPath, configFileName, initEnableDefaults, initEnableComments, initOverwrite)
@@ -177,7 +177,7 @@ func (c *cli) initSandboxCmd() *cobra.Command {
 		Use:               "sandbox",
 		Short:             "Initialize sandbox configuration",
 		Long:              "Generate the sandbox.toml configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -244,7 +244,7 @@ func (c *cli) initStackCmd() *cobra.Command {
 		Use:               "stack",
 		Short:             "Initialize stack configuration",
 		Long:              "Generate the stack.toml configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -294,7 +294,7 @@ func (c *cli) initRunnerCmd() *cobra.Command {
 		Use:               "runner",
 		Short:             "Initialize runner configuration",
 		Long:              "Generate the runner.toml configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -353,7 +353,7 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 		Use:               "terraform-module",
 		Short:             "Initialize Terraform module component",
 		Long:              "Generate a Terraform module component configuration file",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -409,6 +409,87 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 	return cmd
 }
 
+func (c *cli) initComponentOpentofuModuleCmd() *cobra.Command {
+	var (
+		// Component flags
+		componentName string
+		varName       string
+		dependencies  []string
+
+		// OpenTofu module flags
+		openTofuVersion  string
+		envVars          []string
+		vars             []string
+		varFiles         []string
+		publicRepo       string
+		publicRepoDir    string
+		publicRepoBranch string
+		connectedRepo    string
+		connectedRepoDir string
+		connectedBranch  string
+		driftSchedule    string
+	)
+
+	cmd := &cobra.Command{
+		Use:               "opentofu-module",
+		Short:             "Initialize OpenTofu module component",
+		Long:              "Generate an OpenTofu module component configuration file",
+		PersistentPreRunE: c.localInitPreRunE,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			genParams := initRootParams(cmd)
+
+			params := apps.OpentofuModuleComponentParams{
+				Name:             componentName,
+				VarName:          varName,
+				Dependencies:     dependencies,
+				OpenTofuVersion:  openTofuVersion,
+				EnvVars:          parseKeyValuePairs(envVars),
+				Vars:             parseKeyValuePairs(vars),
+				VarFiles:         varFiles,
+				PublicRepo:       publicRepo,
+				PublicRepoDir:    publicRepoDir,
+				PublicRepoBranch: publicRepoBranch,
+				ConnectedRepo:    connectedRepo,
+				ConnectedRepoDir: connectedRepoDir,
+				ConnectedBranch:  connectedBranch,
+				DriftSchedule:    driftSchedule,
+			}
+
+			svc := c.apps
+			err := svc.InitOpentofuModuleComponentConfig(cmd.Context(), genParams, params)
+			if err != nil {
+				return err
+			}
+
+			successMesssage(genParams.Path, fmt.Sprintf("components/%s.toml", params.Name))
+			return nil
+		}),
+	}
+
+	// Component flags
+	cmd.Flags().StringVar(&componentName, "name", "", "Component name (required)")
+	cmd.Flags().StringVar(&varName, "var-name", "", "Variable name for component output")
+	cmd.Flags().StringArrayVar(&dependencies, "dependency", []string{}, "Component dependencies (can be specified multiple times)")
+
+	// OpenTofu module flags
+	cmd.Flags().StringVar(&openTofuVersion, "open-tofu-version", "1.13.9", "OpenTofu version (1.13 or newer)")
+	cmd.Flags().StringArrayVar(&envVars, "env-var", []string{}, "Environment variable in key=value format (can be specified multiple times)")
+	cmd.Flags().StringArrayVar(&vars, "var", []string{}, "OpenTofu variable in key=value format (can be specified multiple times)")
+	cmd.Flags().StringArrayVar(&varFiles, "var-file", []string{}, "OpenTofu variable file path (can be specified multiple times)")
+	cmd.Flags().StringVar(&publicRepo, "public-repo", "", "Public repository")
+	cmd.Flags().StringVar(&publicRepoDir, "public-repo-dir", ".", "Directory within the public repository")
+	cmd.Flags().StringVar(&publicRepoBranch, "public-repo-branch", "main", "Branch of the public repository")
+	cmd.Flags().StringVar(&connectedRepo, "connected-repo", "", "Connected repository")
+	cmd.Flags().StringVar(&connectedRepoDir, "connected-repo-dir", ".", "Directory within the connected repository")
+	cmd.Flags().StringVar(&connectedBranch, "connected-branch", "main", "Branch of the connected repository")
+	cmd.Flags().StringVar(&driftSchedule, "drift-schedule", "", "Cron expression for drift detection")
+
+	// Mark required flags
+	cmd.MarkFlagRequired("name")
+
+	return cmd
+}
+
 func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 	var (
 		// Component flags
@@ -439,7 +520,7 @@ func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 		Use:               "helm-chart",
 		Short:             "Initialize Helm chart component",
 		Long:              "Generate a Helm chart component configuration file",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -523,7 +604,7 @@ func (c *cli) initComponentKubernetesManifestCmd() *cobra.Command {
 		Use:               "kubernetes-manifest",
 		Short:             "Initialize Kubernetes manifest component",
 		Long:              "Generate a Kubernetes manifest component configuration file",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -574,6 +655,7 @@ func (c *cli) initComponentCmd() *cobra.Command {
 
 	// Add subcommands for each component type
 	componentCmd.AddCommand(c.initComponentTerraformModuleCmd())
+	componentCmd.AddCommand(c.initComponentOpentofuModuleCmd())
 	componentCmd.AddCommand(c.initComponentHelmChartCmd())
 	componentCmd.AddCommand(c.initComponentKubernetesManifestCmd())
 
@@ -606,7 +688,7 @@ func (c *cli) initActionCmd() *cobra.Command {
 		Use:               "action",
 		Short:             "Initialize action configuration",
 		Long:              "Generate an action configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		PersistentPreRunE: c.localInitPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 

@@ -87,8 +87,11 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 
 			// preload all terraform configs
 			Preload("TerraformModuleComponentConfig").
+			Preload("OpentofuModuleComponentConfig").
 			Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
+			Preload("OpentofuModuleComponentConfig.PublicGitVCSConfig").
 			Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+			Preload("OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 
 			// preload all helm configs
 			Preload("HelmComponentConfig").

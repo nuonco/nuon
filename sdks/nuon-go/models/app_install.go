@@ -52,9 +52,6 @@ type AppInstall struct {
 	// app runner config
 	AppRunnerConfig *AppAppRunnerConfig `json:"app_runner_config,omitempty"`
 
-	// app sandbox config
-	AppSandboxConfig *AppAppSandboxConfig `json:"app_sandbox_config,omitempty"`
-
 	// aws account
 	AwsAccount *AppAWSAccount `json:"aws_account,omitempty"`
 
@@ -260,10 +257,6 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateAppSandboxConfig(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateAwsAccount(formats); err != nil {
 		res = append(res, err)
 	}
@@ -461,29 +454,6 @@ func (m *AppInstall) validateAppRunnerConfig(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("app_runner_config")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *AppInstall) validateAppSandboxConfig(formats strfmt.Registry) error {
-	if swag.IsZero(m.AppSandboxConfig) { // not required
-		return nil
-	}
-
-	if m.AppSandboxConfig != nil {
-		if err := m.AppSandboxConfig.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("app_sandbox_config")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("app_sandbox_config")
 			}
 
 			return err
@@ -1032,10 +1002,6 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateAppSandboxConfig(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateAwsAccount(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -1239,31 +1205,6 @@ func (m *AppInstall) contextValidateAppRunnerConfig(ctx context.Context, formats
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("app_runner_config")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *AppInstall) contextValidateAppSandboxConfig(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.AppSandboxConfig != nil {
-
-		if swag.IsZero(m.AppSandboxConfig) { // not required
-			return nil
-		}
-
-		if err := m.AppSandboxConfig.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("app_sandbox_config")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("app_sandbox_config")
 			}
 
 			return err

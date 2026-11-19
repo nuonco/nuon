@@ -21,6 +21,7 @@ type SandboxInput struct {
 	TerraformVersion string
 	Runtime          string
 	PulumiVersion    string
+	OpenTofuVersion  string
 
 	PulumiConfig map[string]string
 	Variables    map[string]string
@@ -57,6 +58,7 @@ func SandboxInputFromConfig(sandbox *config.AppSandboxConfig, appID, appConfigID
 		TerraformVersion:             sandbox.TerraformVersion,
 		Runtime:                      sandbox.Runtime,
 		PulumiVersion:                sandbox.PulumiVersion,
+		OpenTofuVersion:              sandbox.OpenTofuVersion,
 		PulumiConfig:                 sandbox.PulumiConfig,
 		Variables:                    sandbox.VarsMap,
 		EnvVars:                      sandbox.EnvVarMap,
@@ -71,7 +73,7 @@ func SandboxInputFromConfig(sandbox *config.AppSandboxConfig, appID, appConfigID
 }
 
 func SandboxConfig(in SandboxInput) (*app.AppSandboxConfig, error) {
-	sandboxType, err := ResolveSandboxType(in.Type, in.TerraformVersion, in.Runtime)
+	sandboxType, err := ResolveSandboxType(in.Type, in.TerraformVersion, in.Runtime, in.OpenTofuVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +101,7 @@ func SandboxConfig(in SandboxInput) (*app.AppSandboxConfig, error) {
 		TerraformVersion:             in.TerraformVersion,
 		Runtime:                      in.Runtime,
 		PulumiVersion:                in.PulumiVersion,
+		OpenTofuVersion:              in.OpenTofuVersion,
 		PulumiConfig:                 Hstore(in.PulumiConfig),
 		Variables:                    Hstore(in.Variables),
 		EnvVars:                      Hstore(in.EnvVars),
@@ -118,7 +121,7 @@ func SandboxConfig(in SandboxInput) (*app.AppSandboxConfig, error) {
 }
 
 // ResolveSandboxType defaults to terraform and enforces per-type required fields.
-func ResolveSandboxType(sandboxType, terraformVersion, runtime string) (string, error) {
+func ResolveSandboxType(sandboxType, terraformVersion, runtime, openTofuVersion string) (string, error) {
 	if sandboxType == "" {
 		sandboxType = config.AppSandboxTypeTerraform
 	}
@@ -135,8 +138,12 @@ func ResolveSandboxType(sandboxType, terraformVersion, runtime string) (string, 
 		if !slices.Contains(config.ValidPulumiRuntimes, runtime) {
 			return "", fmt.Errorf("invalid pulumi runtime: %s. Valid runtimes: %v", runtime, config.ValidPulumiRuntimes)
 		}
+	case config.AppSandboxTypeOpentofu:
+		if err := validation.ValidateOpentofuMinVersion(openTofuVersion); err != nil {
+			return "", err
+		}
 	default:
-		return "", fmt.Errorf("invalid sandbox type: %s. Valid types: terraform, pulumi", sandboxType)
+		return "", fmt.Errorf("invalid sandbox type: %s. Valid types: terraform, pulumi, opentofu", sandboxType)
 	}
 
 	return sandboxType, nil

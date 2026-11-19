@@ -22,7 +22,8 @@ func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *Update
 		return fmt.Errorf("install ID and app config ID are required")
 	}
 	var cfg app.AppConfig
-	if err := a.db.WithContext(ctx).Where(app.AppConfig{ID: input.NewAppConfigID}).First(&cfg).Error; err != nil {
+	if err := a.db.WithContext(ctx).
+		Where(app.AppConfig{ID: input.NewAppConfigID}).First(&cfg).Error; err != nil {
 		return err
 	}
 	if cfg.BuildsPinned && !cfg.BuildsLocked {
@@ -32,14 +33,15 @@ func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *Update
 		if _, err := driftresolution.LockInstall(ctx, tx, input.InstallID); err != nil {
 			return err
 		}
+		updates := map[string]interface{}{
+			"app_config_id": input.NewAppConfigID,
+			"app_config_ref": gorm.Expr(
+				"COALESCE(NULLIF(app_config_ref, 'null'::jsonb), '{}'::jsonb) || jsonb_build_object('expected_config_id', ?::text)",
+				input.NewAppConfigID,
+			),
+		}
 		if err := tx.Model(&app.Install{}).Where(app.Install{ID: input.InstallID}).
-			Updates(map[string]interface{}{
-				"app_config_id": input.NewAppConfigID,
-				"app_config_ref": gorm.Expr(
-					"COALESCE(NULLIF(app_config_ref, 'null'::jsonb), '{}'::jsonb) || jsonb_build_object('expected_config_id', ?::text)",
-					input.NewAppConfigID,
-				),
-			}).Error; err != nil {
+			Updates(updates).Error; err != nil {
 			return fmt.Errorf("unable to update install app_config_id: %w", err)
 		}
 		return nil

@@ -36,8 +36,7 @@ func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app
 			return db.Order("install_sandbox_runs.created_at DESC").Limit(5)
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
-		Preload("App.Org").
-		Preload("AppSandboxConfig")
+		Preload("App.Org")
 	install, err := installlookup.ByRef(ctx, query, orgID, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")

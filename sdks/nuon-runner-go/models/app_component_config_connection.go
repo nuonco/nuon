@@ -101,6 +101,9 @@ type AppComponentConfigConnection struct {
 	// max auto retries
 	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 
+	// opentofu module
+	OpentofuModule *AppOpentofuModuleComponentConfig `json:"opentofu_module,omitempty"`
+
 	// Operation roles map: operation type -> role name
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 
@@ -156,6 +159,10 @@ func (m *AppComponentConfigConnection) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubernetesManifest(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOpentofuModule(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -298,6 +305,29 @@ func (m *AppComponentConfigConnection) validateKubernetesManifest(formats strfmt
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_manifest")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppComponentConfigConnection) validateOpentofuModule(formats strfmt.Registry) error {
+	if swag.IsZero(m.OpentofuModule) { // not required
+		return nil
+	}
+
+	if m.OpentofuModule != nil {
+		if err := m.OpentofuModule.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("opentofu_module")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("opentofu_module")
 			}
 
 			return err
@@ -451,6 +481,10 @@ func (m *AppComponentConfigConnection) ContextValidate(ctx context.Context, form
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateOpentofuModule(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePulumi(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -597,6 +631,31 @@ func (m *AppComponentConfigConnection) contextValidateKubernetesManifest(ctx con
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_manifest")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppComponentConfigConnection) contextValidateOpentofuModule(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.OpentofuModule != nil {
+
+		if swag.IsZero(m.OpentofuModule) { // not required
+			return nil
+		}
+
+		if err := m.OpentofuModule.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("opentofu_module")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("opentofu_module")
 			}
 
 			return err

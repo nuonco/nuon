@@ -34,13 +34,13 @@ const mockState = {
 const unlockButton = (
   <Button variant="danger" size="sm">
     <Icon variant="LockOpenIcon" size={14} />
-    Unlock Terraform state
+    Unlock Terraform/OpenTofu state
   </Button>
 )
 
 const cliButton = (
   <Button variant="secondary" size="sm">
-    Use Terraform CLI
+    Use Terraform/OpenTofu CLI
   </Button>
 )
 

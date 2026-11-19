@@ -149,6 +149,14 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		}
 	}
 
+	opentofuVersion := ""
+	if comp.OpentofuModule != nil {
+		opentofuVersion = comp.OpentofuModule.OpenTofuVersion
+	}
+	if build.NeedsOpentofuVersion(comp) {
+		opentofuVersion = build.DefaultOpentofuVersion
+	}
+
 	in, err := build.ComponentConnectionInputFromConfig(
 		comp,
 		apiComp.ID,
@@ -168,7 +176,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		}
 	}
 
-	if err := build.AttachTypeConfig(ccc, comp, vcs, terraformVersion); err != nil {
+	if err := build.AttachTypeConfig(ccc, comp, vcs, terraformVersion, opentofuVersion); err != nil {
 		return sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
 			Description: err.Error(),

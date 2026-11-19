@@ -74,7 +74,7 @@ func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 	if err != nil || install == nil {
 		return 0
 	}
-	return install.AppSandboxConfig.GetMaxAutoRetries()
+	return install.AppConfig.SandboxConfig.GetMaxAutoRetries()
 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
@@ -255,7 +255,7 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	if installRun.RunType == app.SandboxRunTypeDeprovision {
 		operation = app.RunnerJobOperationTypeCreateTeardownPlan
 	}
-	jobType := install.AppSandboxConfig.JobType()
+	jobType := install.AppConfig.SandboxConfig.JobType()
 	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
 		OwnerID:   installRun.ID,
 		Operation: operation,

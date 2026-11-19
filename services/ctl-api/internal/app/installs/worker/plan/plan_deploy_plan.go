@@ -119,6 +119,22 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			}
 			plan.Teardown = teardownPlan
 		}
+	case app.ComponentTypeOpentofuModule:
+		l.Info("generating opentofu plan")
+		tfPlan, err := p.createOpentofuDeployPlan(ctx, req, appCfg, stack, installState, installDeploy, roleSelection)
+		if err != nil {
+			l.Info("error generating opentofu plan", zap.Error(err))
+			return nil, nil, errors.Wrap(err, "unable to create opentofu deploy plan")
+		}
+		plan.OpentofuDeployPlan = tfPlan
+
+		if installDeploy.Type == app.InstallDeployTypeTeardown {
+			teardownPlan, err := p.createTeardownPlan(ctx, appCfg, build, installState)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to create teardown plan")
+			}
+			plan.Teardown = teardownPlan
+		}
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
 		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy, roleSelection)
@@ -162,6 +178,12 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			plan.SandboxMode.KubernetesManifest = sandboxPlan
 		case app.ComponentTypeTerraformModule:
 			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
+			}
+			plan.SandboxMode.Terraform = sandboxPlan
+		case app.ComponentTypeOpentofuModule:
+			sandboxPlan, err := p.createOpentofuDeploySandboxMode(ctx, plan.OpentofuDeployPlan)
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}

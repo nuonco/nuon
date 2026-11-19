@@ -99,7 +99,7 @@ func parseError(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 
 func init() {
 	errparse.Register(errparse.NewParser(errparse.LayerTool, parseError,
-		errparse.WithTools(errparse.ToolTerraform),
+		errparse.WithTools(errparse.ToolTerraform, errparse.ToolOpentofu),
 		errparse.WithSignals("Error:"),
 	))
 }

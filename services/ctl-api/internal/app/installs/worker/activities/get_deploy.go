@@ -36,7 +36,6 @@ func (a *Activities) getDeploy(ctx context.Context, deployID string) (*app.Insta
 		}).
 		Preload("InstallComponent.Install.InstallInputs.AppInputConfig").
 		Preload("InstallComponent.Install.InstallInputs").
-		Preload("InstallComponent.Install.AppSandboxConfig").
 		Preload("InstallComponent.Install.AppRunnerConfig").
 		First(&installDeploy, "id = ?", deployID)
 	if res.Error != nil {

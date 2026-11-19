@@ -169,6 +169,52 @@ function getConfigItems(
       )
       break
 
+    case 'opentofu_module':
+      items.push(
+        {
+          id: `config-opentofu-version`,
+          title: 'OpenTofu version',
+          subtitle: config?.opentofu_module?.version,
+        },
+        ...[
+          config?.opentofu_module?.variables_files &&
+            config.opentofu_module.variables_files.length > 0 && {
+              id: `config-variables-files-`,
+              title: 'Variables files',
+              leftContent: <Icon variant="FileCodeIcon" />,
+              onClick: () => {
+                const modal = (
+                  <TerraformVariablesFilesModal
+                    variablesFiles={config.opentofu_module.variables_files!}
+                  />
+                )
+                addModal(modal)
+              },
+              subtitle: 'View HCL',
+            },
+          config?.opentofu_module?.variables &&
+            Object.keys(config.opentofu_module.variables).length > 0 && {
+              id: `config-variables-`,
+              title: 'Variables',
+              leftContent: <Icon variant="ListIcon" />,
+              onClick: () => {
+                const modal = (
+                  <TerraformVariablesModal
+                    variables={config.opentofu_module.variables!}
+                  />
+                )
+                addModal(modal)
+              },
+              subtitle: 'View list',
+            },
+        ].filter(Boolean),
+        ...getConfigVCSItems(
+          config?.opentofu_module?.connected_github_vcs_config ||
+            config?.opentofu_module?.public_git_vcs_config
+        )
+      )
+      break
+
     case 'pulumi':
       items.push(
         {

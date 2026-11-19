@@ -211,6 +211,9 @@ func ConvertToConfigStructure(appConfig *config.AppConfig, targetPath string) (*
 		case config.ComponentType(config.PulumiComponentType):
 			componentConfig = component.Pulumi
 			component.Pulumi = nil
+		case config.ComponentType(config.OpentofuModuleComponentType):
+			componentConfig = component.OpentofuModule
+			component.OpentofuModule = nil
 		}
 
 		componentDef := generator.ConfigFileDefinition{

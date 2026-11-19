@@ -1,0 +1,81 @@
+package workspace
+
+import (
+	"context"
+	"fmt"
+	"path/filepath"
+
+	"github.com/hashicorp/go-hclog"
+
+	"github.com/nuonco/nuon/pkg/opentofu/workspace/output"
+)
+
+func (w *workspace) PlanDestroy(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.planDestroy(ctx, client, log, Destroy(true))
+}
+
+// PlanDestroyTargets plans the destruction of only the given resource
+// addresses. OpenTofu also destroys anything that depends on a target.
+func (w *workspace) PlanDestroyTargets(ctx context.Context, log hclog.Logger, targets []string) ([]byte, error) {
+	if len(targets) == 0 {
+		return nil, fmt.Errorf("at least one target is required, an untargeted destroy plan destroys everything")
+	}
+
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := []PlanOption{Destroy(true)}
+	for _, target := range targets {
+		opts = append(opts, Target(target))
+	}
+	return w.planDestroy(ctx, client, log, opts...)
+}
+
+// PlanRefreshOnly writes a saved plan that only syncs state with the real
+// infrastructure, for teardowns where nothing is destroyed.
+func (w *workspace) PlanRefreshOnly(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.planDestroy(ctx, client, log, RefreshOnly(true))
+}
+
+func (w *workspace) planDestroy(ctx context.Context, client Tofu, log hclog.Logger, modeOpts ...PlanOption) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	tfplanFilePath := filepath.Join(w.Root(), "tfplan")
+	opts := []PlanOption{
+		Refresh(true),
+		Out(tfplanFilePath), // NOTE: this should probably be configured w/ a WithPlanOut
+	}
+	opts = append(opts, modeOpts...)
+	for _, fp := range w.varsPaths {
+		opts = append(opts, VarFile(fp))
+	}
+
+	if err := client.PlanJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, fmt.Errorf("unable to plan: %w", err)
+	}
+
+	return out.Bytes()
+}

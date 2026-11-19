@@ -93,6 +93,7 @@ export const ManagementDropdown = ({
           />
         ) : null}
         {(component?.type === 'terraform_module' ||
+          component?.type === 'opentofu_module' ||
           component?.type === 'pulumi') &&
         workspaceId ? (
           <UnlockTerraformWorkspaceButton
