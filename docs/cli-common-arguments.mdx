@@ -5,4 +5,13 @@ description: "Global flags and shared CLI arguments that apply across Nuon comma
 keywords: ["nuon cli arguments", "nuon cli flags", "global flags", "common arguments", "NUON_CONFIG_FILE", "NUON_OUTPUT", "NUON_READ_ONLY"]
 ---
 
-Shared flags and arguments that apply across Nuon CLI commands.
+## Global flags
+
+These work on every command.
+
+| Flag | What it does |
+|------|--------------|
+| `--config <path>`, `-C <path>` | Use a custom config file instead of `~/.nuon`. Can also be set with the `NUON_CONFIG_FILE` env var. |
+| `--output <format>` | Output format: `table` (default), `json`, or `agent`. Can also be set with `NUON_OUTPUT`. |
+| `--read-only` | Block any command that modifies state. Can also be set with `NUON_READ_ONLY=1`. |
+| `--debug` | Print per-request API timing to stderr. |
