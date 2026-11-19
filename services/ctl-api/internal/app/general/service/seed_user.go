@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
@@ -64,21 +63,10 @@ func (s *service) createSeedUser(ctx context.Context) (*app.Token, error) {
 		}
 	}
 
-	token := app.Token{
-		CreatedByID: acct.ID,
-		AccountID:   acct.ID,
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   time.Now().Add(defaultSeedAPITokenTimeout),
-		IssuedAt:    time.Now(),
-		Issuer:      "seed",
+	token, err := s.acctClient.IssueToken(ctx, acct.ID, defaultSeedAPITokenTimeout, account.IssueTokenRequest{Issuer: "seed"})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create seed user: %w", err)
 	}
 
-	res := s.db.WithContext(ctx).
-		Create(&token)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create seed user: %w", res.Error)
-	}
-
-	return &token, nil
+	return token, nil
 }

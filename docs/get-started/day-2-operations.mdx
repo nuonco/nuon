@@ -1,10 +1,10 @@
 ---
 title: "Day-2 Operations Overview"
 sidebarTitle: "Day-2 Overview"
-description: "BYOC primitives for scaling your deployments"
+description: "How you operate installs after the first deploy: health checks and alerts, debugging without network access, database migrations, policies, and scoped roles."
 icon: "wrench"
 boost: 3
-keywords: ["day 2 operations", "operate install", "post-deploy", "operations", "workflows actions policies", "rollback", "rollback a deployment", "how to update", "upgrade process", "monitoring BYOC installs", "logs and observability", "troubleshooting failed install", "release windows", "operate BYOC fleet"]
+keywords: ["day 2 operations", "operate install", "post-deploy", "operations", "workflows actions policies", "rollback", "rollback a deployment", "how to update", "upgrade process", "monitoring BYOC installs", "logs and observability", "troubleshooting failed install", "operate BYOC fleet", "health checks", "install health alerts", "database migrations", "debug without SSH or kubectl"]
 ---
 
 ## Workflows
@@ -15,11 +15,25 @@ Each workflow run's logs and step state are visible in the dashboard, CLI, and T
 
 [How it works → Workflows](/concepts/workflows)
 
+## Health Checks
+
+Nuon checks the health of every component on every install, with no agent to install. Helm chart and Kubernetes
+manifest components are checked about once a minute. Terraform components get a health status when you add an HTTP or
+TCP probe, or a custom check.
+
+When a component or an install becomes unhealthy, and when it recovers, Nuon sends an alert to Slack or a webhook. Each
+component and install keeps 90 days of timeline and uptime.
+
+[How to → Health Checks](/guides/health-checks)
+
 ## Install Telemetry
 
 Install telemetry is the logs, metrics, and traces your application produces while running in a customer's cloud
 account. Nuon can forward this data to your observability backend so you can monitor performance and troubleshoot
 issues across installs.
+
+Forwarding is off until you set it up, and it needs a Nuon BYOC deployment. Without it, Nuon stores only the logs of
+its own operations and the output of your actions. Application logs stay in the customer's account.
 
 [How it works → Install Telemetry](/concepts/install-telemetry)
 
@@ -33,11 +47,27 @@ Nuon audit events are forwarded, not application logs or general runner logs.
 
 ## Actions
 
-An action is a custom script you run on a live install. Define it in TOML, point it at a repo, set environment variables. It runs inside the customer's account — on a cron, on a lifecycle event (`post-deploy-component`, `pre-reprovision`, etc.), on a manual trigger, or as a one-off from the dashboard.
+An action is a script you run on a live install. The runner executes it inside the customer's account, so you need no
+SSH or `kubectl` access to the customer's network. Define it in TOML, point it at a repo, and set environment
+variables. It runs on a cron schedule, on a lifecycle event such as `post-deploy-component` or `pre-reprovision`, or on
+a manual trigger. The output and run history stay in Nuon.
 
-Typical uses: healthchecks, [database migrations](/guides/database-migrations), runbooks, debugging stuck installs.
+During an incident, run a one-off command with an [adhoc action](/guides/adhoc-actions) without changing your app
+config. Chain actions and deploys into a repeatable procedure with a [runbook](/concepts/runbooks).
+
+Typical uses: [database migrations](/guides/database-migrations), maintenance scripts, collecting logs, and custom
+checks that the built-in [health checks](/guides/health-checks) do not cover.
 
 [How it works → Actions](/concepts/actions)
+
+## Database Migrations
+
+There are three ways to run migrations across installs: a Kubernetes Job that an action starts after each deploy, an
+init container in your app's pods, or an action that runs a container image on the install runner. Use an action with a
+`pre-deploy-component` trigger when the migration must finish before new pods start. A failed migration action pauses
+the deploy until someone retries or skips it.
+
+[How to → Database Migrations](/guides/database-migrations)
 
 ## Policies
 

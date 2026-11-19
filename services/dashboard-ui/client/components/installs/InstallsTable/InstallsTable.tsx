@@ -1,3 +1,4 @@
+import { useTableVersion } from '@/hooks/use-table-version'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
@@ -6,6 +7,7 @@ import { ContextTooltip } from '@/components/common/ContextTooltip'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -22,8 +24,10 @@ export type InstallRow = {
   action: ReactNode
   activity: ReactNode
   branch: ReactNode
+  config: ReactNode
   group: ReactNode
   updatedAt: string
+  upgraded: ReactNode
   appHref: string
   appName: string
   installId: string
@@ -31,6 +35,7 @@ export type InstallRow = {
   name: string
   nameHref: string
   region?: ReactNode
+  runner: ReactNode
   statuses: ReactNode
   platform: ReactNode
 }
@@ -101,7 +106,8 @@ export function parseInstallsToTableData(
   orgId: string,
   labelColorsByApp?: Record<string, Record<string, string>>,
   lazyComponents = false,
-  installHref?: (install: TInstall) => string
+  installHref?: (install: TInstall) => string,
+  latestConfigId?: string
 ): InstallRow[] {
   return installs.map((install) => ({
     appHref: `/${install.org_id}/apps/${install.app_id}`,
@@ -173,6 +179,30 @@ export function parseInstallsToTableData(
       <Text variant="subtext" theme="neutral" family="mono">
         {installAppBranchGroup(install) || '—'}
       </Text>
+    ),
+    runner: install.runner_status ? (
+      <Status status={install.runner_status} variant="badge" />
+    ) : (
+      <Icon variant="MinusIcon" />
+    ),
+    config: (() => {
+      const applied = install.app_config_ref?.applied_config_id
+      if (!applied || !latestConfigId) return <Icon variant="MinusIcon" />
+      const current = applied === latestConfigId
+      return (
+        <Status status={current ? 'active' : 'outdated'} variant="badge">
+          {current ? 'Current' : 'Behind'}
+        </Status>
+      )
+    })(),
+    upgraded: install.app_config_ref?.applied_config_at ? (
+      <Time
+        time={install.app_config_ref.applied_config_at}
+        format="relative"
+        variant="subtext"
+      />
+    ) : (
+      <Icon variant="MinusIcon" />
     ),
     activity: <ActivityCell install={install} />,
     updatedAt: install?.updated_at ?? '',
@@ -256,6 +286,27 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
   },
   {
+    enableSorting: false,
+    accessorKey: 'runner',
+    header: 'Runner',
+    meta: { defaultHidden: true },
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'config',
+    header: 'Config',
+    meta: { defaultHidden: true },
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'upgraded',
+    header: 'Upgraded',
+    meta: { defaultHidden: true },
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
     id: 'activity',
     accessorKey: 'updatedAt',
     header: 'Activity',
@@ -272,8 +323,8 @@ const columns: ColumnDef<InstallRow>[] = [
 ]
 
 const HIDDEN_COLUMNS: Record<TInstallsTableScope, string[]> = {
-  org: [],
-  app: ['appName'],
+  org: ['config', 'upgraded'],
+  app: ['appName', 'config', 'upgraded'],
   branch: ['appName', 'branch'],
 }
 
@@ -300,6 +351,7 @@ export const InstallsTable = ({
   scope = 'org',
   statusAxes = false,
 }: IInstallsTable) => {
+  const isTableV2 = useTableVersion() === 'v2'
   const hidden = [
     ...HIDDEN_COLUMNS[scope],
     ...(statusAxes ? ['statuses', 'platform'] : ['statusAxes']),
@@ -316,9 +368,12 @@ export const InstallsTable = ({
       if (key === 'region') {
         return {
           ...column,
-          meta: { className: 'hidden @min-[80rem]:table-cell' },
+          meta: isTableV2
+            ? { defaultHidden: true }
+            : { className: 'hidden @min-[80rem]:table-cell' },
         }
       }
+      if (isTableV2) return column
       if (key === 'updatedAt' || key === 'activity') {
         return {
           ...column,
@@ -330,6 +385,7 @@ export const InstallsTable = ({
 
   return (
     <Table<InstallRow>
+      tableId={statusAxes ? `installs-${scope}-status` : `installs-${scope}`}
       columns={scopedColumns}
       data={data}
       isLoading={isLoading}

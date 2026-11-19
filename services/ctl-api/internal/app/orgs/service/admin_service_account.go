@@ -8,11 +8,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 type AdminCreateServiceAccountRequest struct{}
@@ -53,31 +51,5 @@ func (s *service) AdminCreateServiceAccount(ctx *gin.Context) {
 
 func (s *service) createServiceAccount(ctx context.Context, orgID string) (*app.Account, error) {
 	name := fmt.Sprintf("%s-admin-service-account", orgID)
-	email := account.ServiceAccountEmail(name)
-
-	acct, err := s.acctClient.FindAccount(ctx, email)
-	if err == nil {
-		return acct, nil
-	}
-
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("unable to lookup account: %w", err)
-	}
-
-	newAcct := app.Account{
-		Email:       email,
-		Subject:     name,
-		AccountType: app.AccountTypeService,
-	}
-	res := s.db.WithContext(ctx).
-		Create(&newAcct)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create service account: %w", res.Error)
-	}
-
-	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, orgID, newAcct.ID); err != nil {
-		return nil, fmt.Errorf("unable to add org role to service account: %w", err)
-	}
-
-	return &newAcct, nil
+	return s.acctClient.CreateOrgServiceAccount(ctx, orgID, name, "", app.RoleTypeOrgAdmin)
 }

@@ -6,11 +6,13 @@ import (
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
 )
 
 // StackPhoneHomeRequest is the free-form payload an install stack reports: the
@@ -55,6 +57,17 @@ func (h *Helpers) RecordStackPhoneHome(
 		var current app.InstallStackVersion
 		if err := tx.First(&current, "id = ?", stackVersion.ID).Error; err != nil {
 			return fmt.Errorf("unable to load stack version: %w", err)
+		}
+		if err := tx.Select("id").Clauses(clause.Locking{Strength: "KEY SHARE"}).
+			Where(app.Org{ID: current.OrgID}).Take(&app.Org{}).Error; err != nil {
+			return fmt.Errorf("unable to lock stack version org: %w", err)
+		}
+		if _, err := driftresolution.LockInstall(ctx, tx, current.InstallID); err != nil {
+			return fmt.Errorf("unable to lock stack version install: %w", err)
+		}
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(app.InstallStackVersion{ID: current.ID}).Take(&current).Error; err != nil {
+			return fmt.Errorf("unable to lock stack version: %w", err)
 		}
 		wasCancelled := current.Status.Status == app.StatusCancelled
 

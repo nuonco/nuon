@@ -28,21 +28,12 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 		return nil, errors.Wrap(res.Error, "unable to create log stream")
 	}
 
-	svcAcct, err := a.acctClient.CreateServiceAccount(ctx, ls.ID, "")
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create service account")
-	}
-
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get org id from context")
 	}
 
-	if err := a.authzClient.EnsureLogStreamRole(ctx, orgID, ls.ID, svcAcct.ID); err != nil {
-		return nil, errors.Wrap(err, "unable to grant log stream role")
-	}
-
-	token, err := a.acctClient.CreateToken(ctx, svcAcct.Email, defaultLogStreamTokenDuration)
+	token, err := a.acctClient.IssueLogStreamToken(ctx, orgID, ls.ID, defaultLogStreamTokenDuration)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create token")
 	}

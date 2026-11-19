@@ -38,3 +38,15 @@ A separate API that Runners use to poll for jobs and write logs and metrics. Thi
 Before components can be deployed to installs, they are built into OCI artifacts by the Control Plane. All installs of an app share the same artifacts, and the Control Plane is the only part of the platform that touches your source code.
 
 <Note>Build artifacts are stored as OCI images in your cloud registry.</Note>
+
+## Operating Installs
+
+The same Control Plane and Runner handle the work after the first deploy:
+
+- [Health checks](/guides/health-checks) monitor every component and send alerts to Slack and webhooks.
+- [Actions](/concepts/actions) and [adhoc actions](/guides/adhoc-actions) run scripts inside the customer account, so
+  you can debug without SSH or `kubectl` access.
+- [Database migrations](/guides/database-migrations) run as a Kubernetes Job, an init container, or an action.
+- [App branches](/concepts/app-branches) roll a change out across installs in ordered groups, with a plan and an
+  approval for each group.
+- The [API](/nuon-api) lets your product onboard customers and collect their approvals.
