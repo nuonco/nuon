@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Code } from '@/components/common/Code'
+import { Duration } from '@/components/common/Duration'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -80,6 +81,36 @@ export const OIDCTrustPoliciesTable = ({
         },
       },
       {
+        header: 'Token duration',
+        accessorKey: 'token_duration_seconds',
+        meta: { defaultHidden: true },
+        cell: (props) => {
+          const seconds = props.getValue<number | undefined>()
+          return seconds ? (
+            <Duration variant="subtext" nanoseconds={seconds * 1_000_000_000} />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              —
+            </Text>
+          )
+        },
+      },
+      {
+        header: 'Created',
+        accessorKey: 'created_at',
+        meta: { defaultHidden: true },
+        cell: (props) => {
+          const time = props.getValue<string | undefined>()
+          return time ? (
+            <Time variant="subtext" time={time} format="relative" />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              —
+            </Text>
+          )
+        },
+      },
+      {
         id: 'action',
         header: '',
         cell: (props) => (
@@ -98,6 +129,7 @@ export const OIDCTrustPoliciesTable = ({
 
   return (
     <Table<TOIDCTrustPolicy>
+      tableId="oidc-trust-policies"
       columns={columns}
       data={data}
       isLoading={isLoading}
