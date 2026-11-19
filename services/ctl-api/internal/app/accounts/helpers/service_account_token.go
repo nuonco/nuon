@@ -122,7 +122,7 @@ func (h *Helpers) OrgServiceAccounts(ctx context.Context, orgID string, includeR
 
 	excludedRoleTypes := []app.RoleType{}
 	if !includeRunners {
-		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner)
+		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner, app.RoleTypeRunnerIdentity)
 	}
 	if !includeStacks {
 		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeStack)
