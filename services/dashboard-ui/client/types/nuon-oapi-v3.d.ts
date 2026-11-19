@@ -5956,7 +5956,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home" | "runner_job";
+    "app.ManagedServiceAccountPurpose": "stack" | "telemetry_collector" | "phone_home" | "runner_job" | "runner" | "log_stream";
     "app.Notebook": {
       cell_count?: number;
       cells?: components["schemas"]["app.NotebookCell"][];
@@ -6470,7 +6470,7 @@ export interface components {
       version?: number;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "runner_identity" | "runner_install" | "runner_job" | "hosted-installer" | "stack" | "telemetry_collector" | "phone_home" | "log_stream";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
