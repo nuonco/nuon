@@ -216,14 +216,6 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
-			groupOption, err := h.appsHelpers.WithDB(tx).GroupApprovalOption(ctx, installRunbook.Install.AppBranchID.ValueString(), installRunbook.Install.AppBranchGroup)
-			if err != nil {
-				return err
-			}
-			if groupOption == app.InstallApprovalOptionApproveAll {
-				approvalOption = groupOption
-				metadata["approval_type"] = "install-group"
-			}
 			if installRunbook.Install.Name != "" {
 				metadata[app.WorkflowMetadataKeyOwnerName] = installRunbook.Install.Name
 			}

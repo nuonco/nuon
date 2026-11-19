@@ -76,7 +76,7 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[StackConfig](), "Type:type Name:name Description:description VPCNestedTemplateURL:vpc_nested_template_url RunnerNestedTemplateURL:runner_nested_template_url DeploymentScope:deployment_scope UIDefinition:ui_definition UIDefinitionContents:ui_definition_contents CustomNestedStacks:nested"},
 	{reflect.TypeFor[CustomNestedStack](), "Name:identity TemplateURL:template_url Index:index Parameters:parameters Contents:contents ContentsHash:derived Status:derived TemplateSourceURL:derived"},
 	{reflect.TypeFor[AppBranchConfig](), "Name:name ConnectedRepo:nested PublicRepo:nested InstallGroups:nested Preview:nested Run:nested PostDeployRunbooks:post_deploy_runbooks IgnoreChangesRegex:ignore_changes_regex SendStatusesOnIgnore:send_statuses_on_ignore"},
-	{reflect.TypeFor[AppBranchInstallGroupConfig](), "Name:identity Order:order LabelSelector:label_selector Default:constrained-default ApprovalOption:approval_option AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing"},
+	{reflect.TypeFor[AppBranchInstallGroupConfig](), "Name:identity Order:order LabelSelector:label_selector Default:constrained-default ApprovalOption:approval_option InstallApprovalOption:install_approval_option AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing"},
 	{reflect.TypeFor[AppBranchPreviewConfig](), "Mode:mode InstallID:install_id InstallName:install_name LabelSelector:label_selector SetStatuses:set_statuses Comment:comment IgnoreDrafts:ignore_drafts React:react"},
 	{reflect.TypeFor[AppBranchRunConfig](), "Mode:mode TagPrefix:tag_prefix GithubLabel:github_label Paths:paths PathsIgnore:paths_ignore"},
 	{reflect.TypeFor[KubernetesContextsConfig](), "Contexts:nested"},
@@ -454,7 +454,7 @@ func nestedEditValue(v reflect.Value, typ reflect.Type, field, word string, numb
 			value = "teardown"
 		case "DeploymentScope":
 			value = "subscription"
-		case "ApprovalOption":
+		case "ApprovalOption", "InstallApprovalOption":
 			value = string(InstallApprovalOptionApproveAll)
 		case "Mode":
 			if typ == reflect.TypeFor[AppBranchRunConfig]() {

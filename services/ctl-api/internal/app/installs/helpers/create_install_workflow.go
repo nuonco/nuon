@@ -2,15 +2,12 @@ package helpers
 
 import (
 	"context"
-	"encoding/json"
-	"os"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -98,12 +95,12 @@ func (s *Helpers) prepareInstallWorkflow(ctx context.Context,
 		metadata[app.WorkflowMetadataKeyOwnerName] = install.Name
 	}
 
+	// Label the approval source so the UI can show where auto-approve came from
 	approvalType := ""
 	if approvalOption == app.InstallApprovalOptionApproveAll {
 		approvalType = "install-config"
 	}
-	installOption := approvalOption
-	groupOption, err := appshelpers.GroupApprovalOptionWithDB(ctx, s.db, install.AppBranchID.ValueString(), install.AppBranchGroup)
+	groupOption, err := s.rolloutGroupInstallApprovalOption(ctx, workflowType, metadata)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to set approval option")
 	}
@@ -114,30 +111,6 @@ func (s *Helpers) prepareInstallWorkflow(ctx context.Context,
 	if approvalType != "" {
 		metadata["approval_type"] = approvalType
 	}
-
-	// #region agent log
-	if f, ferr := os.OpenFile("/Users/robertbruce/nuonco/nuon/.cursor/debug-81e497.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); ferr == nil {
-		payload, _ := json.Marshal(map[string]any{
-			"sessionId":    "81e497",
-			"hypothesisId": "group-overrides-install",
-			"location":     "create_install_workflow.go:prepareInstallWorkflow",
-			"message":      "resolved workflow approval option",
-			"timestamp":    time.Now().UnixMilli(),
-			"data": map[string]any{
-				"install_id":      installID,
-				"branch_id":       install.AppBranchID.ValueString(),
-				"group":           install.AppBranchGroup,
-				"install_option":  string(installOption),
-				"group_option":    string(groupOption),
-				"workflow_option": string(approvalOption),
-				"approval_type":   approvalType,
-				"workflow_type":   string(workflowType),
-			},
-		})
-		_, _ = f.Write(append(payload, '\n'))
-		_ = f.Close()
-	}
-	// #endregion
 
 	status := app.NewCompositeStatus(ctx, app.StatusPending)
 	if approvalType != "" {
@@ -162,6 +135,26 @@ func (s *Helpers) prepareInstallWorkflow(ctx context.Context,
 	}
 
 	return &installWorkflow, install.Name, nil
+}
+
+// rolloutGroupInstallApprovalOption returns the install group's
+// install_approval_option for workflows started by an app branch group rollout.
+// Every other workflow uses the install config alone.
+func (s *Helpers) rolloutGroupInstallApprovalOption(ctx context.Context, workflowType app.WorkflowType, metadata map[string]string) (app.InstallApprovalOption, error) {
+	groupID := metadata["install_group_id"]
+	if workflowType != app.WorkflowTypeAppBranchConfigUpdate || groupID == "" {
+		return app.InstallApprovalOptionPrompt, nil
+	}
+
+	var group app.AppBranchInstallGroup
+	err := s.db.WithContext(ctx).Where(app.AppBranchInstallGroup{ID: groupID}).First(&group).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return app.InstallApprovalOptionPrompt, nil
+	}
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get install group")
+	}
+	return group.ResolvedInstallApprovalOption(), nil
 }
 
 func (s *Helpers) insertInstallWorkflow(ctx context.Context, installWorkflow *app.Workflow, installName string) (*app.Workflow, error) {

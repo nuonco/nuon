@@ -24,12 +24,14 @@ type ServiceInstallGroupRequest struct {
 	ApprovalOption AppInstallApprovalOption `json:"approval_option,omitempty"`
 
 	// AutoApproveOnPoliciesPassing approves this group's plan step without user
-	// input when its policy checks pass. The group plan does not run policies,
-	// so this field does not approve it. Omit to leave it unset (off).
+	// input when its policy checks pass. Omit to leave it unset (off).
 	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty"`
 
 	// default
 	Default bool `json:"default,omitempty"`
+
+	// install approval option
+	InstallApprovalOption AppInstallApprovalOption `json:"install_approval_option,omitempty"`
 
 	// label selector
 	LabelSelector *GithubComNuoncoNuonPkgLabelsSelector `json:"label_selector,omitempty"`
@@ -49,6 +51,10 @@ func (m *ServiceInstallGroupRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateApprovalOption(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateInstallApprovalOption(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -83,6 +89,27 @@ func (m *ServiceInstallGroupRequest) validateApprovalOption(formats strfmt.Regis
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("approval_option")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallGroupRequest) validateInstallApprovalOption(formats strfmt.Registry) error {
+	if swag.IsZero(m.InstallApprovalOption) { // not required
+		return nil
+	}
+
+	if err := m.InstallApprovalOption.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("install_approval_option")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("install_approval_option")
 		}
 
 		return err
@@ -147,6 +174,10 @@ func (m *ServiceInstallGroupRequest) ContextValidate(ctx context.Context, format
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateInstallApprovalOption(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateLabelSelector(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -171,6 +202,28 @@ func (m *ServiceInstallGroupRequest) contextValidateApprovalOption(ctx context.C
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("approval_option")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallGroupRequest) contextValidateInstallApprovalOption(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.InstallApprovalOption) { // not required
+		return nil
+	}
+
+	if err := m.InstallApprovalOption.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("install_approval_option")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("install_approval_option")
 		}
 
 		return err

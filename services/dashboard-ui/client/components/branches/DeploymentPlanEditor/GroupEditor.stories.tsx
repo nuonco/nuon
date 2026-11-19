@@ -34,6 +34,7 @@ const labelGroup: IInstallGroup = {
   order: 0,
   max_parallel: 1,
   approval_option: 'prompt',
+  install_approval_option: 'prompt',
   auto_approve_on_policies_passing: false,
 }
 
@@ -46,6 +47,7 @@ const defaultGroup: IInstallGroup = {
   order: 1,
   max_parallel: 1,
   approval_option: 'approve-all',
+  install_approval_option: 'approve-all',
   auto_approve_on_policies_passing: false,
 }
 

@@ -43,6 +43,7 @@ const groups: IInstallGroup[] = [
     order: 0,
     max_parallel: 1,
     approval_option: 'prompt',
+    install_approval_option: 'prompt',
     auto_approve_on_policies_passing: false,
   },
   {
@@ -54,6 +55,7 @@ const groups: IInstallGroup[] = [
     order: 1,
     max_parallel: 1,
     approval_option: 'prompt',
+    install_approval_option: 'prompt',
     auto_approve_on_policies_passing: false,
   },
 ]
@@ -90,6 +92,7 @@ export const MultipleGroups = () => (
           order: 2,
           max_parallel: 2,
           approval_option: 'prompt',
+          install_approval_option: 'prompt',
           auto_approve_on_policies_passing: false,
         },
       ]}
@@ -151,6 +154,7 @@ export const NoInstallsWithDefaultGroup = () => (
           order: 0,
           max_parallel: 1,
           approval_option: 'prompt',
+          install_approval_option: 'prompt',
           auto_approve_on_policies_passing: false,
         },
       ]}
@@ -180,6 +184,7 @@ export const DefaultGroup = () => (
           order: 0,
           max_parallel: 2,
           approval_option: 'prompt',
+          install_approval_option: 'prompt',
           auto_approve_on_policies_passing: false,
         },
       ]}

@@ -132,8 +132,8 @@ env = "prod"
 
 Every change a branch run applies to an install is planned and reviewed first. Each `plan install group` step
 computes a diff per install in that install group. By default the plan waits for approval. Set
-`approval_option = "approve-all"` on an install group to approve that group's config diff. Each install still uses
-its own approval setting.
+`approval_option = "approve-all"` on an install group to approve that group's config diff. The install workflows the
+group starts use each install's own approval setting, unless the group sets `install_approval_option = "approve-all"`.
 
 <TryWithYourAgent
   title="Approve a rollout"

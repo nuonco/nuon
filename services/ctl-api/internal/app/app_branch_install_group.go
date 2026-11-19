@@ -34,13 +34,21 @@ type AppBranchInstallGroup struct {
 
 	MaxParallel int `json:"max_parallel,omitzero" gorm:"default:0" temporaljson:"max_parallel,omitzero,omitempty"`
 
-	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"not null;default:'prompt'" temporaljson:"approval_option,omitzero,omitempty"`
+	ApprovalOption        InstallApprovalOption `json:"approval_option,omitzero" gorm:"not null;default:'prompt'" temporaljson:"approval_option,omitzero,omitempty"`
+	InstallApprovalOption InstallApprovalOption `json:"install_approval_option,omitzero" gorm:"not null;default:'prompt'" temporaljson:"install_approval_option,omitzero,omitempty"`
 
 	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty" gorm:"default:null" temporaljson:"auto_approve_on_policies_passing,omitzero,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 func (a *AppBranchInstallGroup) ResolvedApprovalOption() InstallApprovalOption {
 	if a != nil && a.ApprovalOption == InstallApprovalOptionApproveAll {
+		return InstallApprovalOptionApproveAll
+	}
+	return InstallApprovalOptionPrompt
+}
+
+func (a *AppBranchInstallGroup) ResolvedInstallApprovalOption() InstallApprovalOption {
+	if a != nil && a.InstallApprovalOption == InstallApprovalOptionApproveAll {
 		return InstallApprovalOptionApproveAll
 	}
 	return InstallApprovalOptionPrompt

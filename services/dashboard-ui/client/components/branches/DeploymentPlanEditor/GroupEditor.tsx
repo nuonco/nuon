@@ -190,7 +190,42 @@ export const GroupEditor = ({
                     className="!leading-none"
                   >
                     Approves the config diff for this group and starts its
-                    deploys. Each install still uses its own approval setting.
+                    deploys.
+                  </Text>
+                </span>
+              ),
+              className: '!p-1 !gap-1.5 items-start',
+              labelTextProps: { as: 'div' },
+            }}
+          />
+          <CheckboxInput
+            id={`group-install-approval-${group.id}`}
+            checked={group.install_approval_option === 'approve-all'}
+            disabled={disabled}
+            onChange={(e) =>
+              onUpdate({
+                install_approval_option: e.target.checked
+                  ? 'approve-all'
+                  : 'prompt',
+              })
+            }
+            labelProps={{
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text
+                    variant="subtext"
+                    weight="strong"
+                    className="!leading-none"
+                  >
+                    Auto-approve install deploys
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    Install workflows this group starts are approved
+                    automatically, ignoring each install's approval setting.
                   </Text>
                 </span>
               ),

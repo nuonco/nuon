@@ -40,6 +40,9 @@ type AppAppBranchInstallGroup struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// install approval option
+	InstallApprovalOption AppInstallApprovalOption `json:"install_approval_option,omitempty"`
+
 	// label selector
 	LabelSelector *GithubComNuoncoNuonPkgLabelsSelector `json:"label_selector,omitempty"`
 
@@ -67,6 +70,10 @@ func (m *AppAppBranchInstallGroup) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateInstallApprovalOption(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateLabelSelector(formats); err != nil {
 		res = append(res, err)
 	}
@@ -90,6 +97,27 @@ func (m *AppAppBranchInstallGroup) validateApprovalOption(formats strfmt.Registr
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("approval_option")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchInstallGroup) validateInstallApprovalOption(formats strfmt.Registry) error {
+	if swag.IsZero(m.InstallApprovalOption) { // not required
+		return nil
+	}
+
+	if err := m.InstallApprovalOption.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("install_approval_option")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("install_approval_option")
 		}
 
 		return err
@@ -129,6 +157,10 @@ func (m *AppAppBranchInstallGroup) ContextValidate(ctx context.Context, formats 
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateInstallApprovalOption(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateLabelSelector(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -153,6 +185,28 @@ func (m *AppAppBranchInstallGroup) contextValidateApprovalOption(ctx context.Con
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("approval_option")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchInstallGroup) contextValidateInstallApprovalOption(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.InstallApprovalOption) { // not required
+		return nil
+	}
+
+	if err := m.InstallApprovalOption.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("install_approval_option")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("install_approval_option")
 		}
 
 		return err

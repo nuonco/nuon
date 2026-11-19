@@ -14,6 +14,7 @@ const group = (
   order: 0,
   max_parallel: 1,
   approval_option: 'prompt',
+  install_approval_option: 'prompt',
   auto_approve_on_policies_passing: false,
   label_selector: labels ? { match_labels: labels } : null,
 })

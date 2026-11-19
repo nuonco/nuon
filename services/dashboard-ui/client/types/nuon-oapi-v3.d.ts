@@ -3997,6 +3997,7 @@ export interface components {
       created_by_id?: string;
       default?: boolean;
       id?: string;
+      install_approval_option?: "approve-all" | "prompt";
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       max_parallel?: number;
       name?: string;
@@ -9884,18 +9885,14 @@ export interface components {
       type?: components["schemas"]["app.WorkflowType"];
     };
     "service.InstallGroupRequest": {
-      /**
-       * @description ApprovalOption uses the install values. approve-all approves this group's
-       * config-diff plan. prompt waits. Omit for prompt.
-       */
       approval_option?: "approve-all" | "prompt";
       /**
        * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
-       * input when its policy checks pass. The group plan does not run policies, so this field
-       * does not approve it. Omit to leave it unset (off).
+       * input when its policy checks pass. Omit to leave it unset (off).
        */
       auto_approve_on_policies_passing?: boolean | null;
       default?: boolean;
+      install_approval_option?: "approve-all" | "prompt";
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       name: string;
       order?: number;

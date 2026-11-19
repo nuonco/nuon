@@ -50,12 +50,13 @@ type mcpAppBranchOverview struct {
 }
 
 type mcpAppBranchInstallGroup struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Order          int    `json:"order"`
-	Default        bool   `json:"default"`
-	LabelSelector  bool   `json:"has_label_selector"`
-	ApprovalOption string `json:"approval_option,omitempty"`
+	ID                    string `json:"id"`
+	Name                  string `json:"name"`
+	Order                 int    `json:"order"`
+	Default               bool   `json:"default"`
+	LabelSelector         bool   `json:"has_label_selector"`
+	ApprovalOption        string `json:"approval_option,omitempty"`
+	InstallApprovalOption string `json:"install_approval_option,omitempty"`
 }
 
 type mcpAppBranchRunOverview struct {
@@ -170,12 +171,13 @@ func (s *service) mcpGetAppBranch(ctx context.Context, _ *mcp.CallToolRequest, i
 		result.Branch.RunConfig = cfg.RunConfig
 		for _, g := range cfg.InstallGroups {
 			result.InstallGroups = append(result.InstallGroups, mcpAppBranchInstallGroup{
-				ID:             g.ID,
-				Name:           g.Name,
-				Order:          g.Order,
-				Default:        g.Default,
-				LabelSelector:  g.LabelSelector != nil,
-				ApprovalOption: string(g.ResolvedApprovalOption()),
+				ID:                    g.ID,
+				Name:                  g.Name,
+				Order:                 g.Order,
+				Default:               g.Default,
+				LabelSelector:         g.LabelSelector != nil,
+				ApprovalOption:        string(g.ResolvedApprovalOption()),
+				InstallApprovalOption: string(g.ResolvedInstallApprovalOption()),
 			})
 		}
 	}

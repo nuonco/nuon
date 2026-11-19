@@ -97,6 +97,7 @@ export const latestRolloutFixture: TLatestRollout = {
       order: 1,
       max_parallel: 2,
       approval_option: 'approve-all',
+      install_approval_option: 'approve-all',
       auto_approve_on_policies_passing: true,
       label_selector: { match_labels: { env: 'prod', tier: 'canary' } },
       status: 'success',

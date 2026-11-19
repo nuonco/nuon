@@ -53,11 +53,13 @@ func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFromGroup() 
 		StepID:         "step-1",
 	}
 
+	autoApprove := true
 	s.env.OnActivity("GetInstallGroupByID", mock.Anything, mock.Anything).Return(
 		&app.AppBranchInstallGroup{
-			ID:             "group-1",
-			Name:           "prod",
-			ApprovalOption: app.InstallApprovalOptionApproveAll,
+			ID:                           "group-1",
+			Name:                         "prod",
+			ApprovalOption:               app.InstallApprovalOptionApproveAll,
+			AutoApproveOnPoliciesPassing: &autoApprove,
 		}, nil)
 
 	s.env.ExecuteWorkflow(func(ctx workflow.Context) ([2]string, error) {
@@ -72,7 +74,7 @@ func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFromGroup() 
 	s.NoError(s.env.GetWorkflowError())
 	var result [2]string
 	s.NoError(s.env.GetWorkflowResult(&result))
-	s.Equal("false", result[0])
+	s.Equal("true", result[0])
 	s.Equal(string(app.InstallApprovalOptionApproveAll), result[1])
 }
 
