@@ -5,12 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/credentialcleanup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -56,12 +54,7 @@ func (s *service) RemoveUser(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := authz.RequireUserManaged(tx, req.UserID); err != nil {
-			return err
-		}
-		return authz.New(authz.Params{DB: tx}).RemoveAccountOrgRoles(ctx, org.ID, req.UserID)
-	}); err != nil {
+	if err := s.acctClient.RemoveOrgAccess(ctx, org.ID, req.UserID, false); err != nil {
 		ctx.Error(err)
 		return
 	}

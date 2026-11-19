@@ -1,4 +1,4 @@
-package authz
+package account
 
 import (
 	"context"
@@ -18,10 +18,7 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 	}
 
 	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := RequireUserManaged(tx, acct.ID); err != nil {
-			return err
-		}
-		if err := New(Params{DB: tx}).AddAccountOrgRole(ctx, roleType, invite.OrgID, acct.ID); err != nil {
+		if err := h.withDB(tx).AddOrgRole(ctx, invite.OrgID, acct.ID, roleType); err != nil {
 			return fmt.Errorf("unable to add account role: %w", err)
 		}
 		res := tx.Model(&app.OrgInvite{ID: invite.ID}).Updates(app.OrgInvite{Status: app.OrgInviteStatusAccepted})
