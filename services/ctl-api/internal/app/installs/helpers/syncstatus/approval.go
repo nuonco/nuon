@@ -1,4 +1,4 @@
-package alignment
+package syncstatus
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-func (s *Helpers) validateResolvePlan(ctx context.Context, st *installAlignmentState, res *InstallAlignmentResource, approvalID string, allowUnresponded bool) (*alignmentApproval, error) {
+func (s *Helpers) validateResolvePlan(ctx context.Context, st *installResourceSyncStatusState, res *InstallResourceSyncStatusResource, approvalID string, allowUnresponded bool) (*syncStatusApproval, error) {
 	var approval app.WorkflowStepApproval
 	err := s.db.WithContext(ctx).Preload("Response").Preload("InstallWorkflowStep").
 		Where(app.WorkflowStepApproval{ID: approvalID, OrgID: st.install.OrgID}).First(&approval).Error
@@ -46,7 +46,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, st *installAlignmentS
 		return nil, invalid("the plan predates the resource's last applied change")
 	}
 	switch res.Kind {
-	case InstallAlignmentResourceKindComponent, InstallAlignmentResourceKindImage:
+	case InstallResourceSyncStatusResourceKindComponent, InstallResourceSyncStatusResourceKindImage:
 		if approval.OwnerType != "install_deploys" {
 			return nil, invalid("the plan does not belong to this component")
 		}
@@ -61,7 +61,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, st *installAlignmentS
 		if deploy.ComponentBuildID != res.ExpectedBuildID {
 			return nil, invalid("the plan was made for a different build than the selected target")
 		}
-	case InstallAlignmentResourceKindSandbox:
+	case InstallResourceSyncStatusResourceKindSandbox:
 		if approval.OwnerType != "install_sandbox_runs" {
 			return nil, invalid("the plan does not belong to this sandbox")
 		}
@@ -77,7 +77,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, st *installAlignmentS
 			return nil, invalid("the plan does not belong to this sandbox")
 		}
 		matches := st.expectedSandbox != nil && run.AppSandboxConfigID == st.expectedSandbox.ID
-		if !matches && res.Category == InstallAlignmentCategoryStateDriftDetected && st.appliedSandbox != nil {
+		if !matches && res.Category == InstallResourceSyncStatusCategoryStateDriftDetected && st.appliedSandbox != nil {
 			matches = sandboxScanMatchesApplied(st, run.AppSandboxConfigID)
 		}
 		if !matches {
@@ -97,20 +97,20 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, st *installAlignmentS
 		strings.HasPrefix(approval.Response.Note, "auto-approved") {
 		return nil, invalid("the plan was not explicitly approved")
 	}
-	return &alignmentApproval{approval: &approval, workflow: &wf}, nil
+	return &syncStatusApproval{approval: &approval, workflow: &wf}, nil
 }
 
-func (s *Helpers) findApprovedResolvePlan(ctx context.Context, st *installAlignmentState, res *InstallAlignmentResource) (*alignmentApproval, error) {
+func (s *Helpers) findApprovedResolvePlan(ctx context.Context, st *installResourceSyncStatusState, res *InstallResourceSyncStatusResource) (*syncStatusApproval, error) {
 	query := s.db.WithContext(ctx).Model(&app.WorkflowStepApproval{}).
 		Joins("JOIN install_workflow_step_approval_responses r ON r.install_workflow_step_approval_id = install_workflow_step_approvals.id AND r.deleted_at = 0").
 		Where("r.type = ? AND r.note NOT LIKE ?", app.WorkflowStepApprovalResponseTypeApprove, "auto-approved%").
 		Where(app.WorkflowStepApproval{OrgID: st.install.OrgID})
 	switch res.Kind {
-	case InstallAlignmentResourceKindComponent, InstallAlignmentResourceKindImage:
+	case InstallResourceSyncStatusResourceKindComponent, InstallResourceSyncStatusResourceKindImage:
 		query = query.Joins("JOIN install_deploys d ON d.id = install_workflow_step_approvals.owner_id AND d.deleted_at = 0").
 			Where(app.WorkflowStepApproval{OwnerType: "install_deploys"}).
 			Where("d.install_component_id = ? AND d.component_build_id = ?", res.ID, res.ExpectedBuildID)
-	case InstallAlignmentResourceKindSandbox:
+	case InstallResourceSyncStatusResourceKindSandbox:
 		query = query.Joins("JOIN install_sandbox_runs sr ON sr.id = install_workflow_step_approvals.owner_id AND sr.deleted_at = 0").
 			Where(app.WorkflowStepApproval{OwnerType: "install_sandbox_runs"}).Where("sr.install_sandbox_id = ?", res.ID)
 	default:

@@ -8,6 +8,10 @@ import {
   type TComponentConfigTypeText,
 } from '@/components/components/ComponentTypeFilter'
 import { DriftedResources } from '@/components/install-alignment/DriftedResources'
+import {
+  LiveBuild,
+  useOriginHref,
+} from '@/components/install-alignment/LiveBuild'
 import { usePanelDeepLinks } from '@/hooks/use-panel-deep-links'
 import {
   hasOngoingDeployment,
@@ -70,6 +74,7 @@ export const InstallComponentsListContainer = () => {
   const { install } = useInstall()
   const { addPanel } = useSurfaces()
   const installLink = useInstallLink()
+  const originHref = useOriginHref()
   const [searchParams, setSearchParams] = useSearchParams()
   const showHealth = !!org?.features?.['component-health']
   const {
@@ -77,11 +82,11 @@ export const InstallComponentsListContainer = () => {
     isLoading: overviewLoading,
     isPlaceholderData,
   } = useInstallOverview()
-  const alignmentAvailable = !!overview?.alignment && !overview.alignment.error
+  const alignmentAvailable = !!overview?.resource_sync_status && !overview.resource_sync_status.error
   const alignmentById = useMemo(
     () =>
       new Map(
-        (overview?.alignment?.resources ?? []).map((resource) => [
+        (overview?.resource_sync_status?.resources ?? []).map((resource) => [
           resource.id,
           resource,
         ])
@@ -100,7 +105,7 @@ export const InstallComponentsListContainer = () => {
     ','
   )
   const listed = alignmentAvailable
-    ? listedResources(overview.alignment.resources, ['component'], {
+    ? listedResources(overview.resource_sync_status.resources, ['component'], {
         enabled: enabledFilter,
         search: q,
         types: selectedTypes,
@@ -231,6 +236,20 @@ export const InstallComponentsListContainer = () => {
           <InstallComponentLatestDeploy
             componentId={componentId}
             showHealth={showHealth}
+            live={
+              alignment?.applied_deploy_id ? (
+                <LiveBuild
+                  appliedAt={alignment.applied_deploy_at}
+                  origin={alignment.applied_by}
+                  originHref={originHref(alignment.applied_by)}
+                  deployHref={installLink({
+                    installId: install?.id,
+                    appId: install?.app_id,
+                    suffix: `/components/${componentId}/deploys/${alignment.applied_deploy_id}`,
+                  })}
+                />
+              ) : undefined
+            }
           />
         ) : null,
       }
@@ -260,11 +279,13 @@ export const InstallComponentsListContainer = () => {
     showHealth,
     addPanel,
     installLink,
+    originHref,
     alignmentById,
+    overview?.branch_tracking?.repo,
   ])
 
   const tornDown: TInstallComponentListItem[] = resourcesOfKinds(
-    overview?.alignment?.resources,
+    overview?.resource_sync_status?.resources,
     ['component']
   )
     .filter(

@@ -19,23 +19,19 @@ import (
 // swagger:model service.InstallOverviewResponse
 type ServiceInstallOverviewResponse struct {
 
-	// alignment
-	Alignment *ServiceInstallAlignment `json:"alignment,omitempty"`
-
 	// branch tracking
 	BranchTracking *ServiceInstallBranchTracking `json:"branch_tracking,omitempty"`
 
 	// config drift
 	ConfigDrift *ServiceInstallConfigDrift `json:"config_drift,omitempty"`
+
+	// resource sync status
+	ResourceSyncStatus *ServiceInstallResourceSyncStatus `json:"resource_sync_status,omitempty"`
 }
 
 // Validate validates this service install overview response
 func (m *ServiceInstallOverviewResponse) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateAlignment(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateBranchTracking(formats); err != nil {
 		res = append(res, err)
@@ -45,32 +41,13 @@ func (m *ServiceInstallOverviewResponse) Validate(formats strfmt.Registry) error
 		res = append(res, err)
 	}
 
+	if err := m.validateResourceSyncStatus(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallOverviewResponse) validateAlignment(formats strfmt.Registry) error {
-	if swag.IsZero(m.Alignment) { // not required
-		return nil
-	}
-
-	if m.Alignment != nil {
-		if err := m.Alignment.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("alignment")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("alignment")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -120,13 +97,32 @@ func (m *ServiceInstallOverviewResponse) validateConfigDrift(formats strfmt.Regi
 	return nil
 }
 
+func (m *ServiceInstallOverviewResponse) validateResourceSyncStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.ResourceSyncStatus) { // not required
+		return nil
+	}
+
+	if m.ResourceSyncStatus != nil {
+		if err := m.ResourceSyncStatus.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("resource_sync_status")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("resource_sync_status")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service install overview response based on the context it is used
 func (m *ServiceInstallOverviewResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.contextValidateAlignment(ctx, formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.contextValidateBranchTracking(ctx, formats); err != nil {
 		res = append(res, err)
@@ -136,34 +132,13 @@ func (m *ServiceInstallOverviewResponse) ContextValidate(ctx context.Context, fo
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateResourceSyncStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceInstallOverviewResponse) contextValidateAlignment(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Alignment != nil {
-
-		if swag.IsZero(m.Alignment) { // not required
-			return nil
-		}
-
-		if err := m.Alignment.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("alignment")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("alignment")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -208,6 +183,31 @@ func (m *ServiceInstallOverviewResponse) contextValidateConfigDrift(ctx context.
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("config_drift")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallOverviewResponse) contextValidateResourceSyncStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ResourceSyncStatus != nil {
+
+		if swag.IsZero(m.ResourceSyncStatus) { // not required
+			return nil
+		}
+
+		if err := m.ResourceSyncStatus.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("resource_sync_status")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("resource_sync_status")
 			}
 
 			return err

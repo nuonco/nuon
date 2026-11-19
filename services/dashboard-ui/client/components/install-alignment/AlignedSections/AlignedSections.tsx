@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { SectionHeader } from '@/components/layout/SectionHeader'
-import type { TInstallAlignmentCategory } from '@/types'
+import type { TInstallResourceSyncStatusCategory } from '@/types'
 
-type TAlignedItem = { id: string; alignment?: TInstallAlignmentCategory }
+type TAlignedItem = { id: string; alignment?: TInstallResourceSyncStatusCategory }
 
 export interface IAlignedSections<T extends TAlignedItem> {
   items: T[]
@@ -10,7 +10,7 @@ export interface IAlignedSections<T extends TAlignedItem> {
   render: (items: T[]) => ReactNode
 }
 
-const isDriftCategory = (category?: TInstallAlignmentCategory) =>
+const isDriftCategory = (category?: TInstallResourceSyncStatusCategory) =>
   category === 'changes-not-applied' || category === 'state-drift-detected'
 
 export const AlignedSections = <T extends TAlignedItem>({
