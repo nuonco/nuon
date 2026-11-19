@@ -31,6 +31,7 @@ const (
 	// Deprecated: installer is no longer assignable; it grants full org access, use org_admin instead.
 	RoleTypeInstaller       RoleType = "installer"
 	RoleTypeRunner          RoleType = "runner"
+	RoleTypeRunnerIdentity  RoleType = "runner_identity"
 	RoleTypeRunnerInstall   RoleType = "runner_install"
 	RoleTypeRunnerJob       RoleType = "runner_job"
 	RoleTypeHostedInstaller RoleType = "hosted-installer"
@@ -43,6 +44,7 @@ const (
 )
 
 var PrivateRoleTypes = []RoleType{
+	RoleTypeRunnerIdentity,
 	RoleTypeRunnerInstall,
 	RoleTypeRunnerJob,
 	RoleTypeStack,

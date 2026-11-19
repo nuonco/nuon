@@ -57,36 +57,7 @@
           {
             "group": "Get Started",
             "pages": [
-              "get-started/quickstart",
-              "get-started/create-your-first-app",
-              "get-started/app-branches-walkthrough"
-            ]
-          },
-          {
-            "group": "Deployment Options",
-            "pages": [
-              "guides/deployment-options",
-              "guides/nuon-cloud",
-              {
-                "group": "BYOC",
-                "root": "guides/byoc",
-                "expanded": false,
-                "pages": [
-                  "guides/byoc/requirements",
-                  "guides/byoc/installation",
-                  "guides/byoc/optional",
-                  "guides/byoc/telemetry",
-                  "guides/byoc/updates"
-                ]
-              },
-              {
-                "group": "Self-Hosted",
-                "root": "guides/self-hosted",
-                "expanded": false,
-                "pages": [
-                  "guides/self-hosted/dependencies"
-                ]
-              }
+              "get-started/quickstart"
             ]
           }
         ]
@@ -150,6 +121,7 @@
                 "boost": 3,
                 "pages": [
                   "guides/building-nuon-apps",
+                  "guides/configure-an-app-template",
                   "guides/multiple-app-configurations",
                   "guides/retaining-resources-on-teardown",
                   "guides/configuring-inputs-and-secrets",
@@ -291,6 +263,33 @@
                   "concepts/oidc-federation"
                 ],
                 "expanded": false
+              },
+              {
+                "group": "Nuon Deployment Options",
+                "pages": [
+                  "guides/deployment-options",
+                  "guides/nuon-cloud",
+                  {
+                    "group": "BYOC",
+                    "root": "guides/byoc",
+                    "expanded": false,
+                    "pages": [
+                      "guides/byoc/requirements",
+                      "guides/byoc/installation",
+                      "guides/byoc/optional",
+                      "guides/byoc/telemetry",
+                      "guides/byoc/updates"
+                    ]
+                  },
+                  {
+                    "group": "Self-Hosted",
+                    "root": "guides/self-hosted",
+                    "expanded": false,
+                    "pages": [
+                      "guides/self-hosted/dependencies"
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -362,7 +361,6 @@
             "group": "Configuration",
             "pages": [
               "config-ref/index",
-              "configuration-files",
               {
                 "group": "Component Types",
                 "boost": 2.5,
@@ -539,10 +537,62 @@
     },
     {
       "source": "/guides/app-init",
-      "destination": "/configuration-files"
+      "destination": "/guides/configure-an-app-template"
+    },
+    {
+      "source": "/configuration-files",
+      "destination": "/guides/configure-an-app-template"
+    },
+    {
+      "source": "/get-started/create-your-first-app",
+      "destination": "/get-started/quickstart"
+    },
+    {
+      "source": "/get-started/app-branches-walkthrough",
+      "destination": "/guides/app-branches"
     },
     {
       "source": "/guides/self-hosted/supported-platforms",
+      "destination": "/guides/self-hosted/dependencies"
+    },
+    {
+      "source": "/deployment-options",
+      "destination": "/guides/deployment-options"
+    },
+    {
+      "source": "/nuon-cloud",
+      "destination": "/guides/nuon-cloud"
+    },
+    {
+      "source": "/byoc",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/byoc/requirements",
+      "destination": "/guides/byoc/requirements"
+    },
+    {
+      "source": "/byoc/installation",
+      "destination": "/guides/byoc/installation"
+    },
+    {
+      "source": "/byoc/optional",
+      "destination": "/guides/byoc/optional"
+    },
+    {
+      "source": "/byoc/telemetry",
+      "destination": "/guides/byoc/telemetry"
+    },
+    {
+      "source": "/byoc/updates",
+      "destination": "/guides/byoc/updates"
+    },
+    {
+      "source": "/self-hosted",
+      "destination": "/guides/self-hosted"
+    },
+    {
+      "source": "/self-hosted/dependencies",
       "destination": "/guides/self-hosted/dependencies"
     },
     {
@@ -572,10 +622,6 @@
     {
       "source": "/architecture/byoc",
       "destination": "/architecture/app-deployment"
-    },
-    {
-      "source": "/deployment-options",
-      "destination": "/guides/deployment-options"
     },
     {
       "source": "/guides/self-hosting",

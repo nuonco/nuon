@@ -57,8 +57,14 @@ export const InstallBranchBanner = ({
           This install is{' '}
           <strong>
             {runsBehind} app branch {runsBehind === 1 ? 'run' : 'runs'} behind
+            its desired config
           </strong>{' '}
-          {branchHref ? <Link href={branchHref}>{branch}</Link> : branch}.
+          {branchHref ? (
+            <Link href={branchHref}>on {branch}</Link>
+          ) : (
+            <>on {branch}</>
+          )}
+          .
         </Text>
         {onViewRuns ? (
           <Button size="sm" onClick={onViewRuns}>
