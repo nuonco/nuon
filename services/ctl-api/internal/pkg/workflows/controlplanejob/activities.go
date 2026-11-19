@@ -50,7 +50,9 @@ type Activities struct {
 	statusActivities        *statusactivities.Activities
 	kafka                   *kafka.Producer
 	cloudConnectionsHelpers cloudconnections.ImageAuthorizer
+	cloudConnections        *cloudconnectionshelpers.Helpers
 	vcsHelpers              *vcshelpers.Helpers
+	runnerHelpers           *runnerhelpers.Helpers
 }
 
 type ActivityParams struct {
@@ -67,6 +69,7 @@ type ActivityParams struct {
 	Kafka                   *kafka.Producer
 	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 	VcsHelpers              *vcshelpers.Helpers
+	RunnerHelpers           *runnerhelpers.Helpers
 }
 
 func NewActivities(params ActivityParams) *Activities {
@@ -80,7 +83,9 @@ func NewActivities(params ActivityParams) *Activities {
 		statusActivities:        params.StatusActivities,
 		kafka:                   params.Kafka,
 		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
+		cloudConnections:        params.CloudConnectionsHelpers,
 		vcsHelpers:              params.VcsHelpers,
+		runnerHelpers:           params.RunnerHelpers,
 	}
 }
 
@@ -172,7 +177,7 @@ func (a *Activities) runJob(ctx context.Context, jobID, executionID string) erro
 	capture := errcapture.New()
 	ctx = errcapture.NewContext(ctx, capture)
 
-	executor, err := runnercontrolplane.NewExecutor(a, a.l, runnercontrolplane.Config{GitRef: a.cfg.GitRef})
+	executor, err := a.newExecutor(ctx, job)
 	if err != nil {
 		return fmt.Errorf("unable to create control-plane executor: %w", err)
 	}
@@ -332,6 +337,9 @@ func (a *Activities) GetJobCompositePlan(ctx context.Context, jobID string) (*mo
 		return nil, err
 	}
 	if err := a.authorizeImageSource(ctx, jobID, compositePlan); err != nil {
+		return nil, err
+	}
+	if err := a.injectInstallCredentials(ctx, jobID, compositePlan); err != nil {
 		return nil, err
 	}
 
