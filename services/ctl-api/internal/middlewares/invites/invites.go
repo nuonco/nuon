@@ -6,22 +6,22 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type Params struct {
 	fx.In
 
-	L           *zap.Logger
-	DB          *gorm.DB `name:"psql"`
-	AuthzClient *authz.Client
+	L             *zap.Logger
+	DB            *gorm.DB `name:"psql"`
+	AccountClient *account.Client
 }
 
 type middleware struct {
-	l     *zap.Logger
-	db    *gorm.DB
-	authz *authz.Client
+	l        *zap.Logger
+	db       *gorm.DB
+	accounts *account.Client
 }
 
 func (m middleware) Name() string {
@@ -54,8 +54,8 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 func New(params Params) *middleware {
 	return &middleware{
-		l:     params.L,
-		db:    params.DB,
-		authz: params.AuthzClient,
+		l:        params.L,
+		db:       params.DB,
+		accounts: params.AccountClient,
 	}
 }

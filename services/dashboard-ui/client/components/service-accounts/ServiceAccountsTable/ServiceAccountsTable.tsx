@@ -402,6 +402,7 @@ export const ServiceAccountsTable = ({
 
   return (
     <Table<TServiceAccountRow>
+      tableId="service-accounts"
       columns={
         management === 'user'
           ? columns.filter(({ id }) => id !== 'purpose' && id !== 'resource')

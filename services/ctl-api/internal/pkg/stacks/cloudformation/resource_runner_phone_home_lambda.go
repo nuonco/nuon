@@ -88,7 +88,7 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 	// runner_iam_role_arn references the ASG nested stack output, only available
 	// when not using local runners
 	if !a.cfg.UseLocalRunners {
-		lambdaprops["runner_iam_role_arn"] = cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole")
+		lambdaprops["runner_iam_role_arn"] = cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRoleARN")
 	}
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {

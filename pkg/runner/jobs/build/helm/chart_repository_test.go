@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -36,6 +37,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/publicnet"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
@@ -271,37 +273,36 @@ func TestOCIChartRejectsCorruptContent(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestChartRepositoryEnvironmentProxy(t *testing.T) {
+func TestMain(m *testing.M) {
+	// Fixtures are httptest servers on loopback; tests that exercise the public
+	// policy switch it back on with usePublicChartRepositories.
+	chartRepositoryLocal = true
+	os.Exit(m.Run())
+}
+
+func usePublicChartRepositories(t *testing.T) {
+	t.Helper()
+	chartRepositoryLocal = false
+	t.Cleanup(func() { chartRepositoryLocal = true })
+}
+
+// A proxy dials on our behalf, past the public-address check, so the client
+// must not pick one up from the environment.
+func TestChartRepositoryIgnoresEnvironmentProxy(t *testing.T) {
 	if repository := os.Getenv("NUON_HELM_TEST_PROXY_REPOSITORY"); repository != "" {
 		client := newChartRepositoryClient()
 		defer client.CloseIdleConnections()
-		data, err := fetchRepositoryChart(t.Context(), client, repository, "acme", "1.0.0")
-		require.NoError(t, err)
-		files, err := chartArchiveFiles(bytes.NewReader(data))
-		require.NoError(t, err)
-		chart, err := loadChartFiles(files)
-		require.NoError(t, err)
-		require.Equal(t, "1.0.0", chart.Metadata.Version)
+		_, err := fetchRepositoryChart(t.Context(), client, repository, "acme", "1.0.0")
+		require.Error(t, err)
 		return
 	}
 
 	for _, oci := range []bool{false, true} {
 		t.Run(fmt.Sprintf("oci=%t", oci), func(t *testing.T) {
-			repository := chartRepositoryFixture(t, oci, false)
-			upstream, err := url.Parse("http://" + strings.TrimPrefix(strings.TrimPrefix(repository, "oci://"), "http://"))
-			require.NoError(t, err)
-			upstream.Path = ""
-			forward := httputil.NewSingleHostReverseProxy(upstream)
-			forward.ModifyResponse = func(resp *http.Response) error {
-				if challenge := resp.Header.Get("WWW-Authenticate"); challenge != "" {
-					resp.Header.Set("WWW-Authenticate", strings.ReplaceAll(challenge, upstream.String(), "http://charts.example.invalid"))
-				}
-				return nil
-			}
 			var requests atomic.Int32
 			proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				requests.Add(1)
-				forward.ServeHTTP(w, r)
+				http.Error(w, "proxied", http.StatusBadGateway)
 			}))
 			defer proxy.Close()
 			scheme := "http"
@@ -311,7 +312,7 @@ func TestChartRepositoryEnvironmentProxy(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 			defer cancel()
 			// Go caches proxy environment variables on first use; use a fresh process.
-			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestChartRepositoryEnvironmentProxy$")
+			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestChartRepositoryIgnoresEnvironmentProxy$")
 			cmd.Env = append(os.Environ(),
 				"HTTP_PROXY="+proxy.URL, "http_proxy="+proxy.URL,
 				"HTTPS_PROXY="+proxy.URL, "https_proxy="+proxy.URL,
@@ -320,9 +321,114 @@ func TestChartRepositoryEnvironmentProxy(t *testing.T) {
 			)
 			output, err := cmd.CombinedOutput()
 			require.NoError(t, err, "%s", output)
-			require.Positive(t, requests.Load())
+			require.Zero(t, requests.Load())
 		})
 	}
+}
+
+func TestChartRepositoryRefusesNonPublicAddresses(t *testing.T) {
+	usePublicChartRepositories(t)
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+	loopback := strings.TrimPrefix(server.URL, "http://")
+	port := server.Listener.Addr().(*net.TCPAddr).AddrPort().Port()
+
+	for name, repository := range map[string]string{
+		"loopback":       server.URL + "/charts",
+		"loopback oci":   "oci://" + loopback + "/charts",
+		"localhost":      fmt.Sprintf("http://localhost:%d/charts", port),
+		"metadata":       "http://169.254.169.254/latest",
+		"metadata oci":   "oci://169.254.169.254/charts",
+		"private":        "https://10.0.0.1/charts",
+		"private oci":    "oci://192.168.0.1/charts",
+		"ipv6 loopback":  "http://[::1]/charts",
+		"ipv4-mapped v6": "http://[::ffff:127.0.0.1]/charts",
+	} {
+		t.Run(name, func(t *testing.T) {
+			client := newChartRepositoryClient()
+			defer client.CloseIdleConnections()
+			_, err := fetchRepositoryChart(t.Context(), client, repository, "acme", "1.0.0")
+			require.ErrorIs(t, err, publicnet.ErrNonPublic)
+		})
+	}
+	require.Zero(t, requests.Load())
+}
+
+func TestChartRepositoryRedirectLimit(t *testing.T) {
+	data := chartArchiveFixture(t, chartArchiveEntry{name: "acme/Chart.yaml", data: acmeChartMetadata})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/acme.tgz") {
+			_, _ = w.Write(data)
+			return
+		}
+		var hops int
+		if _, err := fmt.Sscanf(r.URL.Path, "/r%d/index.yaml", &hops); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		if hops > 0 {
+			http.Redirect(w, r, fmt.Sprintf("/r%d/index.yaml", hops-1), http.StatusFound)
+			return
+		}
+		fmt.Fprint(w, "apiVersion: v1\nentries:\n  acme:\n  - name: acme\n    version: 1.0.0\n    urls: [acme.tgz]\n")
+	}))
+	defer server.Close()
+
+	client := newChartRepositoryClient()
+	defer client.CloseIdleConnections()
+	got, err := fetchRepositoryChart(t.Context(), client, fmt.Sprintf("%s/r%d", server.URL, maxChartRepositoryRedirects), "acme", "1.0.0")
+	require.NoError(t, err)
+	require.Equal(t, data, got)
+
+	_, err = fetchRepositoryChart(t.Context(), client, fmt.Sprintf("%s/r%d", server.URL, maxChartRepositoryRedirects+1), "acme", "1.0.0")
+	require.ErrorContains(t, err, fmt.Sprintf("stopped after %d redirects", maxChartRepositoryRedirects))
+}
+
+// redirectingTransport answers the first hop itself, standing in for a public
+// server, and sends every later hop through the client's real transport.
+type redirectingTransport struct {
+	next     http.RoundTripper
+	location string
+}
+
+func (rt redirectingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.URL.Host == "charts.example.com" {
+		return &http.Response{
+			StatusCode: http.StatusFound,
+			Header:     http.Header{"Location": []string{rt.location}},
+			Body:       http.NoBody,
+			Request:    req,
+		}, nil
+	}
+	return rt.next.RoundTrip(req)
+}
+
+func TestChartRepositoryRefusesRedirectToNonPublicAddress(t *testing.T) {
+	usePublicChartRepositories(t)
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		fmt.Fprint(w, "apiVersion: v1\nentries: {}\n")
+	}))
+	defer server.Close()
+
+	for name, location := range map[string]string{
+		"loopback": server.URL + "/index.yaml",
+		"metadata": "http://169.254.169.254/latest/meta-data/",
+	} {
+		t.Run(name, func(t *testing.T) {
+			client := newChartRepositoryClient()
+			defer client.CloseIdleConnections()
+			client.Transport = redirectingTransport{next: client.Transport, location: location}
+			_, err := fetchRepositoryChart(t.Context(), client, "https://charts.example.com/charts", "acme", "1.0.0")
+			require.ErrorIs(t, err, publicnet.ErrNonPublic)
+		})
+	}
+	require.Zero(t, requests.Load())
 }
 
 func TestOCIChartRetriesTransientFailures(t *testing.T) {

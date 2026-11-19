@@ -4,12 +4,37 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm/clause"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func (m *Client) CreateAuthAccount(ctx context.Context, email, subject string, userJourneys app.UserJourneys) (*app.Account, error) {
 	return m.createAccount(ctx, email, subject, app.AccountTypeAuth, userJourneys)
+}
+
+// CreateTestAccount creates an integration or canary account for subject. Canary
+// subjects are reused across runs, so an existing row is taken over in place.
+// Test accounts are not identified to analytics.
+func (m *Client) CreateTestAccount(ctx context.Context, subject string, accountType app.AccountType) (*app.Account, error) {
+	if accountType != app.AccountTypeIntegration && accountType != app.AccountTypeCanary {
+		return nil, fmt.Errorf("unsupported test account type %q", accountType)
+	}
+	acct := app.Account{
+		Email:       fmt.Sprintf("%s@nuon.co", subject),
+		Subject:     subject,
+		AccountType: accountType,
+	}
+	if err := m.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "email"}, {Name: "subject"}, {Name: "deleted_at"}},
+			UpdateAll: true,
+		}).
+		Create(&acct).Error; err != nil {
+		return nil, fmt.Errorf("unable to create %s account: %w", accountType, err)
+	}
+	return &acct, nil
 }
 
 func (m *Client) createAccount(ctx context.Context, email, subject string, accountType app.AccountType, userJourneys app.UserJourneys) (*app.Account, error) {

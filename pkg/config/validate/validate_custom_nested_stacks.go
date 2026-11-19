@@ -39,8 +39,12 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parseTemplateOutputs(templateURL, body)
+}
 
+func parseTemplateOutputs(templateURL string, body []byte) (map[string]struct{}, error) {
 	var tmpl cfnOutputsShape
+	var err error
 	if strings.HasSuffix(templateURL, ".json") {
 		err = json.Unmarshal(body, &tmpl)
 	} else {
@@ -55,6 +59,11 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 
 func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 	if a.Stack == nil || len(a.Stack.CustomNestedStacks) == 0 {
+		return nil
+	}
+	// gcp-terraform template_urls are module addresses, not templates with
+	// CloudFormation outputs.
+	if a.Stack.Type == "gcp-terraform" {
 		return nil
 	}
 
@@ -92,7 +101,7 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 			continue
 		}
 
-		outputs, err := fetchTemplateOutputs(stack.TemplateURL)
+		outputs, err := customNestedStackOutputs(stack)
 		if templatefetch.IsRefused(err) {
 			return fmt.Errorf("custom_nested_stacks (%s): template_url %q cannot be fetched: %w", stack.Name, stack.TemplateURL, err)
 		}
@@ -130,4 +139,14 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 		Warning:     true,
 		Err:         fmt.Errorf("custom nested stack output warnings: %s", strings.Join(warnings, "; ")),
 	}
+}
+
+// customNestedStackOutputs reads outputs from the contents the parser already
+// loaded through go-getter, which is how template_url may name a local file.
+// Only a stack without loaded contents is fetched over the network.
+func customNestedStackOutputs(stack config.CustomNestedStack) (map[string]struct{}, error) {
+	if stack.Contents != "" {
+		return parseTemplateOutputs(stack.TemplateURL, []byte(stack.Contents))
+	}
+	return fetchTemplateOutputs(stack.TemplateURL)
 }

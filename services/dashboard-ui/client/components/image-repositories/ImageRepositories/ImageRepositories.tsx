@@ -92,6 +92,25 @@ export const ImageRepositories = ({
           ),
       },
       {
+        id: 'cloud_target',
+        accessorFn: (repository) => repository.cloud_connection?.target_id,
+        header: 'Cloud target',
+        enableSorting: false,
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <div className="flex flex-col gap-1">
+            <Text family="mono" variant="subtext">
+              {row.original.cloud_connection?.target_id || '—'}
+            </Text>
+            {row.original.cloud_connection?.default_region ? (
+              <Text theme="neutral" family="mono" variant="subtext">
+                {row.original.cloud_connection.default_region}
+              </Text>
+            ) : null}
+          </div>
+        ),
+      },
+      {
         accessorKey: 'created_at',
         header: 'Added',
         cell: ({ row }) => (
@@ -116,6 +135,7 @@ export const ImageRepositories = ({
         fallback="Image repositories failed to load"
       />
       <Table
+        tableId="image-repositories"
         columns={columns}
         data={repositories}
         isLoading={isLoading}
@@ -160,8 +180,8 @@ export const ImageRepositories = ({
         }}
       />
       <Text variant="subtext" theme="neutral">
-        Authentication verifies the principal, not repository permissions.
-        Image builds check actual pull access.
+        Authentication verifies the principal, not repository permissions. Image
+        builds check actual pull access.
       </Text>
     </ListPage>
   )

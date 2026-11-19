@@ -34,6 +34,9 @@ type ServiceAppAWSIAMRoleConfig struct {
 	// Required: true
 	DisplayName *string `json:"display_name"`
 
+	// eks access
+	EksAccess *AppAppAWSIAMRoleEKSAccess `json:"eks_access,omitempty"`
+
 	// enabled in stack
 	EnabledInStack *bool `json:"enabled_in_stack,omitempty"`
 
@@ -65,6 +68,10 @@ func (m *ServiceAppAWSIAMRoleConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDisplayName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEksAccess(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -145,6 +152,29 @@ func (m *ServiceAppAWSIAMRoleConfig) validateDisplayName(formats strfmt.Registry
 	return nil
 }
 
+func (m *ServiceAppAWSIAMRoleConfig) validateEksAccess(formats strfmt.Registry) error {
+	if swag.IsZero(m.EksAccess) { // not required
+		return nil
+	}
+
+	if m.EksAccess != nil {
+		if err := m.EksAccess.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("eks_access")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("eks_access")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ServiceAppAWSIAMRoleConfig) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
@@ -188,6 +218,10 @@ func (m *ServiceAppAWSIAMRoleConfig) validatePolicies(formats strfmt.Registry) e
 func (m *ServiceAppAWSIAMRoleConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateEksAccess(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePolicies(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -195,6 +229,31 @@ func (m *ServiceAppAWSIAMRoleConfig) ContextValidate(ctx context.Context, format
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceAppAWSIAMRoleConfig) contextValidateEksAccess(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.EksAccess != nil {
+
+		if swag.IsZero(m.EksAccess) { // not required
+			return nil
+		}
+
+		if err := m.EksAccess.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("eks_access")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("eks_access")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

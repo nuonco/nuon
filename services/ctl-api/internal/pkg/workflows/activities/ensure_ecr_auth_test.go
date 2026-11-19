@@ -22,6 +22,19 @@ func rewrittenCfg(loginServer string) *configs.OCIRegistryRepository {
 	}
 }
 
+func TestScopeECRPullLimitsTheAssumeToTheRepository(t *testing.T) {
+	cfg := ecrSandboxCfg()
+	require.NoError(t, scopeECRPull(cfg))
+	require.Contains(t, cfg.ECRAuth.AssumeRole.SessionPolicy, "arn:aws:ecr:us-west-2:111122223333:repository/org1/app1")
+	require.NotContains(t, cfg.ECRAuth.AssumeRole.SessionPolicy, "ecr:PutImage")
+}
+
+func TestScopeECRPullRejectsANonECRRepository(t *testing.T) {
+	cfg := ecrSandboxCfg()
+	cfg.Repository = "registry.example.com/org/app"
+	require.Error(t, scopeECRPull(cfg))
+}
+
 func TestRewrittenECRConfigKeepsRepositoryURI(t *testing.T) {
 	info, err := oci.FetchAccessInfo(context.Background(), rewrittenCfg("111122223333.dkr.ecr.us-west-2.amazonaws.com"))
 	require.NoError(t, err)

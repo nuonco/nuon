@@ -68,6 +68,34 @@ func (h *Client) EnsureManagedServiceAccountRole(ctx context.Context, accountID 
 			}
 			roleID = *binding.PrivateRoleID
 		}
+		// An account bound after it was created, such as a log stream account
+		// from before log streams had bindings, adopts the role it already holds
+		// and keeps that role's API restriction.
+		if roleID == "" {
+			var existing []app.Role
+			if err := tx.Preload("Policies").Joins("JOIN account_roles ON account_roles.role_id = roles.id AND account_roles.deleted_at = 0").
+				Where("account_roles.account_id = ?", accountID).
+				Where(app.Role{OrgID: want.OrgID, RoleType: want.RoleType}).
+				Find(&existing).Error; err != nil {
+				return fmt.Errorf("load existing private role: %w", err)
+			}
+			if len(existing) > 1 {
+				return fmt.Errorf("managed account has multiple %s roles", want.RoleType)
+			}
+			if len(existing) == 1 {
+				roleID = existing[0].ID
+				if len(existing[0].Policies) == 1 {
+					current, err := existing[0].Policies[0].PermissionProjection()
+					if err != nil {
+						return err
+					}
+					delete(want.Policies[0].Permissions, permissions.APIPermissionKey)
+					if api, ok := current[permissions.APIPermissionKey]; ok {
+						want.Policies[0].Permissions[permissions.APIPermissionKey] = api
+					}
+				}
+			}
+		}
 		want.ID = roleID
 		if err := ensurePrivateRole(tx, accountID, want); err != nil {
 			return err
@@ -87,6 +115,19 @@ func ensurePrivateRole(tx *gorm.DB, accountID string, want *app.Role) error {
 	}
 	if want.ID == "" {
 		want.Policies[0].OrgID = want.OrgID
+		switch want.RoleType {
+		case app.RoleTypeRunnerIdentity, app.RoleTypeRunnerInstall, app.RoleTypeRunnerJob, app.RoleTypeStack, app.RoleTypeTelemetryCollector, app.RoleTypePhoneHome, app.RoleTypeLogStream:
+			policy, err := ScopedRolePolicy(want)
+			if err != nil {
+				return err
+			}
+			document, err := policy.MarshalJSON()
+			if err != nil {
+				return err
+			}
+			want.Policies[0].Document, want.Policies[0].Permissions = document, nil
+			want.Version = app.RoleVersionV3
+		}
 		if err := tx.Create(want).Error; err != nil {
 			return fmt.Errorf("create private service account role: %w", err)
 		}

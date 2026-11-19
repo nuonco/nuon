@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # nuonctl assembles a service context. For a repository-root context, set AGENT_SOURCE=bins/telemetry-agent.
 ARG BUILD_IMAGE=821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine
-ARG RUNTIME_IMAGE=821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.21
+ARG RUNTIME_IMAGE=821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.24
 ARG ARTIFACT_PLATFORMS=full
 
 FROM ${BUILD_IMAGE} AS code

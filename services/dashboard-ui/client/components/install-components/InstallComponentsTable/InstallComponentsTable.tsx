@@ -27,6 +27,7 @@ export type InstallComponentRow = {
   componentId: string
   componentName: string
   componentType: ReactNode
+  deployedAt?: string
   toggleStatus: ReactNode
   overrideStatus: ReactNode
   deployStatus: ReactNode
@@ -71,6 +72,7 @@ export function parseInstallComponentSummaryToTableData(
     return {
       componentId: component.component_id,
       componentName: component.component?.name,
+      deployedAt: component.app_config_ref?.applied_config_at,
       componentType: (
         <ComponentType
           type={component?.component?.type}
@@ -246,6 +248,21 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     ),
   },
   {
+    accessorKey: 'deployedAt',
+    header: 'Deployed',
+    meta: { defaultHidden: true },
+    cell: (info) =>
+      info.getValue() ? (
+        <Time
+          time={info.getValue() as string}
+          format="relative"
+          variant="subtext"
+        />
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
+  },
+  {
     enableSorting: false,
     accessorKey: 'driftStatus',
     header: 'Drifted',
@@ -303,6 +320,7 @@ export const InstallComponentsTable = ({
 }: IInstallComponentsTable) => {
   return (
     <Table<InstallComponentRow>
+      tableId="install-components"
       columns={columns}
       data={data}
       isLoading={isLoading}

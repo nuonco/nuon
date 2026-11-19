@@ -26,8 +26,9 @@ type Token struct {
 type Params struct {
 	fx.In
 
-	Cfg *runnerconfig.Config
-	L   *zap.Logger `name:"dev"`
+	Cfg     *runnerconfig.Config
+	L       *zap.Logger `name:"dev"`
+	Process string      `name:"process" optional:"true"`
 }
 
 func New(params Params) (*Token, error) {
@@ -43,7 +44,7 @@ func New(params Params) (*Token, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	result, err := fetch(ctx, params.Cfg)
+	result, err := fetch(ctx, params.Cfg, params.Process)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch runner token via IMDS: %w", err)
 	}
@@ -61,7 +62,7 @@ func New(params Params) (*Token, error) {
 	return &Token{Value: result.Token, ExpiresAt: result.ExpiresAt}, nil
 }
 
-func fetch(ctx context.Context, cfg *runnerconfig.Config) (*fetchtoken.FetchTokenResult, error) {
+func fetch(ctx context.Context, cfg *runnerconfig.Config, process string) (*fetchtoken.FetchTokenResult, error) {
 	apiClient, err := nuonrunner.New(
 		nuonrunner.WithURL(cfg.RunnerAPIURL),
 	)
@@ -73,6 +74,7 @@ func fetch(ctx context.Context, cfg *runnerconfig.Config) (*fetchtoken.FetchToke
 	case "azure":
 		return fetchtoken.FetchTokenAzure(ctx, apiClient, cfg.RunnerID, true)
 	default:
-		return fetchtoken.FetchToken(ctx, apiClient, cfg.RunnerAuthMethod, cfg.RunnerID, true)
+		return fetchtoken.FetchToken(ctx, apiClient, cfg.RunnerAuthMethod, cfg.RunnerID, true,
+			fetchtoken.WithTTL(fetchtoken.TokenTTLForProcess(process)))
 	}
 }

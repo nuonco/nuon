@@ -52,22 +52,33 @@ type resourceDocument struct {
 	Rules []resourceRule `json:"rules"`
 }
 
-func ResourcePolicy(api API, scope Scope, permission PermissionID) (Policy, error) {
+type ResourceGrant struct {
+	Scope      Scope
+	Permission PermissionID
+}
+
+func ResourcePolicy(api API, grants ...ResourceGrant) (Policy, error) {
 	if api != "" {
 		if _, err := ParseAPI(string(api)); err != nil {
 			return Policy{}, err
 		}
 	}
-	switch scope.Kind {
-	case KindInstall, KindRunnerJob, KindPhoneHome, KindLogStream:
-	default:
-		return Policy{}, fmt.Errorf("unsupported resource rule scope %q", scope.Kind)
+	if len(grants) == 0 {
+		return Policy{}, fmt.Errorf("resource policy requires a rule")
 	}
-	set, err := NewPermissionSet(permission)
-	if err != nil {
-		return Policy{}, err
+	rules := make([]ScopedPermissions, 0, len(grants))
+	for _, grant := range grants {
+		switch grant.Scope.Kind {
+		case KindInstall, KindRunnerJob, KindPhoneHome, KindLogStream:
+		default:
+			return Policy{}, fmt.Errorf("unsupported resource rule scope %q", grant.Scope.Kind)
+		}
+		set, err := NewPermissionSet(grant.Permission)
+		if err != nil {
+			return Policy{}, err
+		}
+		rules = append(rules, ScopedPermissions{Scope: grant.Scope, Permissions: set})
 	}
-	rules := []ScopedPermissions{{Scope: scope, Permissions: set}}
 	if _, err := LegacySources(rules); err != nil {
 		return Policy{}, err
 	}

@@ -3,10 +3,6 @@ package activities
 import (
 	"context"
 	"fmt"
-
-	"gorm.io/gorm"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type CleanupCredentialsRequest struct {
@@ -28,9 +24,7 @@ func (a *Activities) CleanupCredentials(ctx context.Context, req CleanupCredenti
 	if req.AccountID == "" || req.OrgID == "" {
 		return fmt.Errorf("credential cleanup requires a service account subject or an account and org")
 	}
-	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return tx.Where(app.Token{OrgID: req.OrgID, AccountID: req.AccountID}).Delete(&app.Token{}).Error
-	}); err != nil {
+	if err := a.acctClient.RevokeOrgTokens(ctx, req.OrgID, req.AccountID); err != nil {
 		return fmt.Errorf("revoke organization tokens: %w", err)
 	}
 	return nil

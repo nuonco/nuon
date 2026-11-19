@@ -87,6 +87,7 @@ export const InstallationsTable = ({
 
   return (
     <Table<TSlackInstallation>
+      tableId="slack-installations"
       columns={columns}
       data={data}
       isLoading={isLoading}

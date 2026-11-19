@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -70,7 +71,11 @@ func (s *service) CreateAppBreakGlasssConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppBreakGlassConfig(ctx context.Context, appID string, req *CreateAppBreakGlassConfigRequest) (*app.AppBreakGlassConfig, error) {
-	obj, err := build.BreakGlassConfig(appID, req.AppConfigID, toConfigRoles(&req.Roles))
+	if err := require.AppConfigInApp(ctx, s.db, appID, req.AppConfigID); err != nil {
+		return nil, err
+	}
+
+	obj, err := build.BreakGlassConfig(appID, req.AppConfigID, s.stackTypeForAppConfig(ctx, req.AppConfigID), toConfigRoles(&req.Roles))
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(err)
 	}

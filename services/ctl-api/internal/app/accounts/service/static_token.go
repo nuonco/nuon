@@ -1,18 +1,15 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -118,13 +115,7 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	acct, role, err := s.resolveTokenAccount(ctx, org.ID, caller, &req)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	token, err := s.helpers.CreateStaticToken(ctx, acct, org.ID, caller.ID, req.Name, role, duration)
+	token, err := s.issueStaticToken(ctx, org.ID, caller, &req, duration)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create static token: %w", err))
 		return
@@ -136,25 +127,21 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 	})
 }
 
-func (s *service) resolveTokenAccount(ctx *gin.Context, orgID string, caller *app.Account, req *CreateStaticTokenRequest) (*app.Account, app.RoleType, error) {
+func (s *service) issueStaticToken(ctx *gin.Context, orgID string, caller *app.Account, req *CreateStaticTokenRequest, duration time.Duration) (*app.Token, error) {
 	switch req.TokenIdentity {
 	case TokenIdentityPersonal:
 		if req.Role != "" {
-			return nil, "", stderr.NewInvalidRequest(fmt.Errorf("role cannot be set for personal tokens; the token uses your account's existing roles"))
+			return nil, stderr.NewInvalidRequest(fmt.Errorf("role cannot be set for personal tokens; the token uses your account's existing roles"))
 		}
-		return caller, app.RoleTypeOrgAdmin, nil
+		return s.acctClient.IssueStaticToken(ctx, account.StaticTokenRequest{AccountID: caller.ID, OrgID: orgID, CreatedByID: caller.ID, Name: req.Name, Role: app.RoleTypeOrgAdmin, Duration: duration})
 	case "", TokenIdentityServiceAccount:
 		role, err := s.resolveTokenRole(ctx, orgID, req.Role)
 		if err != nil {
-			return nil, "", stderr.NewInvalidRequest(err)
+			return nil, stderr.NewInvalidRequest(err)
 		}
-		acct, err := s.createTokenServiceAccount(ctx, orgID, req.Name, role)
-		if err != nil {
-			return nil, "", fmt.Errorf("unable to create service account: %w", err)
-		}
-		return acct, role, nil
+		return s.acctClient.CreateDedicatedStaticToken(ctx, account.StaticTokenRequest{OrgID: orgID, CreatedByID: caller.ID, Name: req.Name, Role: role, Duration: duration})
 	default:
-		return nil, "", stderr.NewInvalidRequest(fmt.Errorf("invalid token_identity %q: must be %q or %q", req.TokenIdentity, TokenIdentityPersonal, TokenIdentityServiceAccount))
+		return nil, stderr.NewInvalidRequest(fmt.Errorf("invalid token_identity %q: must be %q or %q", req.TokenIdentity, TokenIdentityPersonal, TokenIdentityServiceAccount))
 	}
 }
 
@@ -228,76 +215,10 @@ func (s *service) DeleteStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.acctClient.RevokeToken(ctx, token.ID); err != nil {
+	if err := s.acctClient.DeleteStaticToken(ctx, org.ID, token.ID); err != nil {
 		ctx.Error(fmt.Errorf("unable to delete static token: %w", err))
 		return
 	}
 
-	if err := s.deleteTokenServiceAccount(ctx, org.ID, token.AccountID); err != nil {
-		ctx.Error(fmt.Errorf("unable to delete service account: %w", err))
-		return
-	}
-
 	ctx.Status(http.StatusNoContent)
-}
-
-// dedicatedTokenSubjectPrefix marks an account that exists only to hold one static
-// token, so deleting the token deletes the account.
-func dedicatedTokenSubjectPrefix(orgID string) string {
-	return fmt.Sprintf("%s-token-", orgID)
-}
-
-func (s *service) createTokenServiceAccount(ctx context.Context, orgID, tokenName string, roleType app.RoleType) (*app.Account, error) {
-	subject := dedicatedTokenSubjectPrefix(orgID) + domains.NewAccountID()
-	email := account.ServiceAccountEmail(subject)
-
-	newAcct := app.Account{
-		Email:       email,
-		Subject:     subject,
-		Name:        tokenName,
-		AccountType: app.AccountTypeService,
-	}
-	if res := s.db.WithContext(ctx).Create(&newAcct); res.Error != nil {
-		return nil, fmt.Errorf("unable to create service account: %w", res.Error)
-	}
-
-	if err := s.authzClient.AddAccountOrgRole(ctx, roleType, orgID, newAcct.ID); err != nil {
-		return nil, fmt.Errorf("unable to add org role to service account: %w", err)
-	}
-
-	return &newAcct, nil
-}
-
-func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountID string) error {
-	var acct app.Account
-	res := s.db.WithContext(ctx).Where(app.Account{ID: accountID}).First(&acct)
-	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return nil
-	}
-	if res.Error != nil {
-		return fmt.Errorf("unable to look up token account: %w", res.Error)
-	}
-
-	// never remove roles from or delete a personal token's real user account
-	if acct.AccountType != app.AccountTypeService {
-		return nil
-	}
-
-	// Only accounts created to hold this one token: revoking a stack's or runner's token
-	// must not take the identity with it.
-	if !strings.HasPrefix(acct.Subject, dedicatedTokenSubjectPrefix(orgID)) {
-		return nil
-	}
-
-	if err := s.authzClient.RemoveAccountOrgRoles(ctx, orgID, accountID); err != nil {
-		return fmt.Errorf("unable to remove service account roles: %w", err)
-	}
-
-	if err := s.db.WithContext(ctx).
-		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).
-		Delete(&app.Account{}).Error; err != nil {
-		return fmt.Errorf("unable to delete service account: %w", err)
-	}
-
-	return nil
 }

@@ -105,6 +105,17 @@ export const AppRolesTable = ({
         ),
       },
       {
+        accessorKey: 'description',
+        header: 'Description',
+        enableSorting: false,
+        meta: { defaultHidden: true },
+        cell: ({ row }) => (
+          <Text variant="subtext" theme="neutral">
+            {row.original.description || '—'}
+          </Text>
+        ),
+      },
+      {
         accessorKey: 'created_at',
         header: 'Created',
         cell: (info) => (
@@ -142,6 +153,7 @@ export const AppRolesTable = ({
 
   return (
     <Table
+      tableId="app-roles"
       columns={columns}
       data={roles}
       isLoading={isLoading}

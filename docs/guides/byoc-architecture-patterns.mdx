@@ -7,12 +7,15 @@ keywords: ["BYOC architecture", "enterprise deployment", "deploy in customer VPC
 
 Use this page to match an enterprise customer's requirement to an architecture you can build with Nuon. Each pattern lists what the customer asks for, how to build it, and a reference app in [`nuonco/example-app-configs`](https://github.com/nuonco/example-app-configs).
 
+BYOC covers more than one shape. You can run your whole product in the customer's account, or only the part that touches customer data.
+
 Every pattern shares the same base:
 
 - The customer deploys a [stack](/concepts/stacks) with their own credentials. It creates the [runner](/concepts/runners) and the [operation roles](/concepts/operation-roles) it uses.
 - The runner connects outbound only, so you need no cross-account access. The customer can [turn it off](/guides/runner-kill-switch) at any time.
 - [Secrets](/concepts/app-secrets) stay in the customer's cloud secret manager, and [break glass roles](/concepts/break-glass) cover incidents.
 - Customers can [export runner audit logs](/guides/export-runner-audit-logs) to their own logging backend.
+- The Nuon control plane stores install metadata, logs of infrastructure operations, [action](/concepts/actions) outputs, and Terraform state. Application logs and secret values stay in the customer's account.
 
 For the full security model, see [Security](/security).
 
