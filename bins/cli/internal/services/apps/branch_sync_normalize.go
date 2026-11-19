@@ -86,6 +86,7 @@ func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, na
 			Name:                         group.Name,
 			Order:                        int(group.Order),
 			Default:                      group.Default,
+			ApprovalOption:               config.InstallApprovalOption(group.ApprovalOption),
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
 		}
 		if group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0 {

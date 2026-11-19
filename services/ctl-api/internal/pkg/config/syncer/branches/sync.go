@@ -267,6 +267,7 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig) []app.AppBranchInstal
 			Name:                         group.Name,
 			Order:                        order,
 			Default:                      group.Default,
+			ApprovalOption:               app.InstallApprovalOption(group.ApprovalOption),
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
 		}
 

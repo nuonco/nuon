@@ -224,7 +224,8 @@ Preview a Change). Approve the plan and the install group deploys.
 
 The run then stops at `plan install group: production`. An install group with no matching installs still pauses;
 **Skip install group** moves the run past it. By default the plan waits for approval. Set
-`auto_approve_on_policies_passing = true` on an install group to approve automatically when policy checks pass.
+`approval_option = "approve-all"` on an install group to approve that group's config diff. Each install still uses
+its own approval setting.
 
 ### Watch runs from the CLI
 

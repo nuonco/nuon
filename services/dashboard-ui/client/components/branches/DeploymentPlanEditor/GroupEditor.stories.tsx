@@ -33,6 +33,7 @@ const labelGroup: IInstallGroup = {
   is_default: false,
   order: 0,
   max_parallel: 1,
+  approval_option: 'prompt',
   auto_approve_on_policies_passing: false,
 }
 
@@ -44,6 +45,7 @@ const defaultGroup: IInstallGroup = {
   is_default: true,
   order: 1,
   max_parallel: 1,
+  approval_option: 'approve-all',
   auto_approve_on_policies_passing: false,
 }
 
