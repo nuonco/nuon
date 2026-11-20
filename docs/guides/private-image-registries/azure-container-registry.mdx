@@ -1,0 +1,64 @@
+---
+title: "Azure Container Registry"
+description: "Configure Nuon read-only access to private Azure Container Registry repositories."
+keywords: ["private images", "ACR", "Azure Container Registry", "image repositories", "pull identity", "OIDC"]
+---
+
+Shared flow: [Private Image Registries](/guides/private-image-registries).
+
+<Warning>
+The registry must already use **RBAC Registry + ABAC Repository Permissions**. Nuon does not change this mode. See [Microsoft's migration guide](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-rbac-abac-repository-permissions#migrate-from-rbac-only-to-abac-enabled-mode) if needed.
+</Warning>
+
+## Prerequisites
+
+Admin rights for Entra federated credentials **and** role assignments at the registry scope.
+
+1. Set subscription / tenant. Azure CLI must support `--role-assignment-mode rbac-abac`.
+2. Create or choose a dedicated app + service principal. Use the **client ID** as the Nuon principal:
+
+   ```bash
+   az account set --subscription "<subscription-id>"
+   client_id=$(az ad app create \
+     --display-name acme-nuon-image-access \
+     --sign-in-audience AzureADMyOrg \
+     --query appId --output tsv)
+   az ad sp create --id "$client_id" --output none
+   printf 'Application client ID: %s\n' "$client_id"
+   az account show --query '{subscription_id:id,tenant_id:tenantId}'
+   ```
+
+3. Confirm ABAC mode and copy the real login server:
+
+   ```bash
+   az acr show --name acmeimages --resource-group acme-images \
+     --query '{resource_id:id,login_server:loginServer,permission_mode:roleAssignmentMode}'
+   ```
+
+   `permission_mode` must be `AbacRepositoryPermissions`.
+
+## Configure
+
+1. [Add an image repository](/guides/private-image-registries#add-an-image-repository) → **Azure Container Registry** (path like `acme/api`).
+2. Choose or create an `acr` identity. Use the **actual** login server (Azure may append a hash). Apply setup, then verify.
+
+```bash
+nuon cloud-connections create \
+  --name acme-acr-images \
+  --platform azure \
+  --target-id 11111111-1111-4111-8111-111111111111 \
+  --azure-tenant-id 22222222-2222-4222-8222-222222222222 \
+  --principal 33333333-3333-4333-8333-333333333333 \
+  --preset acr \
+  --azure-registry-id /subscriptions/11111111-1111-4111-8111-111111111111/resourceGroups/acme-images/providers/Microsoft.ContainerRegistry/registries/acmeimages \
+  --azure-registry-login-server acmeimages.azurecr.io
+
+nuon image-repositories create \
+  --connection-id <connection-id> \
+  --repository acme/api
+```
+
+- Tenant, registry resource ID, and login server are required. Setup does not create the app, registry, or repository.
+- Grants: federated credential + **Container Registry Repository Reader** (ABAC) for assigned repos.
+- Then set `azure_acr` on the component — [Container Image Components](/guides/container-image-components).
+- Another repo: [Grant access to another repository](/guides/private-image-registries#grant-access-to-another-repository).
