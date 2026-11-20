@@ -216,6 +216,12 @@ func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
+			Name:         indexes.Name(db, &AppBranchRun{}, "app_branch_id_created_at"),
+			Columns:      []string{"app_branch_id", "created_at DESC", "id DESC"},
+			Option:       "WHERE deleted_at = 0",
+			Concurrently: true,
+		},
+		{
 			Name: indexes.Name(db, &AppBranchRun{}, "workflow_id"),
 			Columns: []string{
 				"workflow_id",
