@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Masterminds/semver/v3"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -50,6 +51,23 @@ func buildChangeReason(sourceChanged bool, oldChecksum, newChecksum string) stri
 }
 func reuseExistingBuild(id string) *CheckBuildNeededOutput {
 	return &CheckBuildNeededOutput{ExistingBuildID: id, ChangeReason: ChangeReasonNoChanges}
+}
+
+func reusableWithoutSourceResolution(cfg *app.ComponentConfigConnection, completed *app.ComponentBuild) bool {
+	if cfg.ConnectedGithubVCSConfig != nil || cfg.PublicGitVCSConfig != nil {
+		return false
+	}
+	if image := cfg.ExternalImageComponentConfig; image != nil {
+		return image.UpdatePolicy == "" && completed.SourceDigest != ""
+	}
+	if helm := cfg.HelmComponentConfig; helm != nil && helm.HelmConfig != nil && helm.HelmConfig.HelmRepoConfig != nil {
+		if helm.ConnectedGithubVCSConfig != nil || helm.PublicGitVCSConfig != nil {
+			return false
+		}
+		_, err := semver.NewVersion(helm.HelmConfig.HelmRepoConfig.Version)
+		return err == nil && completed.SourceChecksum != ""
+	}
+	return false
 }
 
 // @temporal-gen-v2 activity
@@ -101,6 +119,9 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 	out.ChangeReason = buildChangeReason(sourceCommitChanged(input), oldChecksum, newChecksum)
 	if oldChecksum != newChecksum {
 		return out, nil
+	}
+	if reusableWithoutSourceResolution(&cfg, &completed) {
+		return reuseExistingBuild(existing.ID), nil
 	}
 	candidate := app.ComponentBuild{ComponentConfigConnection: cfg}
 	if input.RunID != "" {
