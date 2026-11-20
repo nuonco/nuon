@@ -576,6 +576,31 @@ const outcomeInstalls: TTrackGroup[] = [
   },
 ]
 
+export const LongCommitMessage = () => (
+  <Overview
+    {...props}
+    rollout={{
+      ...rollout,
+      source: { kind: 'manual' },
+      commit: {
+        ...rollout.commit,
+        message: [
+          'Add cache component with inline values and preview inputs (#482)',
+          '',
+          'Adds a cache Helm chart with inline values, folder inputs, and apply previews.',
+          '',
+          'Moves the chart values into the component TOML and splits the inputs into per-group folders so each install config only carries what it overrides.',
+        ].join('\n'),
+        pullRequest: {
+          number: 482,
+          url: 'https://github.com/acme/platform/pull/482',
+        },
+      },
+    }}
+  />
+)
+LongCommitMessage.storyName = 'Long commit message'
+
 export const InstallOutcomes = () => (
   <Overview {...props} groups={outcomeInstalls} />
 )
