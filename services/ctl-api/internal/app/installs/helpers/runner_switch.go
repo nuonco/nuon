@@ -29,9 +29,9 @@ func NewRunnerSwitchInProgressConflict() error {
 
 // IsRunnerSwitchInProgress reports whether the install's desired use_runner
 // setting (InstallConfig.UsesRunner) disagrees with its runner's actual
-// status (RunnerStatusNotUsed vs. anything else). A missing runner (not yet
-// provisioned) never counts as a mismatch -- there is nothing to reconcile
-// against yet.
+// status (RunnerStatusNotUsed vs. anything else). A missing runner, or one
+// whose install stack hasn't run yet, never counts as a mismatch: the first
+// stack run sets the actual mode, so there is nothing to reconcile against.
 func (s *Helpers) IsRunnerSwitchInProgress(ctx context.Context, installID string) (bool, error) {
 	groupIDs := s.db.WithContext(ctx).
 		Model(&app.RunnerGroup{}).
@@ -50,6 +50,10 @@ func (s *Helpers) IsRunnerSwitchInProgress(ctx context.Context, installID string
 		return false, errors.Wrap(res.Error, "unable to get install runner status")
 	}
 	if len(statuses) == 0 {
+		return false, nil
+	}
+	switch statuses[0] {
+	case app.RunnerStatusPending, app.RunnerStatusAwaitingInstallStackRun:
 		return false, nil
 	}
 
