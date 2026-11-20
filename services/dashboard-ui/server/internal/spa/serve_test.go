@@ -1,8 +1,15 @@
 package spa
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
@@ -53,6 +60,49 @@ func TestSelectShellLinksHashedFilenames(t *testing.T) {
 	}
 	if strings.Contains(got, "/assets/styles-e5f6a7b8.css") {
 		t.Errorf("expected hashed default stylesheet to be stripped, got:\n%s", got)
+	}
+}
+
+func TestPortFileIsNotServed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	dist := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dist, ".port"), []byte("4010"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dist, "ping.txt"), []byte("ok"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dist, "index.html"), []byte("<head></head>"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	h := NewHandler(&internal.Config{
+		DistDir:           dist,
+		AppUrl:            "https://example.com",
+		ServiceDeployment: "dashboard-prod",
+	}, zap.NewNop())
+
+	e := gin.New()
+	if err := h.RegisterRoutes(e); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range []string{"/.port", "/nested/.port"} {
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("%s: got status %d, want 404", path, rec.Code)
+		}
+		if strings.Contains(rec.Body.String(), "4010") {
+			t.Errorf("%s: response included the port file", path)
+		}
+	}
+
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/ping.txt", nil))
+	if rec.Code != http.StatusOK || rec.Body.String() != "ok" {
+		t.Errorf("static file: got %d %q, want 200 ok", rec.Code, rec.Body.String())
 	}
 }
 
