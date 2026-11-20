@@ -339,7 +339,8 @@
                 "group": "CLI",
                 "root": "cli",
                 "pages": [
-                  "cli-commands"
+                  "cli-commands",
+                  "cli-common-arguments"
                 ]
               },
               "tui",
