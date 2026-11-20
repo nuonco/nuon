@@ -89,6 +89,7 @@ const (
 	// users reconcile live state to desired from the drift view. One-way: once
 	// enabled it cannot be disabled.
 	OrgFeatureDesiredConfigRollout OrgFeature = "desired-config-rollout"
+	OrgFeatureFleetView            OrgFeature = "fleet-view"
 )
 
 type OrgTelemetrySettings struct {
@@ -253,6 +254,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureManualBuildSelection:    false,
 		OrgFeatureRunnerVendorSTS:         false,
 		OrgFeatureDesiredConfigRollout:    false,
+		OrgFeatureFleetView:               false,
 	}
 }
 
@@ -276,6 +278,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureManualBuildSelection,
 		OrgFeatureRunnerVendorSTS,
 		OrgFeatureDesiredConfigRollout,
+		OrgFeatureFleetView,
 	}
 }
 
@@ -308,6 +311,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureManualBuildSelection:    "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
 		OrgFeatureRunnerVendorSTS:         "Allow this org's runner groups to use the sts-vendor AWS auth method (runner assumes its Nuon-side identity role and authenticates via POST /v1/runner-auth/aws/sts). Enabling it provisions the vendor identity role for every AWS install runner in the org; each runner group is then switched individually.",
 		OrgFeatureDesiredConfigRollout:    "Ship app branch config changes by desired state: approving a branch run only moves each install's desired app config; nothing deploys until you reconcile from the drift view.",
+		OrgFeatureFleetView:               "Enable the app fleet view in the dashboard: installs grouped by app branch and install group, with rollout state, health, and runner status, served by the paginated /v1/apps/:app_id/fleet endpoints.",
 	}
 }
 
