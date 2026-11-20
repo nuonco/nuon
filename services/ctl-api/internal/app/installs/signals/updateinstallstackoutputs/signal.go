@@ -154,6 +154,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to reconcile runner enabled status")
 	}
 
+	if workflow.GetVersion(ctx, "check-use-runner-mismatch", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		useRunnerInputs, err := activities.AwaitGetInstallUseRunnerInputsByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install use_runner inputs")
+		}
+		// The stack outputs are what the applied stack actually has; the install
+		// config is what was requested. A reprovision in flight can legitimately
+		// leave these momentarily mismatched mid-apply, but by the time outputs
+		// are reported, the two must agree -- otherwise the stack was applied
+		// with a different runner mode than was requested.
+		if useRunnerInputs.UseRunner == installStackOutputs.RunnerNotUsed() {
+			return fmt.Errorf(
+				"install stack outputs report use_runner=%t but the install's desired use_runner is %t",
+				!installStackOutputs.RunnerNotUsed(), useRunnerInputs.UseRunner,
+			)
+		}
+	}
+
 	if workflow.GetVersion(ctx, "reconcile-use-runner", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 		if err := activities.AwaitReconcileUseRunner(ctx, &activities.ReconcileUseRunner{
 			RunnerID:  install.RunnerID,

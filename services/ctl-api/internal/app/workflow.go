@@ -185,6 +185,10 @@ const (
 	WorkflowMetadataKeyStackChanged       = "stack_changed"
 	WorkflowMetadataKeyTriggeredByID      = "triggered_by_id"
 	WorkflowMetadataKeyResolveDrift       = "resolve_drift"
+	// WorkflowMetadataKeyUseRunnerChange marks a reprovision_stack workflow
+	// created by an install's use_runner switch, valued "to_runnerless" or
+	// "to_runner" depending on the direction of the change.
+	WorkflowMetadataKeyUseRunnerChange = "use_runner_change"
 
 	// misspelled key written by workflows created before triggered_by_id; remove once none remain in flight.
 	workflowMetadataKeyTriggeredByIDLegacy = "triggerred_by_id"

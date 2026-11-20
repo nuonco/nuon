@@ -4,9 +4,11 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { InstallTelemetry } from '@/components/installs/InstallTelemetry'
 import { AutoApproveToggle } from '@/components/installs/management/EnableAutoApprove'
+import { RunnerModeToggle } from '@/components/installs/management/UseRunnerToggle'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useInstall } from '@/hooks/use-install'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction/RunAdhocActionContainer'
 import { AuditHistoryButton } from '@/components/installs/management/AuditHistory'
@@ -61,6 +63,11 @@ const ActionCard = ({
 const InstallSettingsPanelContentInner = () => {
   const { install } = useInstall()
   const canRenameInstall = true
+  const runnerlessInstallsEnabled = useOrgFeatureFlag('runnerless-installs')
+  const showRunnerModeToggle =
+    runnerlessInstallsEnabled &&
+    install?.cloud_platform === 'aws' &&
+    !!install?.cloud_connection_id
 
   return (
     <div className="@container flex flex-col gap-6">
@@ -101,6 +108,14 @@ const InstallSettingsPanelContentInner = () => {
         >
           <AutoApproveToggle />
         </ActionCard>
+        {showRunnerModeToggle ? (
+          <ActionCard
+            title="Runner"
+            description="Run this install's jobs on a runner in its cloud account, or on Nuon's control plane."
+          >
+            <RunnerModeToggle />
+          </ActionCard>
+        ) : null}
       </Section>
 
       <Section label="Controls">

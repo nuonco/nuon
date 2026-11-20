@@ -21,6 +21,26 @@ const WORKFLOW_STEP_LABELS: Record<string, string> = {
     'Build components and sandbox (skipped)',
 }
 
+const USE_RUNNER_CHANGE_LABELS: Record<string, string> = {
+  to_runnerless: 'Switch to runnerless',
+  to_runner: 'Switch to runner',
+}
+
+// getWorkflowDisplayName names a reprovision_stack workflow by its
+// use_runner_change metadata ('to_runnerless' | 'to_runner') before falling
+// back to the workflow's own name, then a humanized type.
+export function getWorkflowDisplayName(workflow?: {
+  name?: string
+  type?: string
+  metadata?: { use_runner_change?: string }
+}): string | undefined {
+  const useRunnerChange = workflow?.metadata?.use_runner_change
+  if (useRunnerChange && USE_RUNNER_CHANGE_LABELS[useRunnerChange]) {
+    return USE_RUNNER_CHANGE_LABELS[useRunnerChange]
+  }
+  return workflow?.name
+}
+
 export function getWorkflowStepTitle(
   step?: { name?: string; links?: { event_wait?: unknown } | null } | null
 ): string {

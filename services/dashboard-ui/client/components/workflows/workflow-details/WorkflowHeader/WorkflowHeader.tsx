@@ -1,6 +1,7 @@
 import { Badge } from '@/components/common/Badge'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { humanize } from '@/utils/string-utils'
+import { getWorkflowDisplayName } from '@/utils/workflow-utils'
 import { WorkflowActionButtons } from '../WorkflowActionButtons'
 import type { TWorkflow, TInstall } from '@/types'
 
@@ -30,7 +31,7 @@ export const WorkflowHeader = ({
         workflow?.type === 'action_workflow_run' &&
         workflow?.metadata?.adhoc_action
           ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
-          : workflow?.name || humanize(workflow?.type)
+          : getWorkflowDisplayName(workflow) || humanize(workflow?.type)
       }
       description="Watch your app get updated here and provide needed approvals."
       status={

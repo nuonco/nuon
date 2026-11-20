@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -30,6 +31,14 @@ type UpdateInstallConfigRequest struct {
 	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID           *string                    `json:"runner_image_id,omitempty"`
 	ActionTimeout           *time.Duration             `json:"action_timeout,omitempty" swaggertype:"primitive,integer" extensions:"x-nullable"`
+
+	// UseRunner changes the install's desired runner mode: nil leaves it
+	// unchanged. Changing it enqueues a reprovision_stack workflow and is rejected with a 409
+	// if the install has any unfinished workflow, or if the install's latest
+	// stack outputs report the runner as disabled. Setting it to false also
+	// requires a cloud_connection_id on the install, an AWS install, and the
+	// org's runnerless-installs feature, exactly like install creation.
+	UseRunner *bool `json:"use_runner,omitempty" extensions:"x-nullable"`
 }
 
 func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {
@@ -57,6 +66,7 @@ func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.InstallConfig
 // @Router					/v1/installs/{install_id}/configs/{config_id} [patch]
@@ -134,6 +144,18 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 		updates["telemetry_enabled"] = req.Telemetry.Enabled
 	}
 
+	var workflowMetadata map[string]string
+	if req.UseRunner != nil {
+		metadata, err := s.prepareUseRunnerChange(ctx, installID, *req.UseRunner)
+		if err != nil {
+			return nil, err
+		}
+		if metadata != nil {
+			updates["use_runner"] = req.UseRunner
+			workflowMetadata = metadata
+		}
+	}
+
 	if len(updates) > 0 {
 		res := s.db.WithContext(ctx).Model(&app.InstallConfig{}).Where(filter).Updates(updates)
 		if res.Error != nil {
@@ -147,5 +169,95 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 	if err := s.db.WithContext(ctx).Where(filter).First(installConfig).Error; err != nil {
 		return nil, fmt.Errorf("unable to reload install config: %w", err)
 	}
+
+	if workflowMetadata != nil {
+		if _, err := s.createUseRunnerChangeWorkflow(ctx, installID, workflowMetadata); err != nil {
+			return nil, err
+		}
+	}
+
 	return installConfig, nil
+}
+
+// prepareUseRunnerChange validates a use_runner change and returns the
+// workflow metadata to use for the reprovision_stack workflow it triggers, or
+// nil if the request doesn't actually change the install's current desired
+// value (a no-op that shouldn't enqueue anything).
+func (s *service) prepareUseRunnerChange(ctx *gin.Context, installID string, desired bool) (map[string]string, error) {
+	existingCfg, err := s.helpers.GetLatestInstallConfig(ctx, installID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install config: %w", err)
+	}
+	if existingCfg.UsesRunner() == desired {
+		return nil, nil
+	}
+
+	var install app.Install
+	if err := s.db.WithContext(ctx).Where("id = ?", installID).First(&install).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+
+	// A disabled runner freezes the install's stack in an unknown state --
+	// reject a use_runner change in either direction until it's resolved via
+	// reprovisioning, which is the only thing that can clear it.
+	var installStack app.InstallStack
+	if err := s.db.WithContext(ctx).Where(app.InstallStack{InstallID: installID}).First(&installStack).Error; err != nil && err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("unable to get install stack: %w", err)
+	}
+	if installStack.InstallStackOutputs.RunnerDisabled() {
+		return nil, stderr.ErrConflict{
+			Err:         fmt.Errorf("use_runner cannot change while the install's runner is disabled"),
+			Description: "This install's runner is disabled, so its runner mode can't be changed. Re-enable it in the install stack, then try again.",
+		}
+	}
+
+	if !desired {
+		cloudConnectionID := ""
+		if install.CloudConnectionID != nil {
+			cloudConnectionID = *install.CloudConnectionID
+		}
+		if err := s.helpers.ValidateUseRunnerFalse(ctx, cloudConnectionID, install.AWSAccount != nil); err != nil {
+			return nil, err
+		}
+	}
+
+	unfinished, err := s.helpers.HasUnfinishedInstallWorkflow(ctx, installID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check for unfinished workflows: %w", err)
+	}
+	if unfinished {
+		return nil, stderr.ErrConflict{
+			Err:         fmt.Errorf("install has an unfinished workflow"),
+			Description: "This install has a workflow still in progress. Wait for it to finish, then try again.",
+		}
+	}
+
+	changeDirection := "to_runner"
+	if !desired {
+		changeDirection = "to_runnerless"
+	}
+	return map[string]string{app.WorkflowMetadataKeyUseRunnerChange: changeDirection}, nil
+}
+
+// createUseRunnerChangeWorkflow creates and enqueues a reprovision_stack
+// workflow for a use_runner change, exactly like ReprovisionInstallStack.
+func (s *service) createUseRunnerChangeWorkflow(ctx *gin.Context, installID string, metadata map[string]string) (string, error) {
+	wf, err := s.helpers.CreateWorkflowWithRole(ctx,
+		installID,
+		app.WorkflowTypeReprovisionStack,
+		metadata,
+		false,
+		"",
+	)
+	if err != nil {
+		return "", fmt.Errorf("unable to create reprovision stack workflow: %w", err)
+	}
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	if err != nil {
+		return "", fmt.Errorf("unable to get install workflows queue: %w", err)
+	}
+	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(wf.ID), wf.ID, "install_workflows"); err != nil {
+		return "", fmt.Errorf("enqueue signal: %w", err)
+	}
+	return wf.ID, nil
 }

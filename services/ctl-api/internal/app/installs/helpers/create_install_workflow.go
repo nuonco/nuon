@@ -149,6 +149,19 @@ func (s *Helpers) CheckInstallRunnerForWorkflow(ctx context.Context, installID s
 		return nil
 	}
 
+	// A reprovision_stack workflow is the only way to resolve a runner/desired
+	// mismatch (it's what the use_runner switch itself enqueues), so it's
+	// exempt from this gate; every other workflow type must wait.
+	if workflowType != app.WorkflowTypeReprovisionStack {
+		switching, err := s.IsRunnerSwitchInProgress(ctx, installID)
+		if err != nil {
+			return err
+		}
+		if switching {
+			return NewRunnerSwitchInProgressConflict()
+		}
+	}
+
 	if workflowType.RequiresInstallRunner() && !stackChangeDefersRunnerGate(workflowType, metadata) {
 		disabled, err := s.IsRunnerDisabled(ctx, installID)
 		if err != nil {

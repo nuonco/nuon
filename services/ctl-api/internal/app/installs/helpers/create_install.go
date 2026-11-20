@@ -322,27 +322,8 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	if req.UseRunner != nil && !*req.UseRunner {
-		if req.CloudConnectionID == "" {
-			return nil, stderr.ErrUser{
-				Err:         fmt.Errorf("use_runner=false requires cloud_connection_id"),
-				Description: "use_runner=false requires a cloud_connection_id so control-plane workers can assume the install stack's roles",
-			}
-		}
-		if runnerType.CloudPlatform() != app.CloudPlatformAWS {
-			return nil, stderr.ErrUser{
-				Err:         fmt.Errorf("use_runner=false is only supported for AWS installs"),
-				Description: "use_runner=false is only supported for AWS installs",
-			}
-		}
-		runnerlessEnabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunnerlessInstalls)
-		if err != nil {
-			return nil, fmt.Errorf("check runnerless-installs feature: %w", err)
-		}
-		if !runnerlessEnabled {
-			return nil, stderr.ErrUser{
-				Err:         fmt.Errorf("runnerless-installs feature is not enabled for this org"),
-				Description: "use_runner=false requires the runnerless-installs feature to be enabled for this org",
-			}
+		if err := s.ValidateUseRunnerFalse(ctx, req.CloudConnectionID, runnerType.CloudPlatform() == app.CloudPlatformAWS); err != nil {
+			return nil, err
 		}
 	}
 
