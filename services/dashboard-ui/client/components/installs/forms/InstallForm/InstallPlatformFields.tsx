@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
 import { useStore } from '@tanstack/react-form'
+import { FormCheckbox } from '@/components/common/form/FormCheckbox'
 import { FormInput } from '@/components/common/form/FormInput'
 import { FormSelect } from '@/components/common/form/FormSelect'
 import { Text } from '@/components/common/Text'
 import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { getFlagEmoji } from '@/utils/string-utils'
 import type { TCloudConnectionSummary } from '@/types'
 import { FieldRow } from './FieldRow'
@@ -44,12 +46,20 @@ const AwsFields = ({
   const connectionAccountId = cloudConnections?.find(
     (connection) => connection.id === connectionId
   )?.target_id
+  const runnerlessInstallsEnabled = useOrgFeatureFlag('runnerless-installs')
+  const showUseRunnerToggle = runnerlessInstallsEnabled && !!connectionId
 
   useEffect(() => {
     if (connectionAccountId) {
       form.setFieldValue('aws_account_id', connectionAccountId)
     }
   }, [connectionAccountId, form])
+
+  useEffect(() => {
+    if (!showUseRunnerToggle) {
+      form.setFieldValue('useRunner', true)
+    }
+  }, [showUseRunnerToggle, form])
 
   return (
     <fieldset className="flex flex-col gap-6 border-t pt-6">
@@ -92,6 +102,42 @@ const AwsFields = ({
             )}
           </form.Field>
         </FieldRow>
+      ) : null}
+
+      {showUseRunnerToggle ? (
+        <form.Field name="useRunner">
+          {(field) => (
+            <FormCheckbox
+              field={field}
+              disabled={disabled}
+              labelProps={{
+                className:
+                  'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
+                labelText: (
+                  <span className="flex flex-col gap-1">
+                    <Text
+                      variant="base"
+                      weight="stronger"
+                      className="!leading-none"
+                    >
+                      Use a runner
+                    </Text>
+                    <Text
+                      variant="subtext"
+                      theme="neutral"
+                      className="!leading-none"
+                    >
+                      Turn off to run this install&apos;s jobs on Nuon&apos;s
+                      control plane through the cloud connection, with no runner
+                      in the customer account.
+                    </Text>
+                  </span>
+                ),
+                labelTextProps: { as: 'div' },
+              }}
+            />
+          )}
+        </form.Field>
       ) : null}
 
       <FieldRow
