@@ -142,7 +142,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 		tx = tx.Where("action_workflows.name ILIKE ? OR action_workflows.id = ?", "%"+q+"%", q)
 	}
 
-	res := tx.Find(&iaws, "install_action_workflows.org_id = ? AND install_action_workflows.install_id = ?", orgID, installID)
+	res := tx.Find(&iaws, "install_action_workflows.org_id = ? AND install_action_workflows.install_id = ?", orgID, install.ID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflows: %w", res.Error)
 	}
