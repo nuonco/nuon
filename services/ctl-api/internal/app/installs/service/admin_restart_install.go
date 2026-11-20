@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	installrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -91,7 +92,11 @@ func (s *service) loadInstall(ctx context.Context, installID string, orgID *stri
 		Preload("App.Org").
 		Preload("AppSandboxConfig")
 	if orgID != nil {
-		q = q.Where("org_id = ?", *orgID)
+		resolved, err := installlookup.ByRef(ctx, q, *orgID, installID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get install: %w", err)
+		}
+		return resolved, nil
 	}
 	res := q.
 		Where(s.db.Where("name = ?", installID).Or("id = ?", installID)).

@@ -64,7 +64,7 @@ func (s *service) mcpRunRunbook(ctx context.Context, _ *mcp.CallToolRequest, in 
 		return nil, nil, err
 	}
 
-	triggered, err := s.createRunbookRun(ctx, orgID, accountID, install.ID, in.Runbook, CreateRunbookRunRequest{
+	triggered, err := s.createRunbookRun(ctx, accountID, install, in.Runbook, CreateRunbookRunRequest{
 		Inputs: in.Inputs,
 		Steps:  in.Steps,
 		Role:   in.Role,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -66,16 +67,12 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 }
 
 func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app.App, error) {
-	var currentApp app.App
-	res := s.db.WithContext(ctx).
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
-		First(&currentApp)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to find app: %w", res.Error)
+	currentApp, err := applookup.ByRef(ctx, s.db, orgID, appID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find app: %w", err)
 	}
 
-	return &currentApp, nil
+	return currentApp, nil
 }
 
 func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBranchID string, lbls labels.Labels) ([]app.Install, error) {
