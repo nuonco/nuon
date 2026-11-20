@@ -134,6 +134,7 @@ type installResourceSyncStatusState struct {
 	expectedSandbox  *app.AppSandboxConfig
 	stack            *app.InstallStack
 	stackHasVersions bool
+	appliedStackVer  *app.InstallStackVersion
 	inputs           *app.InstallInputs
 	appConfigs       map[string]*app.AppConfig
 
@@ -317,6 +318,9 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 			return nil, fmt.Errorf("unable to count install stack versions: %w", err)
 		}
 		st.stackHasVersions = count > 0
+		if st.appliedStackVer, err = s.installs.AppliedInstallStackVersion(ctx, st.stack); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := s.loadDependencyState(ctx, st); err != nil {
@@ -519,19 +523,29 @@ func (st *installResourceSyncStatusState) sandboxResource() *InstallResourceSync
 	return &res
 }
 
+func (st *installResourceSyncStatusState) appliedStackConfigID() string {
+	if st.appliedStackVer != nil && st.appliedStackVer.AppConfigID != "" {
+		return st.appliedStackVer.AppConfigID
+	}
+	if st.stack == nil {
+		return ""
+	}
+	return st.stack.AppConfigRef.AppliedConfigID
+}
+
 func (st *installResourceSyncStatusState) stackResource() *InstallResourceSyncStatusResource {
 	if st.stack == nil {
 		return nil
 	}
+	applied := st.appliedStackConfigID()
 	res := InstallResourceSyncStatusResource{
 		ID:               st.stack.ID,
 		Kind:             InstallResourceSyncStatusResourceKindStack,
 		Name:             "stack",
 		ExpectedConfigID: st.install.AppConfigID,
-		AppliedConfigID:  st.stack.AppConfigRef.AppliedConfigID,
+		AppliedConfigID:  applied,
 		appliedAt:        st.stack.AppConfigRef.AppliedConfigAt,
 	}
-	applied := st.stack.AppConfigRef.AppliedConfigID
 	switch {
 	case st.install.AppConfigID == "":
 		res.Category = InstallResourceSyncStatusCategoryUnknown
