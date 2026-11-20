@@ -102,6 +102,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	{
 		apps.GET("/installs", s.GetAppInstalls)
 		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
+
+		apps.GET("/fleet", s.GetAppFleet)
+		apps.GET("/fleet/installs", s.GetAppFleetInstalls)
 	}
 
 	// deprecated sandbox run route
