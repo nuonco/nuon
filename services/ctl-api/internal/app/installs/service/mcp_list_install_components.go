@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -48,11 +49,7 @@ func (s *service) mcpListInstallComponents(ctx context.Context, _ *mcp.CallToolR
 		return nil, nil, fmt.Errorf("install is required")
 	}
 
-	var install app.Install
-	err = s.db.WithContext(ctx).
-		Where(app.Install{OrgID: orgID}).
-		Where(s.db.Where(app.Install{ID: in.Install}).Or(app.Install{Name: in.Install})).
-		First(&install).Error
+	install, err := installlookup.ByRef(ctx, s.db, orgID, in.Install)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find install %q: %w", in.Install, err)
 	}

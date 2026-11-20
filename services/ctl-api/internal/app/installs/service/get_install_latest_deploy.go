@@ -40,13 +40,13 @@ func (s *service) GetInstallLatestDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	// Validate install belongs to org
-	_, err = s.findInstall(ctx, org.ID, installID)
+	install, err := s.findInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find install %s: %w", installID, err))
 		return
 	}
 
-	installDeploy, err := s.getInstallLatestDeploy(ctx, installID)
+	installDeploy, err := s.getInstallLatestDeploy(ctx, install.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install latest deploy: %w", err))
 		return

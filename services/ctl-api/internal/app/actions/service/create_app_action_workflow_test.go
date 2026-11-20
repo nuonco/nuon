@@ -269,3 +269,92 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionDifferentOrg() {
 	require.NoError(s.T(), s.service.DB.Model(&app.ActionWorkflow{}).Where("app_id = ?", otherApp.ID).Count(&count).Error)
 	assert.Zero(s.T(), count)
 }
+
+func (s *CreateAppActionDeprecatedTestSuite) TestActionWritersPreserveParentAcrossCollisions() {
+	owner := s.testApp
+	decoy := s.service.Seeder.CreateApp(s.ctx, s.T())
+	if owner.ID < decoy.ID {
+		owner, decoy = decoy, owner
+	}
+	foreignCtx, _ := s.service.Seeder.EnsureAccount(context.Background(), s.T())
+	foreignCtx, _ = s.service.Seeder.EnsureOrg(foreignCtx, s.T())
+	foreignApp := s.service.Seeder.CreateApp(foreignCtx, s.T())
+	s.service.Seeder.CreateActionWorkflow(foreignCtx, s.T(), foreignApp.ID)
+	require.NoError(s.T(), s.service.DB.Model(owner).Update("name", foreignApp.ID).Error)
+	require.NoError(s.T(), s.service.DB.Model(decoy).Update("name", owner.ID).Error)
+	config := s.service.Seeder.CreateBareAppConfig(s.ctx, s.T(), owner.ID)
+
+	for _, alias := range []string{"actions", "action-workflows"} {
+		s.Run(alias, func() {
+			path := "/v1/apps/" + foreignApp.ID + "/" + alias
+			rr := s.makeRequest(http.MethodPost, path, CreateAppActionWorkflowRequest{Name: "collision-" + alias})
+			require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+			var action app.ActionWorkflow
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &action))
+			require.Equal(s.T(), owner.ID, action.AppID)
+			require.Equal(s.T(), s.testOrg.ID, action.OrgID)
+			var persisted app.ActionWorkflow
+			require.NoError(s.T(), s.service.DB.First(&persisted, "id = ?", action.ID).Error)
+			require.Equal(s.T(), owner.ID, persisted.AppID)
+			require.Equal(s.T(), s.testOrg.ID, persisted.OrgID)
+
+			rr = s.makeRequest(http.MethodGet, path, nil)
+			require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+			var listed []app.ActionWorkflow
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &listed))
+			var ids []string
+			for _, item := range listed {
+				require.Equal(s.T(), owner.ID, item.AppID)
+				require.Equal(s.T(), s.testOrg.ID, item.OrgID)
+				ids = append(ids, item.ID)
+			}
+			require.Contains(s.T(), ids, action.ID)
+
+			req := CreateActionWorkflowConfigRequest{
+				AppConfigID: config.ID,
+				Triggers:    []CreateActionWorkflowConfigTriggerRequest{{Type: app.ActionWorkflowTriggerTypeManual}},
+				Steps:       []CreateActionWorkflowConfigStepRequest{{Name: "step", InlineContents: "echo acme"}},
+			}
+			rr = s.makeRequest(http.MethodPost, "/v1/apps/"+decoy.ID+"/actions/"+action.ID+"/configs", req)
+			require.Equal(s.T(), http.StatusNotFound, rr.Code, rr.Body.String())
+			var count int64
+			require.NoError(s.T(), s.service.DB.Model(&app.ActionWorkflowConfig{}).Where(&app.ActionWorkflowConfig{ActionWorkflowID: action.ID}).Count(&count).Error)
+			require.Zero(s.T(), count)
+
+			configPath := "/v1/apps/" + foreignApp.ID + "/actions/" + action.Name + "/configs"
+			if alias == "action-workflows" {
+				configPath = "/v1/action-workflows/" + action.Name + "/configs"
+			} else {
+				sibling := s.service.Seeder.CreateActionWorkflow(s.ctx, s.T(), decoy.ID)
+				require.NoError(s.T(), s.service.DB.Model(sibling).Update("name", action.Name).Error)
+				siblingConfig := s.service.Seeder.CreateBareAppConfig(s.ctx, s.T(), decoy.ID)
+				siblingReq := req
+				siblingReq.AppConfigID = siblingConfig.ID
+				rr = s.makeRequest(http.MethodPost, "/v1/apps/"+decoy.ID+"/actions/"+action.Name+"/configs", siblingReq)
+				require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+				var siblingCreated app.ActionWorkflowConfig
+				require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &siblingCreated))
+				require.Equal(s.T(), sibling.ID, siblingCreated.ActionWorkflowID)
+				var persistedConfig app.ActionWorkflowConfig
+				require.NoError(s.T(), s.service.DB.First(&persistedConfig, "id = ?", siblingCreated.ID).Error)
+				require.Equal(s.T(), sibling.ID, persistedConfig.ActionWorkflowID)
+				require.Equal(s.T(), decoy.ID, persistedConfig.AppID)
+				require.Equal(s.T(), siblingConfig.ID, persistedConfig.AppConfigID)
+			}
+			rr = s.makeRequest(http.MethodPost, configPath, req)
+			require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+			var created app.ActionWorkflowConfig
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &created))
+			require.Equal(s.T(), owner.ID, created.AppID)
+			require.Equal(s.T(), action.ID, created.ActionWorkflowID)
+			require.Equal(s.T(), config.ID, created.AppConfigID)
+
+			var configs []app.ActionWorkflowConfig
+			require.NoError(s.T(), s.service.DB.Where(&app.ActionWorkflowConfig{ActionWorkflowID: action.ID}).Find(&configs).Error)
+			require.Len(s.T(), configs, 1)
+			require.Equal(s.T(), created.ID, configs[0].ID)
+			require.Equal(s.T(), owner.ID, configs[0].AppID)
+			require.Equal(s.T(), s.testOrg.ID, configs[0].OrgID)
+		})
+	}
+}

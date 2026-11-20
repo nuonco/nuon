@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
@@ -61,8 +62,7 @@ func (s *service) GetInstall(ctx *gin.Context) {
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
-	install := app.Install{}
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx).
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
 			return db.Order("active DESC, created_at DESC, id DESC")
 		}).
@@ -98,16 +98,14 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("InstallConfig").
 		Preload("InstallRoles").
-		Preload("InstallRoles.AppRoleConfig").
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", installID).Or("id = ?", installID)).
-		First(&install)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		Preload("InstallRoles.AppRoleConfig")
+	install, err := installlookup.ByRef(ctx, query, orgID, installID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
 	driftedObj := make([]app.DriftedObject, 0)
-	res = s.db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		Where("install_id = ?", install.ID).
 		Find(&driftedObj)
 	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
@@ -115,5 +113,5 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 	}
 	install.DriftedObjects = driftedObj
 
-	return &install, nil
+	return install, nil
 }
