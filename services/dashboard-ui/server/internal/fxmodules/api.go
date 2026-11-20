@@ -78,8 +78,10 @@ func NewAPI(p APIParams) (*API, error) {
 		p.Config.AppUrl = fmt.Sprintf("http://localhost:%s", port)
 	}
 
-	if err := writePortFile(p.Config.DistDir, port); err != nil {
-		p.Logger.Warn("failed to write port file", zap.Error(err))
+	if p.Config.IsLocalDev() {
+		if err := writePortFile(p.Config.DistDir, port); err != nil {
+			p.Logger.Warn("failed to write port file", zap.Error(err))
+		}
 	}
 
 	handler := gin.New()
