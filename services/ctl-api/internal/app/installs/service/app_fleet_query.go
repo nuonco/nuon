@@ -60,6 +60,7 @@ type fleetFilters struct {
 	health       []string
 	runnerStatus string
 	rollout      string
+	componentID  string
 	branchID     *string
 	group        *string
 }
@@ -71,6 +72,7 @@ func parseFleetFilters(ctx *gin.Context) (fleetFilters, error) {
 		health:       parseCommaSeparated(ctx.Query("health")),
 		runnerStatus: ctx.Query("runner_status"),
 		rollout:      ctx.Query("rollout"),
+		componentID:  strings.TrimSpace(ctx.Query("component_id")),
 	}
 
 	for _, h := range f.health {
@@ -219,16 +221,35 @@ func (s *service) fleetTx(ctx context.Context, fn func(tx *gorm.DB) error) error
 	})
 }
 
-func fleetRolloutSQL(view string) string {
+func fleetRolloutSQL(view string, f fleetFilters) string {
+	applied := "f.applied_config_id"
+	component := ""
+	if f.componentID != "" {
+		applied = "COALESCE(ic.applied_config_id, '')"
+		component = `LEFT JOIN LATERAL (
+	SELECT c.app_config_ref->>'applied_config_id' AS applied_config_id
+	FROM install_components c
+	WHERE c.install_id = f.id AND c.component_id = ? AND c.deleted_at = 0
+	LIMIT 1
+) ic ON true
+`
+	}
 	return fmt.Sprintf(`SELECT f.*,
 	CASE
-		WHEN f.applied_config_id = '' OR t.target_config_id IS NULL THEN 'unknown'
-		WHEN f.applied_config_id = t.target_config_id THEN 'applied'
+		WHEN %[2]s = '' OR t.target_config_id IS NULL THEN 'unknown'
+		WHEN %[2]s = t.target_config_id THEN 'applied'
 		ELSE 'behind'
 	END AS rollout
-FROM %s f
+FROM %[1]s f
 CROSS JOIN LATERAL (SELECT (?::jsonb) ->> f.app_branch_id AS target_config_id) t
-WHERE f.org_id = ? AND f.app_id = ?`, view)
+%[3]sWHERE f.org_id = ? AND f.app_id = ?`, view, applied, component)
+}
+
+func fleetRolloutArgs(targetsJSON, orgID, appID string, f fleetFilters) []any {
+	if f.componentID != "" {
+		return []any{targetsJSON, f.componentID, orgID, appID}
+	}
+	return []any{targetsJSON, orgID, appID}
 }
 
 func fleetScopedSQL(view, targetsJSON, orgID, appID string, f fleetFilters) (string, []any, error) {
@@ -236,9 +257,8 @@ func fleetScopedSQL(view, targetsJSON, orgID, appID string, f fleetFilters) (str
 	if err != nil {
 		return "", nil, err
 	}
-	base := []any{targetsJSON, orgID, appID}
-	return fmt.Sprintf("SELECT fleet.* FROM (%s) fleet WHERE %s", fleetRolloutSQL(view), where),
-		append(base, args...), nil
+	return fmt.Sprintf("SELECT fleet.* FROM (%s) fleet WHERE %s", fleetRolloutSQL(view, f), where),
+		append(fleetRolloutArgs(targetsJSON, orgID, appID, f), args...), nil
 }
 
 type fleetCountRow struct {
@@ -260,12 +280,12 @@ func fleetCountsSQL(view, targetsJSON, orgID, appID string, f fleetFilters) (str
 	COUNT(*) FILTER (WHERE %s) AS matched,
 	COUNT(*) FILTER (WHERE (%s) AND fleet.runner_status <> 'active') AS runner_not_active
 FROM (%s) fleet
-GROUP BY fleet.app_branch_id, fleet.app_branch_group, fleet.rollout`, where, where, fleetRolloutSQL(view))
+GROUP BY fleet.app_branch_id, fleet.app_branch_group, fleet.rollout`, where, where, fleetRolloutSQL(view, f))
 
-	args := make([]any, 0, len(whereArgs)*2+3)
+	args := make([]any, 0, len(whereArgs)*2+4)
 	args = append(args, whereArgs...)
 	args = append(args, whereArgs...)
-	args = append(args, targetsJSON, orgID, appID)
+	args = append(args, fleetRolloutArgs(targetsJSON, orgID, appID, f)...)
 	return sql, args, nil
 }
 
