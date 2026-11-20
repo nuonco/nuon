@@ -3,6 +3,7 @@ import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { matchesSelector } from '@/components/match/matches'
 import { resolveInstallGroupMembership } from '@/components/branches/install-group-membership'
+import { resolvePrLink } from '@/components/branches/shared/pr-link'
 import { isPreviewBranchRun } from '@/components/branches/shared/preview-run-utils'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { useApp } from '@/hooks/use-app'
@@ -507,6 +508,11 @@ export const useRolloutGroups = () => {
                 shaUrl: commitUrl(repoSlug, sha),
                 createdAt: branchRun?.vcs_connection_commit?.created_at,
                 committedAt: branchRun?.vcs_connection_commit?.committed_at,
+                pullRequest: resolvePrLink({
+                  repoSlug,
+                  prNumber: branchRun?.pr_number,
+                  commitMessage,
+                }),
               }
             : undefined,
         runAt: branchRun?.created_at ?? rolloutRun.created_at,
