@@ -721,7 +721,7 @@ export const BranchOverview = ({
           {rollout ? (
             <Card
               elevation="1"
-              className="!flex-row !flex-wrap !items-center !justify-between !gap-4 !p-4"
+              className="!flex-row !flex-wrap !items-start !justify-between !gap-4 !p-4"
             >
               {commitLoading ? (
                 <div
@@ -748,7 +748,9 @@ export const BranchOverview = ({
                   runAt={rollout.runAt}
                 />
               )}
-              {showConfigChanges ? null : changes}
+              {showConfigChanges ? null : (
+                <div className="shrink-0">{changes}</div>
+              )}
             </Card>
           ) : !isLoading ? (
             <Text variant="subtext" theme="neutral">
