@@ -189,7 +189,7 @@ func TestRunnerEnvVars(t *testing.T) {
 		require.NotNil(t, restricted.CheckRunnerEnvVar("runner.env_vars."+name, name), name)
 		require.Nil(t, unrestricted.CheckRunnerEnvVar("runner.env_vars."+name, name), name)
 	}
-	for _, name := range []string{"DEBUG", "LOG_LEVEL", "AWS_REGION", "PROXY_MODE"} {
+	for _, name := range []string{"DEBUG", "LOG_LEVEL", "AWS_REGION", "PROXY_MODE", "RUNNER_AUTH_METHOD"} {
 		require.Nil(t, restricted.CheckRunnerEnvVar("runner.env_vars."+name, name), name)
 	}
 }

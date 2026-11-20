@@ -242,7 +242,7 @@ The control plane does not start when an entry is malformed.
 
 ### Reserved Runner Environment Variables
 
-When `ALLOWED_HOSTS_RUNNER_API` is set, `env_vars` in `runner.toml` may not set variables that redirect the runner's traffic or credentials: variables ending in `_PROXY`, variables starting with `RUNNER_` or `NUON_`, and the AWS credential and endpoint variables such as `AWS_ACCESS_KEY_ID` and `AWS_ENDPOINT_URL`.
+When `ALLOWED_HOSTS_RUNNER_API` is set, `env_vars` in `runner.toml` may not set variables that redirect the runner's traffic or credentials: variables ending in `_PROXY`, variables starting with `RUNNER_` or `NUON_`, and the AWS credential and endpoint variables such as `AWS_ACCESS_KEY_ID` and `AWS_ENDPOINT_URL`. `RUNNER_AUTH_METHOD` is the one exception: it is still allowed.
 
 ### What Is Checked
 

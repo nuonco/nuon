@@ -284,10 +284,20 @@ var reservedEnvVarPrefixes = []string{
 	"AWS_EC2_METADATA_",
 }
 
+// allowedRunnerEnvVarNames are exempt from the reserved prefixes. They choose
+// how the runner authenticates, not where it sends requests or which build
+// runs, and stock app configs set them.
+var allowedRunnerEnvVarNames = map[string]struct{}{
+	"RUNNER_AUTH_METHOD": {},
+}
+
 // ReservedRunnerEnvVar reports whether a runner env var name could redirect
 // the runner's traffic or credentials, or change which runner build runs.
 func ReservedRunnerEnvVar(name string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(name))
+	if _, ok := allowedRunnerEnvVarNames[upper]; ok {
+		return false
+	}
 	if strings.HasSuffix(upper, "_PROXY") {
 		return true
 	}
