@@ -8,6 +8,7 @@ import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { AppProvider } from '@/providers/app-provider'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
@@ -61,6 +62,7 @@ const AppTemplate = () => {
   const { app } = useApp()
   const isChildRoute = !!useMatch('/:orgId/apps/:appId/:section/:rest/*')
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
+  const hasFleetView = useOrgFeatureFlag('fleet-view')
   const hasNewAppIA = useNewAppIA()
 
   if (!app) return null
@@ -99,7 +101,7 @@ const AppTemplate = () => {
     {
       path: `/branches`,
       iconVariant: 'GitBranchIcon' as const,
-      text: 'Branches',
+      text: hasFleetView ? 'Fleet' : 'Branches',
     },
     { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
     {
