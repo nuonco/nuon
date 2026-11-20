@@ -1,3 +1,4 @@
+import { PageContent } from '@/components/layout/PageContent'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -5,11 +6,43 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { BranchCards } from '@/components/branches/BranchCards'
 import { BranchesTable } from '@/components/branches/BranchesTable'
 import { CreateBranchButton } from '@/components/branches/CreateBranchModal'
+import { LegacyAppRoute } from '../LegacyAppRoute'
+import { Fleet } from './Fleet'
+
+export const useFleetView = () => useOrgFeatureFlag('fleet-view')
+
+export const FleetPage = () => {
+  const hasNewAppIA = useNewAppIA()
+  return hasNewAppIA ? (
+    <PageContent className="border-t">
+      <Fleet />
+    </PageContent>
+  ) : (
+    <Fleet />
+  )
+}
+
+export const BranchesRoute = () => {
+  const hasFleetView = useFleetView()
+  return hasFleetView ? (
+    <FleetPage />
+  ) : (
+    <LegacyAppRoute>
+      <Branches />
+    </LegacyAppRoute>
+  )
+}
 
 export const Branches = () => {
+  const hasFleetView = useFleetView()
+  return hasFleetView ? <Fleet /> : <BranchList />
+}
+
+const BranchList = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const hasNewAppIA = useNewAppIA()

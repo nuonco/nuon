@@ -35,19 +35,6 @@ export const FleetFiltersDropdown = ({
     onReset={onReset}
     menuClassName="!w-64"
   >
-    {componentChoices.length ? (
-      <>
-        <SectionHeading>Compare runs on</SectionHeading>
-        <RadioChoices
-          name="fleet-component"
-          allLabel="Whole install"
-          options={componentChoices}
-          selected={component}
-          onChange={onComponentChange}
-        />
-        <hr className="my-1" />
-      </>
-    ) : null}
     <SectionHeading>Runner</SectionHeading>
     <RadioChoices
       name="fleet-runner"
@@ -59,6 +46,19 @@ export const FleetFiltersDropdown = ({
         )
       }
     />
+    {componentChoices.length ? (
+      <>
+        <hr className="my-1" />
+        <SectionHeading>Compare runs on</SectionHeading>
+        <RadioChoices
+          name="fleet-component"
+          allLabel="Whole install"
+          options={componentChoices}
+          selected={component}
+          onChange={onComponentChange}
+        />
+      </>
+    ) : null}
   </FleetFilterDropdown>
 )
 

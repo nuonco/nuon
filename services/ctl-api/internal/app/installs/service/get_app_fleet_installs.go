@@ -22,6 +22,7 @@ const fleetDefaultPageLimit = 50
 // @Param					health			query	string	false	"comma-separated health: unhealthy,degraded,unknown,progressing,healthy,no-signal"
 // @Param					runner_status	query	string	false	"runner filter: active or not-active"
 // @Param					rollout			query	string	false	"rollout filter: applied, behind, or unknown"
+// @Param					component_id	query	string	false	"compare rollout on one component's applied config instead of the whole install"
 // @Param					app_branch_id	query	string	false	"limit to one branch; __none__ for installs without a branch"
 // @Param					app_branch_group	query	string	false	"limit to one install group; __none__ for installs without a group"
 // @Param					offset			query	int		false	"offset of results to return"	Default(0)
