@@ -8,7 +8,7 @@ import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { getAppBranches } from '@/lib'
 import { Overview } from './Overview'
-import { Branches } from './branches/Branches'
+import { Branches, FleetPage, useFleetView } from './branches/Branches'
 
 const BranchPicker = () => {
   const { org } = useOrg()
@@ -55,6 +55,8 @@ const BranchPicker = () => {
 
 export const AppIndex = () => {
   const hasNewAppIA = useNewAppIA()
+  const hasFleetView = useFleetView()
 
-  return hasNewAppIA ? <BranchPicker /> : <Overview />
+  if (!hasNewAppIA) return <Overview />
+  return hasFleetView ? <FleetPage /> : <BranchPicker />
 }
