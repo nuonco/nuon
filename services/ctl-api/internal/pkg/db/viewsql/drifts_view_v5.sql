@@ -114,7 +114,7 @@ FROM (
                     AND NOT (COALESCE(live_build.source_identity ->> 'digest', '') LIKE 'git:%'
                         AND COALESCE(live_build.source_identity ->> 'inputs_recorded', '') <> 'true')
                 THEN live_build.source_identity ->> 'checksum' END AS live_source
-        ) eligible
+        ) eligible ON true
         CROSS JOIN LATERAL (
             SELECT st.expected_state = 'ready' AND st.live_state = 'deployed' AND NOT COALESCE(
                 sel.selected_build_id = live.component_build_id
