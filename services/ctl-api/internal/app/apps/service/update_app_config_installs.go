@@ -167,6 +167,24 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}
 
+	// Roles and the runner pointer follow each install's new desired ACV.
+	for _, install := range affectedInstalls {
+		if err := s.installsHelpers.WithDB(tx).MigrateInstallRoles(ctx, install.ID); err != nil {
+			tx.Rollback()
+			return stderr.ErrSystem{
+				Err:         fmt.Errorf("unable to migrate install roles: %w", err),
+				Description: "Failed to migrate install roles",
+			}
+		}
+		if err := s.installsHelpers.WithDB(tx).MigrateInstallRunnerConfig(ctx, install.ID); err != nil {
+			tx.Rollback()
+			return stderr.ErrSystem{
+				Err:         fmt.Errorf("unable to migrate install runner config: %w", err),
+				Description: "Failed to migrate install runner config",
+			}
+		}
+	}
+
 	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return stderr.ErrSystem{

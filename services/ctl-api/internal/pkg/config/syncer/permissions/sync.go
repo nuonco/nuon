@@ -7,14 +7,13 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
-	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
 // Sync creates the app permissions configuration via the shared builder in
 // internal/pkg/config/build, which the CreateAppPermissionsConfig handler also
 // uses.
-func Sync(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, cfg *config.AppConfig, appID, appConfigID string) error {
+func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID string) error {
 	if cfg.Permissions == nil {
 		return nil
 	}
@@ -39,26 +38,14 @@ func Sync(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpe
 		}
 	}
 
-	// Repoint existing installs at the new role rows, or they keep resolving
-	// against the previous permissions config.
-	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if res := tx.WithContext(ctx).Create(obj); res.Error != nil {
-			return sync.SyncInternalErr{
-				Description: "unable to create app permissions config",
-				Err:         res.Error,
-			}
+	if res := db.WithContext(ctx).Create(obj); res.Error != nil {
+		return sync.SyncInternalErr{
+			Description: "unable to create app permissions config",
+			Err:         res.Error,
 		}
-		if err := installHelpers.WithDB(tx).MigrateInstallRoles(ctx, appID, *obj); err != nil {
-			return sync.SyncInternalErr{
-				Description: "unable to create app permissions config",
-				Err:         err,
-			}
-		}
+	}
 
-		return nil
-	})
-
-	return err
+	return nil
 }
 
 func stackType(cfg *config.AppConfig) string {
