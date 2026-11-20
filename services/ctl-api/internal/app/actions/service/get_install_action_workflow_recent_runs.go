@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -96,16 +97,12 @@ func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
-	install := app.Install{}
-	res := s.db.WithContext(ctx).
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", installID).Or("id = ?", installID)).
-		First(&install)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+	install, err := installlookup.ByRef(ctx, s.db, orgID, installID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	return &install, nil
+	return install, nil
 }
 
 func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkflowID string) (*app.InstallActionWorkflow, error) {
@@ -124,7 +121,7 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 
 	res := s.db.WithContext(ctx).
 		Where(app.InstallActionWorkflow{
-			InstallID:        installID,
+			InstallID:        install.ID,
 			ActionWorkflowID: actionWorkflowID,
 			OrgID:            orgID,
 		}).
@@ -158,7 +155,7 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 	// Display surface: the break-glass role ARN can interpolate install inputs,
 	// so render against redacted state to keep sensitive input values out of
 	// the response.
-	installState, err := s.installHelpers.GetInstallState(ctx, installID, true, false)
+	installState, err := s.installHelpers.GetInstallState(ctx, install.ID, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install state: %w", err)
 	}

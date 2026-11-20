@@ -68,13 +68,13 @@ func (s *service) GetInstallAppPermissionsConfig(ctx *gin.Context) {
 	// Display surface: rendered role names can interpolate install inputs, so
 	// render against redacted state to keep sensitive input values out of the
 	// response.
-	installState, err := s.helpers.GetInstallState(ctx, installID, true, false)
+	installState, err := s.helpers.GetInstallState(ctx, install.ID, true, false)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
 		return
 	}
 
-	installStack, err := s.getInstallStack(ctx, installID, org.ID)
+	installStack, err := s.getInstallStack(ctx, install.ID, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install stack: %w", err))
 		return
