@@ -160,17 +160,16 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, 
 	return actionWorkflows, nil
 }
 
-func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
-	app := app.App{}
+func (s *service) findAppByID(ctx context.Context, orgID, appID string) (*app.App, error) {
+	var currentApp app.App
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Org.VCSConnections").
-		Where("name = ? AND org_id = ?", appID, orgID).
-		Or("id = ?", appID).
-		First(&app)
+		Where(&app.App{ID: appID, OrgID: orgID}, "ID", "OrgID").
+		First(&currentApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return &app, nil
+	return &currentApp, nil
 }

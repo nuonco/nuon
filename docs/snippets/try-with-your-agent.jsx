@@ -48,14 +48,18 @@ export const TryWithYourAgent = ({ title, prompt, tools = [], writes = false }) 
         <div className="nuon-try-agent-body">
           <pre className="nuon-try-agent-prompt">{prompt}</pre>
           <p className="nuon-try-agent-note">
-            {writes ? "Needs write access: the agent calls" : "Read-only: the agent calls"}{" "}
-            {tools.map((t, i) => (
-              <span key={t}>
-                {i > 0 && (i === tools.length - 1 ? " and " : ", ")}
-                <code>{t}</code>
-              </span>
-            ))}
-            .
+            {tools.length > 0 && (
+              <>
+                {writes ? "Needs write access: the agent calls" : "Read-only: the agent calls"}{" "}
+                {tools.map((t, i) => (
+                  <span key={t}>
+                    {i > 0 && (i === tools.length - 1 ? " and " : ", ")}
+                    <code>{t}</code>
+                  </span>
+                ))}
+                .{" "}
+              </>
+            )}
             <a href="/guides/agents/setup">Set up the Nuon MCP server →</a>
           </p>
         </div>

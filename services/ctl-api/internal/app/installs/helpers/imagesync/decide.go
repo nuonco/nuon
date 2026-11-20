@@ -81,7 +81,7 @@ func (d InstallDeploys) DeployedBuild(ctx workflow.Context, componentID string) 
 
 func syncFailed(status app.InstallDeployStatus) bool {
 	switch status {
-	case app.InstallDeployStatusError, app.InstallDeployStatusCancelled:
+	case app.InstallDeployStatusError, app.InstallDeployStatusCancelled, app.InstallDeployStatusUserSkipped:
 		return true
 	default:
 		return false

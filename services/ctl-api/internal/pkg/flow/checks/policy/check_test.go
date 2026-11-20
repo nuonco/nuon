@@ -196,6 +196,11 @@ check_shared contains check.finding("blocked") if { input.blocked }`
 			env.RegisterActivity((&activities.Activities{}).EvaluateSinglePolicy)
 			env.RegisterActivityWithOptions(func(context.Context, any) error { return nil },
 				activity.RegisterOptions{Name: "PkgStatusUpdateFlowStepStatus"})
+			targetUpdates := make(chan activities.UpdateFlowStepTargetStatusRequest, 1)
+			env.RegisterActivityWithOptions(func(_ context.Context, req activities.UpdateFlowStepTargetStatusRequest) error {
+				targetUpdates <- req
+				return nil
+			}, activity.RegisterOptions{Name: "PkgWorkflowsFlowUpdateFlowStepTargetStatus"})
 			prep := &activities.PrepPolicyEvaluationResult{
 				HasPolicies: true, OrgID: "org-1", AppID: "app-1",
 				PolicyIDs: []string{"policy-a", "policy-b"}, InputCount: 2,
@@ -229,7 +234,16 @@ check_shared contains check.finding("blocked") if { input.blocked }`
 			})
 			if tt.blocked {
 				require.ErrorContains(t, env.GetWorkflowError(), "policy violations found")
+				select {
+				case update := <-targetUpdates:
+					require.Equal(t, "step-1", update.StepID)
+					require.Equal(t, app.StatusError, update.Status)
+					require.Len(t, update.Metadata[DenyViolationsKey], 1)
+				default:
+					t.Fatal("policy deny did not update the deploy status")
+				}
 			} else {
+				require.Empty(t, targetUpdates)
 				require.NoError(t, env.GetWorkflowError())
 				var result directive.CheckResult
 				require.NoError(t, env.GetWorkflowResult(&result))

@@ -248,7 +248,7 @@ func (s *service) createIdempotentInstallDeploy(
 			}
 			return tx.WithContext(ctx).Model(&app.InstallDeploy{}).
 				Where("id = ?", createdDeploy.ID).
-				Update("install_workflow_id", wf.ID).Error
+				Updates(map[string]any{"install_workflow_id": wf.ID, "plan_only": wf.PlanOnly}).Error
 		},
 	})
 	if err != nil {
