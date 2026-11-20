@@ -250,23 +250,56 @@ export function getInstallComponentsStatusTitle(status: string): string {
   )
 }
 
+// getInstallRunnerSwitchLabel reports when an install's desired runner mode
+// (install_config.use_runner, nil = true) disagrees with its actual runner
+// status (runner_status "not-used" means no runner). A reprovision_stack
+// workflow is in flight while they disagree. Returns undefined once they
+// agree.
+export function getInstallRunnerSwitchLabel(install?: {
+  install_config?: { use_runner?: boolean | null }
+  runner_status?: string
+}): string | undefined {
+  if (!install?.runner_status) return undefined
+  const desiredUseRunner = install.install_config?.use_runner ?? true
+  const actualUsesRunner = install.runner_status !== 'not-used'
+  if (desiredUseRunner === actualUsesRunner) return undefined
+  return desiredUseRunner
+    ? 'Switching to a runner...'
+    : 'Switching to runnerless...'
+}
+
 export function getInstallStatusTitle(
   statusKey: string,
   status: string,
   lifecycleStatus?: string
 ): string {
-  if (lifecycleStatus === 'deprovisioning' || lifecycleStatus === 'deprovisioned') {
+  if (
+    lifecycleStatus === 'deprovisioning' ||
+    lifecycleStatus === 'deprovisioned'
+  ) {
     const isFinished = lifecycleStatus === 'deprovisioned'
     let override: string | undefined
     switch (statusKey) {
       case 'runner_status':
-        override = (isFinished ? DEPROVISIONED_RUNNER_OVERRIDES : DEPROVISIONING_RUNNER_OVERRIDES)[status]
+        override = (
+          isFinished
+            ? DEPROVISIONED_RUNNER_OVERRIDES
+            : DEPROVISIONING_RUNNER_OVERRIDES
+        )[status]
         break
       case 'sandbox_status':
-        override = (isFinished ? DEPROVISIONED_SANDBOX_OVERRIDES : DEPROVISIONING_SANDBOX_OVERRIDES)[status]
+        override = (
+          isFinished
+            ? DEPROVISIONED_SANDBOX_OVERRIDES
+            : DEPROVISIONING_SANDBOX_OVERRIDES
+        )[status]
         break
       case 'composite_component_status':
-        override = (isFinished ? DEPROVISIONED_COMPONENTS_OVERRIDES : DEPROVISIONING_COMPONENTS_OVERRIDES)[status]
+        override = (
+          isFinished
+            ? DEPROVISIONED_COMPONENTS_OVERRIDES
+            : DEPROVISIONING_COMPONENTS_OVERRIDES
+        )[status]
         break
     }
     if (override) return override

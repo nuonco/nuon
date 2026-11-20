@@ -24,7 +24,10 @@ import type { TInstall, TInstallComponent, TInstallStack } from '@/types'
 import { getInstallComponents } from '@/lib'
 import { cn } from '@/utils/classnames'
 import { Time } from '@/components/common/Time'
-import { getInstallStatusTitle } from '@/utils/install-utils'
+import {
+  getInstallRunnerSwitchLabel,
+  getInstallStatusTitle,
+} from '@/utils/install-utils'
 import { getStatusTheme, getWorstStatusTheme } from '@/utils/status-utils'
 import { humanize } from '@/utils/string-utils'
 
@@ -187,11 +190,20 @@ export const InstallStatuses = ({
   const isDeprovisioning = lifecycleStatus === 'deprovisioning'
   const isDeprovisioned = lifecycleStatus === 'deprovisioned'
 
-  const STALE_STATUSES = ['active', 'pending', 'executing', 'queued', 'planning', 'syncing']
+  const STALE_STATUSES = [
+    'active',
+    'pending',
+    'executing',
+    'queued',
+    'planning',
+    'syncing',
+  ]
   const effectiveStatus = (status: string | undefined) => {
     if (!status) return status
-    if (isDeprovisioned && STALE_STATUSES.includes(status)) return 'deprovisioned'
-    if (isDeprovisioning && STALE_STATUSES.includes(status)) return 'deprovisioning'
+    if (isDeprovisioned && STALE_STATUSES.includes(status))
+      return 'deprovisioned'
+    if (isDeprovisioning && STALE_STATUSES.includes(status))
+      return 'deprovisioning'
     return status
   }
 
@@ -201,7 +213,8 @@ export const InstallStatuses = ({
       ? install.sandbox_health_status
       : sandboxBaseStatus
   const sandboxSubtitle =
-    sandboxDisplayStatus !== sandboxBaseStatus && install?.sandbox_health_message
+    sandboxDisplayStatus !== sandboxBaseStatus &&
+    install?.sandbox_health_message
       ? install.sandbox_health_message
       : getInstallStatusTitle(
           'sandbox_status',
@@ -281,6 +294,8 @@ export const InstallStatuses = ({
     </ContextTooltip>
   )
 
+  const runnerSwitchLabel = getInstallRunnerSwitchLabel(install)
+
   const runnerContent = (
     <ContextTooltip
       title="Install runner"
@@ -290,11 +305,13 @@ export const InstallStatuses = ({
           href: statusHref.page('runner'),
           id: install?.runner_id,
           title: `${humanize(install?.runner_type)} runner`,
-          subtitle: getInstallStatusTitle(
-            'runner_status',
-            install?.runner_status,
-            install?.lifecycle_phase?.phase
-          ),
+          subtitle:
+            runnerSwitchLabel ??
+            getInstallStatusTitle(
+              'runner_status',
+              install?.runner_status,
+              install?.lifecycle_phase?.phase
+            ),
           leftContent: (
             <Status
               status={effectiveStatus(install?.runner_status)}
@@ -307,7 +324,9 @@ export const InstallStatuses = ({
       ]}
     >
       {variant === 'icon' ? (
-        <Text theme={getStatusTheme(effectiveStatus(install.runner_status) ?? '')}>
+        <Text
+          theme={getStatusTheme(effectiveStatus(install.runner_status) ?? '')}
+        >
           <Icon
             variant="SneakerMoveIcon"
             size={14}
@@ -316,7 +335,9 @@ export const InstallStatuses = ({
         </Text>
       ) : (
         <Status status={effectiveStatus(install.runner_status)} variant="badge">
-          {isLabelHidden ? 'Runner' : effectiveStatus(install.runner_status)}
+          {isLabelHidden
+            ? 'Runner'
+            : (runnerSwitchLabel ?? effectiveStatus(install.runner_status))}
         </Status>
       )}
     </ContextTooltip>
@@ -361,12 +382,21 @@ export const InstallStatuses = ({
 
   const componentsBadge =
     variant === 'icon' ? (
-      <Text theme={getStatusTheme(effectiveStatus(install.composite_component_status) ?? '')}>
+      <Text
+        theme={getStatusTheme(
+          effectiveStatus(install.composite_component_status) ?? ''
+        )}
+      >
         <Icon variant="CardsIcon" size={14} className="cursor-default" />
       </Text>
     ) : (
-      <Status status={effectiveStatus(install.composite_component_status)} variant="badge">
-        {isLabelHidden ? 'Components' : effectiveStatus(install.composite_component_status)}
+      <Status
+        status={effectiveStatus(install.composite_component_status)}
+        variant="badge"
+      >
+        {isLabelHidden
+          ? 'Components'
+          : effectiveStatus(install.composite_component_status)}
       </Status>
     )
 
@@ -511,7 +541,13 @@ export const InstallStatuses = ({
     {
       id: 'runner',
       title: 'Runner',
-      subtitle: getInstallStatusTitle('runner_status', install?.runner_status, install?.lifecycle_phase?.phase),
+      subtitle:
+        runnerSwitchLabel ??
+        getInstallStatusTitle(
+          'runner_status',
+          install?.runner_status,
+          install?.lifecycle_phase?.phase
+        ),
       href: statusHref.page('runner'),
       leftContent: (
         <Status
@@ -599,7 +635,11 @@ export const InstallStatuses = ({
   ]
 
   const expandedContent = (
-    <div className={cn('flex items-center flex-wrap gap-2', { 'hidden @5xl:flex': collapsible })}>
+    <div
+      className={cn('flex items-center flex-wrap gap-2', {
+        'hidden @5xl:flex': collapsible,
+      })}
+    >
       {stackContent ? wrap('Stack', stackContent) : null}
       {wrap('Runner', runnerContent)}
       {wrap('Sandbox', sandboxContent)}
@@ -640,9 +680,10 @@ export const SimpleInstallStatuses = ({
   install: TInstall
   isLabelHidden?: boolean
 }) => {
+  const runnerSwitchLabel = getInstallRunnerSwitchLabel(install)
   const RunnerStatus = (
     <Status status={install.runner_status} variant="badge">
-      {isLabelHidden ? 'Runner' : install.runner_status}
+      {isLabelHidden ? 'Runner' : (runnerSwitchLabel ?? install.runner_status)}
     </Status>
   )
   const sandboxStatus =

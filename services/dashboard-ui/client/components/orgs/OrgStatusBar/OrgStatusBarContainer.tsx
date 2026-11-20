@@ -18,6 +18,7 @@ import {
 import { humanize } from '@/utils/string-utils'
 import {
   getApprovalHref,
+  getWorkflowDisplayName,
   getWorkflowHref,
   getWorkflowStepTitle,
 } from '@/utils/workflow-utils'
@@ -58,7 +59,12 @@ export const OrgStatusBarContainer = () => {
   const { data: branchData } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-branch', org.id, appId, resolvedBranchId],
-    queryFn: () => getAppBranch({ orgId: org.id, appId: appId!, branchId: resolvedBranchId! }),
+    queryFn: () =>
+      getAppBranch({
+        orgId: org.id,
+        appId: appId!,
+        branchId: resolvedBranchId!,
+      }),
     enabled: !!appId && !!resolvedBranchId,
   })
 
@@ -112,14 +118,16 @@ export const OrgStatusBarContainer = () => {
   const branchIdByInstall = new Map<string, string>()
   if (install?.id && install.app_id) {
     appIdByInstall.set(install.id, install.app_id)
-    if (install.app_branch_id) branchIdByInstall.set(install.id, install.app_branch_id)
+    if (install.app_branch_id)
+      branchIdByInstall.set(install.id, install.app_branch_id)
   }
   installQueries.forEach((query, index) => {
     const id = installOwnerIds[index]
     const resolvedAppId = query.data?.app_id
     if (!id || !resolvedAppId) return
     appIdByInstall.set(id, resolvedAppId)
-    if (query.data?.app_branch_id) branchIdByInstall.set(id, query.data.app_branch_id)
+    if (query.data?.app_branch_id)
+      branchIdByInstall.set(id, query.data.app_branch_id)
   })
 
   const installTarget = (installId?: string) => {
@@ -130,28 +138,33 @@ export const OrgStatusBarContainer = () => {
     return { appId: app, branchId: branch }
   }
 
-  const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => {
-    const target =
-      workflow.owner_type === 'installs' ? installTarget(workflow.owner_id) : undefined
-    return {
-      id: workflow.id ?? '',
-      title: workflow.name || humanize(workflow.type),
-      subtitle: workflow.metadata?.owner_name || workflow.status?.status || undefined,
-      href: getWorkflowHref(org.id, workflow, {
-        nested,
-        appId: target?.appId,
-        branchId: target?.branchId,
-      }),
-      leftContent: (
-        <Status
-          status={workflow.status?.status ?? ''}
-          isWithoutText
-          variant="timeline"
-          iconSize={16}
-        />
-      ),
+  const workflowItems: TContextTooltipItem[] = activeWorkflows.map(
+    (workflow) => {
+      const target =
+        workflow.owner_type === 'installs'
+          ? installTarget(workflow.owner_id)
+          : undefined
+      return {
+        id: workflow.id ?? '',
+        title: getWorkflowDisplayName(workflow) || humanize(workflow.type),
+        subtitle:
+          workflow.metadata?.owner_name || workflow.status?.status || undefined,
+        href: getWorkflowHref(org.id, workflow, {
+          nested,
+          appId: target?.appId,
+          branchId: target?.branchId,
+        }),
+        leftContent: (
+          <Status
+            status={workflow.status?.status ?? ''}
+            isWithoutText
+            variant="timeline"
+            iconSize={16}
+          />
+        ),
+      }
     }
-  })
+  )
 
   const ownerNames = new Map(
     activeWorkflows
@@ -184,7 +197,9 @@ export const OrgStatusBarContainer = () => {
       href && step?.id && !opensBranch
         ? `${href}?panel=${encodeURIComponent(step.id)}`
         : href
-    const installName = step?.owner_id ? ownerNames.get(step.owner_id) : undefined
+    const installName = step?.owner_id
+      ? ownerNames.get(step.owner_id)
+      : undefined
     return {
       id: approval.id ?? '',
       title: step?.name ? getWorkflowStepTitle(step) : 'Approval required',
