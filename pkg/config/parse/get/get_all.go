@@ -134,7 +134,7 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 		if field.Kind() == reflect.String {
 			strValue := field.String()
 
-			val, err := g.processField(ctx, strValue, fieldSubdir)
+			val, err := g.processField(ctx, strValue, fieldSubdir, typ.Name()+"."+fieldType.Name)
 			if err != nil {
 				return errors.Wrap(err, "unable to fetch field value")
 			}
@@ -212,7 +212,7 @@ func (g *get) isDir(name string) (bool, error) {
 	return info.IsDir(), nil
 }
 
-func (g *get) processField(ctx context.Context, inputVal string, subdir string) (string, error) {
+func (g *get) processField(ctx context.Context, inputVal string, subdir string, field string) (string, error) {
 	prefixes := []string{
 		"http",
 		"./",
@@ -293,6 +293,11 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 			if (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.Opaque != "" || u.User != nil {
 				return "", errors.New("remote field imports must use HTTP(S) URLs without credentials")
 			}
+			if g.opts.CheckRemote != nil {
+				if err := g.opts.CheckRemote(field, raw); err != nil {
+					return "", err
+				}
+			}
 			checksum := u.Query().Get("checksum")
 			if !strings.HasPrefix(checksum, "file:") {
 				break
@@ -305,6 +310,13 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 			if err != nil {
 				return "", err
 			}
+		}
+	}
+	// With a source, every hop was checked above. Without one, local files are
+	// detected as file:// URLs and are not remote fetches.
+	if g.opts.Source == nil && g.opts.CheckRemote != nil && !strings.HasPrefix(detected, "file:") {
+		if err := g.opts.CheckRemote(field, detected); err != nil {
+			return "", err
 		}
 	}
 	if err := g.recordLocalFile(inputVal, pwd); err != nil {
