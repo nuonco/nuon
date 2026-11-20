@@ -413,6 +413,20 @@ func processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.Work
 		}); updateErr != nil {
 			return errors.Wrap(updateErr, "unable to mark step as error")
 		}
+		if step.StepTargetID != "" && workflow.GetVersion(ctx, "policy-deny-records-target-status-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			if updateErr := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+				StepID:            step.ID,
+				Status:            app.StatusError,
+				StatusDescription: "Policy check failed",
+				Metadata: map[string]any{
+					"reason":          "Policy violations found",
+					DenyViolationsKey: denyViolations,
+					WarnViolationsKey: warnViolations,
+				},
+			}); updateErr != nil {
+				return errors.Wrap(updateErr, "unable to mark step target as denied by policy")
+			}
+		}
 		return fmt.Errorf("policy violations found: %d deny violations", len(denyViolations))
 	}
 

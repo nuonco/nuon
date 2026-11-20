@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -134,6 +135,7 @@ func SkipSettledStep(ctx workflow.Context, step *app.WorkflowStep) error {
 // NotifyOnSkip runs a signal's OnSkip hook. The version gate keeps replays of
 // skips that completed before the hook was called from scheduling new work.
 func NotifyOnSkip(ctx workflow.Context, step *app.WorkflowStep) {
+	recordSkipOnTarget(ctx, step)
 	if workflow.GetVersion(ctx, "skip-notifies-signal-on-skip-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		return
 	}
@@ -146,6 +148,44 @@ func NotifyOnSkip(ctx workflow.Context, step *app.WorkflowStep) {
 	}
 	if err := hook.OnSkip(ctx); err != nil {
 		workflow.GetLogger(ctx).Warn("OnSkip hook failed", "error", err)
+	}
+}
+
+func recordSkipOnTarget(ctx workflow.Context, step *app.WorkflowStep) {
+	if step == nil || step.StepTargetID == "" {
+		return
+	}
+	// Only record a skip on the target when the step was actually blocked:
+	// error or parked awaiting approval. A skip signal racing a running or
+	// already-terminal step must not mark the deploy/sandbox target skipped.
+	switch step.Status.Status {
+	case app.StatusError, app.AwaitingApproval:
+	default:
+		return
+	}
+	switch step.StepTargetType {
+	case "install_deploys":
+		if workflow.GetVersion(ctx, "skip-records-target-status-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return
+		}
+	case "install_sandbox_runs":
+		if workflow.GetVersion(ctx, "skip-records-sandbox-target-status-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return
+		}
+	default:
+		return
+	}
+	meta := map[string]any{}
+	if deny, ok := step.Status.Metadata[executeworkflowstep.DenyViolationsKey]; ok {
+		meta[executeworkflowstep.DenyViolationsKey] = deny
+	}
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            step.ID,
+		Status:            app.StatusUserSkipped,
+		StatusDescription: "Skipped by the user",
+		Metadata:          meta,
+	}); err != nil {
+		workflow.GetLogger(ctx).Warn("unable to record skip on step target", "error", err)
 	}
 }
 

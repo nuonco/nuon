@@ -143,6 +143,14 @@ func (c *WorkflowStepApproval) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &WorkflowStepApproval{}, "owner"),
+			Columns: []string{
+				"owner_id",
+				"owner_type",
+			},
+			Concurrently: true,
+		},
 	}
 }
 

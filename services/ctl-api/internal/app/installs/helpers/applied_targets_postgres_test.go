@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 func appliedHistoryPostgres(t *testing.T) *gorm.DB {
@@ -69,6 +70,8 @@ func appliedHistoryPostgres(t *testing.T) *gorm.DB {
 		&app.InstallSandbox{}, &app.InstallSandboxRun{}, &app.AppSandboxConfig{},
 		&app.InstallStack{}, &app.InstallStackVersion{}, &app.Workflow{},
 	))
+	require.NoError(t, db.Exec("CREATE VIEW install_deploys_live_view_v1 AS "+viewsql.InstallDeploysLiveViewV1).Error)
+	require.NoError(t, db.Exec("CREATE VIEW install_sandbox_runs_live_view_v1 AS "+viewsql.InstallSandboxRunsLiveViewV1).Error)
 	var version, database string
 	require.NoError(t, db.Raw("SELECT version(), current_database()").Row().Scan(&version, &database))
 	t.Logf("disposable PostgreSQL database=%s server=%s", database, version)
