@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
@@ -53,20 +54,20 @@ func (s *service) appByNameOrID(ctx context.Context, appID string) (*app.App, er
 		return nil, err
 	}
 
-	var currentApp app.App
-	res := s.db.WithContext(ctx).
-		Where("org_id = ?", org.ID).
-		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
-		First(&currentApp)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to find app")
+	currentApp, err := applookup.ByRef(ctx, s.db, org.ID, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find app")
 	}
 
-	return &currentApp, nil
+	return currentApp, nil
 }
 
 func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
-	a := app.App{}
+	a, err := applookup.ByRef(ctx, s.db, orgID, appID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app: %w", err)
+	}
+
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
@@ -98,12 +99,11 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
 		Preload("NotificationsConfig").
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
-		First(&a)
+		Where(&app.App{ID: a.ID, OrgID: a.OrgID}, "ID", "OrgID").
+		First(a)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return &a, nil
+	return a, nil
 }
