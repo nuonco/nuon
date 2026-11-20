@@ -20,6 +20,7 @@ export type TFileResponse = { content: string; filename: string }
 export type TStepChangePlanType =
   | 'terraform_plan'
   | 'pulumi_plan'
+  | 'opentofu_plan'
   | 'helm_approval'
   | 'kubernetes_manifest_approval'
   | 'app_branch_plan'

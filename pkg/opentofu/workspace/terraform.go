@@ -1,0 +1,373 @@
+package workspace
+
+import (
+	"context"
+	"fmt"
+	"path/filepath"
+
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/terraform-exec/tfexec"
+	tfjson "github.com/hashicorp/terraform-json"
+
+	"github.com/nuonco/nuon/pkg/opentofu/workspace/output"
+)
+
+// getClient returns the cached tofu CLI client, creating it on first use once
+// the workspace root, binary and environment are known. The client caches the
+// `tofu version` result, so the binary is version-probed at most once per
+// workspace. GracefulShutdown runs on a monitor goroutine concurrently with
+// the main job flow, so the lazy cache must be mutex-guarded.
+func (w *workspace) getClient(ctx context.Context, log hclog.Logger) (Tofu, error) {
+	w.clientMu.Lock()
+	defer w.clientMu.Unlock()
+
+	if w.client == nil {
+		w.client = newTofuClient(w.root, w.execPath, w.envVars, log)
+	}
+	return w.client, nil
+}
+
+func (w *workspace) Init(ctx context.Context, log hclog.Logger) error {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return err
+	}
+
+	return w.init(ctx, client)
+}
+
+func (w *workspace) init(ctx context.Context, client Tofu) error {
+	if err := client.Init(ctx,
+		w.backendFilepath(),
+	); err != nil {
+		return fmt.Errorf("unable to init tofu: %w", err)
+	}
+
+	return nil
+}
+
+func (w *workspace) Apply(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-apply hook: %w", err)
+	}
+
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	byts, err := w.apply(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-apply hook: %w", err)
+	}
+	return byts, nil
+}
+
+func (w *workspace) apply(ctx context.Context, client Tofu, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	opts := []ApplyOption{
+		Refresh(true),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, VarFile(fp))
+	}
+
+	if err := client.ApplyJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, errWithOutputTail("apply", err, out)
+	}
+
+	return out.Bytes()
+}
+
+func (w *workspace) Destroy(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreDestroy(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-destroy hook: %w", err)
+	}
+
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	byts, err := w.destroy(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorDestroy(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-destroy hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostDestroy(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-destroy hook: %w", err)
+	}
+
+	return byts, nil
+}
+
+func (w *workspace) destroy(ctx context.Context, client Tofu, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	opts := []DestroyOption{
+		Refresh(true),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, VarFile(fp))
+	}
+
+	if err := client.DestroyJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, errWithOutputTail("destroy", err, out)
+	}
+
+	return out.Bytes()
+}
+
+func (w *workspace) Refresh(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.refresh(ctx, client, log)
+}
+
+func (w *workspace) refresh(ctx context.Context, client Tofu, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	opts := []RefreshOption{}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, VarFile(fp))
+	}
+
+	if err := client.RefreshJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, fmt.Errorf("unable to execute refresh: %w", err)
+	}
+
+	return out.Bytes()
+}
+
+func (w *workspace) Output(ctx context.Context, log hclog.Logger) (map[string]tfexec.OutputMeta, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.output(ctx, client)
+}
+
+func (w *workspace) output(ctx context.Context, client Tofu) (map[string]tfexec.OutputMeta, error) {
+	out, err := client.Output(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (w *workspace) Show(ctx context.Context, log hclog.Logger) (*tfjson.State, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.show(ctx, client)
+}
+
+func (w *workspace) show(ctx context.Context, client Tofu) (*tfjson.State, error) {
+	out, err := client.Show(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute show: %w", err)
+	}
+
+	return out, nil
+}
+
+func (w *workspace) StatePull(ctx context.Context, log hclog.Logger) (string, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return "", err
+	}
+
+	state, err := client.StatePull(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to execute state pull: %w", err)
+	}
+	return state, nil
+}
+
+func (w *workspace) Validate(ctx context.Context, log hclog.Logger) (*tfjson.ValidateOutput, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := w.validate(ctx, client, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (w *workspace) validate(ctx context.Context, client Tofu, log hclog.Logger) (*tfjson.ValidateOutput, error) {
+	out, err := client.Validate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error running validate: %w", err)
+	}
+
+	return out, nil
+}
+
+func (w *workspace) ApplyPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-apply hook: %w", err)
+	}
+
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	byts, err := w.applyPlan(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-apply hook: %w", err)
+	}
+	return byts, nil
+}
+
+func (w *workspace) applyPlan(ctx context.Context, client Tofu, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	// NOTE: the plan file at <root>/tfplan must have been produced by the
+	// same OpenTofu binary generation that is applying it. Plan files are
+	// engine-specific — a terraform-produced tfplan cannot be applied by
+	// tofu (or vice versa), and an OpenTofu plan file can only be applied
+	// by an OpenTofu binary that understands its plan format version.
+	// Callers guarantee this because a workspace plans and applies within
+	// a single component deploy using the binary LoadBinary installed.
+	opts := []ApplyOption{
+		Refresh(true),
+		DirOrPlan(filepath.Join(w.Root(), "tfplan")),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, VarFile(fp))
+	}
+
+	if err := client.ApplyJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, errWithOutputTail("apply", err, out)
+	}
+
+	return out.Bytes()
+}
+
+// NOTE: creates a plan for tf destroy
+func (w *workspace) ApplyDestroyPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-apply hook: %w", err)
+	}
+
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	byts, err := w.applyDestroyPlan(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-apply hook: %w", err)
+	}
+	return byts, nil
+}
+
+func (w *workspace) applyDestroyPlan(ctx context.Context, client Tofu, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
+	opts := []ApplyOption{
+		Refresh(true),
+		Destroy(true),
+	}
+	for _, fp := range w.varsPaths {
+		opts = append(opts, VarFile(fp))
+	}
+
+	if err := client.ApplyJSON(ctx,
+		writer,
+		opts...,
+	); err != nil {
+		return nil, errWithOutputTail("destroy", err, out)
+	}
+
+	return out.Bytes()
+}

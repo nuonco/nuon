@@ -80,7 +80,6 @@ func (s *service) updateInstallSandbox(ctx context.Context, installID string, sa
 	}
 
 	res := s.db.WithContext(ctx).
-		Preload("AppSandboxConfig").
 		Model(&currentInstall).
 		Updates(app.App{})
 	if res.Error != nil {

@@ -27,6 +27,24 @@ func GetTerraformComponent(name string) *config.Component {
 	}
 }
 
+// GetOpentofuComponent returns a fake opentofu module component with the given name.
+func GetOpentofuComponent(name string) *config.Component {
+	return &config.Component{
+		Type: config.OpentofuModuleComponentType,
+		Name: name,
+		OpentofuModule: &config.OpentofuModuleComponentConfig{
+			OpenTofuVersion: "v1.13.9",
+			PublicRepo: &config.PublicRepoConfig{
+				Repo:      "https://github.com/nuonco/nuon-opentofu-starter",
+				Directory: "/",
+				Branch:    "main",
+			},
+			EnvVarMap: map[string]string{},
+			VarsMap:   map[string]string{},
+		},
+	}
+}
+
 // GetHelmComponent returns a fake helm chart component with the given name.
 func GetHelmComponent(name string) *config.Component {
 	return &config.Component{

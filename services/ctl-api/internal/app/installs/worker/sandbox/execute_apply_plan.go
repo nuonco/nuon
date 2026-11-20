@@ -31,7 +31,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if installRun.RunType == app.SandboxRunTypeDeprovision {
 		operation = app.RunnerJobOperationTypeCreateTeardownPlan
 	}
-	jobType := install.AppSandboxConfig.JobType()
+	jobType := install.AppConfig.SandboxConfig.JobType()
 	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
 		OwnerID:   installRun.ID,
 		Operation: operation,

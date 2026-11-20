@@ -48,19 +48,14 @@ func (p *Planner) createSandboxBuildPlan(ctx workflow.Context, req *CreateSandbo
 		return nil, fmt.Errorf("unable to get OCI registry for sandbox build: %w", err)
 	}
 
-	tfPlan := buildsource.SandboxInputs(&build.AppSandboxConfig)
-	tfPlan.Labels = map[string]string{
+	plan := buildsource.SandboxPlan(&build.AppSandboxConfig, map[string]string{
 		"app_id":               build.AppID,
 		"app_sandbox_build_id": build.ID,
-	}
-
-	plan := &plantypes.BuildPlan{
-		Src:                gitSource,
-		SourceIdentity:     identity,
-		Dst:                dstCfg,
-		DstTag:             build.ID,
-		TerraformBuildPlan: tfPlan,
-	}
+	})
+	plan.Src = gitSource
+	plan.SourceIdentity = identity
+	plan.Dst = dstCfg
+	plan.DstTag = build.ID
 
 	isSandboxOrg, err := activities.AwaitIsOrgSandboxMode(ctx, activities.IsOrgSandboxModeRequest{
 		OrgID: build.OrgID,

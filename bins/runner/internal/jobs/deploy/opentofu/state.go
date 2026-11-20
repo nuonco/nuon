@@ -1,0 +1,37 @@
+package opentofu
+
+import (
+	"time"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+
+	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
+	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
+)
+
+const (
+	defaultFileType string = "file/opentofu"
+)
+
+type handlerState struct {
+	// set during the fetch/validate phase
+	plan        *plantypes.DeployPlan
+	appCfg      *models.AppAppConfig
+	opentofuCfg *models.AppOpentofuModuleComponentConfig
+
+	// cloud auth information
+	auth *pkgplantypes.PlanAuth
+
+	srcCfg  *configs.OCIRegistryRepository
+	srcTag  string
+	timeout time.Duration
+
+	// fields set by the plugin execution
+	arch           ociarchive.Archive
+	jobExecutionID string
+	jobID          string
+	tfWorkspace    terraformworkspace.Workspace
+}

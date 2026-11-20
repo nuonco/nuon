@@ -28,7 +28,7 @@ func (s *Signal) reconcileDriftSandboxEmitter(
 ) error {
 	stopAndDeleteEmitters(ctx, l, existing)
 
-	schedule := install.AppSandboxConfig.DriftSchedule
+	schedule := install.AppConfig.SandboxConfig.DriftSchedule
 	if schedule == "" {
 		return nil
 	}

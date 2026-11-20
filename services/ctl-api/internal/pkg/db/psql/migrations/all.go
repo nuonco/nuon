@@ -301,5 +301,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "157-app-config-child-indexes",
 			Fn:   m.Migration157AppConfigChildIndexes,
 		},
+		migrations.Migration{
+			Name: "159-drop-install-sandbox-config-id",
+			Fn:   m.Migration159DropInstallSandboxConfigID,
+		},
 	)
 }

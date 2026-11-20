@@ -7,6 +7,7 @@ import type {
 const APPROVAL_TYPE: Record<TWorkflowStepApprovalType, string> = {
   'approve-all': 'all changes approved',
   terraform_plan: 'terraform',
+  opentofu_plan: 'opentofu',
   kubernetes_manifest_approval: 'kubernetes',
   helm_approval: 'helm',
   pulumi_plan: 'pulumi',
@@ -95,6 +96,12 @@ export const APPROVAL_MODAL_COPY: Record<
     message:
       'The Terraform plan will be applied to your environment.',
   },
+  opentofu_plan: {
+    title: 'Approve OpenTofu plan',
+    heading: 'This will immediately apply the proposed infrastructure changes.',
+    message:
+      'The OpenTofu plan will be applied to your environment.',
+  },
   helm_approval: {
     title: 'Approve Helm chart plan',
     heading: 'This will immediately apply the proposed deployment changes.',
@@ -137,6 +144,12 @@ export const DENY_MODAL_COPY: Record<
     message:
       'Denying prevents the plan from being applied to your environment.',
   },
+  opentofu_plan: {
+    title: 'Deny OpenTofu plan',
+    heading: 'The proposed infrastructure changes will be discarded.',
+    message:
+      'Denying prevents the OpenTofu plan from being applied to your environment.',
+  },
   helm_approval: {
     title: 'Deny Helm chart plan',
     heading: 'The proposed deployment changes will be discarded.',
@@ -178,6 +191,12 @@ export const RETRY_MODAL_COPY: Record<
     heading: 'A new plan will be generated, replacing the current proposed changes.',
     message:
       'The existing infrastructure changes will be discarded.',
+  },
+  opentofu_plan: {
+    title: 'Retry OpenTofu plan',
+    heading: 'A new plan will be generated, replacing the current proposed changes.',
+    message:
+      'The existing OpenTofu infrastructure changes will be discarded.',
   },
   helm_approval: {
     title: 'Retry Helm chart plan',

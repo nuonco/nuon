@@ -111,7 +111,7 @@ func (a *Activities) matchPriorApprovalPlan(ctx context.Context, req *MatchPrior
 	}
 
 	switch current.Type {
-	case app.TerraformPlanApprovalType, app.HelmApprovalApprovalType, app.KubernetesManifestApprovalType, app.PulumiApprovalType:
+	case app.TerraformPlanApprovalType, app.OpentofuPlanApprovalType, app.HelmApprovalApprovalType, app.KubernetesManifestApprovalType, app.PulumiApprovalType:
 	default:
 		return "", priorApprovalMismatch("unsupported_approval_type")
 	}
@@ -250,7 +250,7 @@ func canonicalApprovalPlan(approvalType app.WorkflowStepApprovalType, contents s
 	if _, err := dec.Token(); err != io.EOF {
 		return nil, errors.New("trailing data after plan")
 	}
-	if approvalType == app.TerraformPlanApprovalType {
+	if approvalType == app.TerraformPlanApprovalType || approvalType == app.OpentofuPlanApprovalType {
 		if _, ok := fields["timestamp"].(string); ok {
 			delete(fields, "timestamp")
 		}

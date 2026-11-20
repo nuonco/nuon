@@ -344,6 +344,7 @@ func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("terraform_version"), diff.WithStringDiff(old.TerraformVersion, new.TerraformVersion)),
 		diff.NewDiff(diff.WithKey("runtime"), diff.WithStringDiff(old.Runtime, new.Runtime)),
 		diff.NewDiff(diff.WithKey("pulumi_version"), diff.WithStringDiff(old.PulumiVersion, new.PulumiVersion)),
+		diff.NewDiff(diff.WithKey("open_tofu_version"), diff.WithStringDiff(old.OpenTofuVersion, new.OpenTofuVersion)),
 		diff.NewDiff(diff.WithKey("drift_schedule"), diff.WithOptionalStringDiff(old.DriftSchedule, new.DriftSchedule)),
 	}
 	children = append(children, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
@@ -1003,6 +1004,7 @@ func diffComponent(old, new *Component) *diff.Diff {
 	children = append(children, diffKubernetesManifest(old.KubernetesManifest, new.KubernetesManifest)...)
 	children = append(children, diffJob(old.Job, new.Job)...)
 	children = append(children, diffPulumi(old.Pulumi, new.Pulumi)...)
+	children = append(children, diffOpentofu(old.OpentofuModule, new.OpentofuModule)...)
 
 	oldComponent, newComponent := *old, *new
 	oldComponent.Checksum, newComponent.Checksum = "", ""
@@ -1385,6 +1387,44 @@ func diffPulumi(old, new *PulumiComponentConfig) []*diff.Diff {
 
 	diffs = append(diffs, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
 	diffs = append(diffs, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
+
+	return diffs
+}
+
+func diffOpentofu(old, new *OpentofuModuleComponentConfig) []*diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &OpentofuModuleComponentConfig{}
+	}
+	if new == nil {
+		new = &OpentofuModuleComponentConfig{}
+	}
+
+	var diffs []*diff.Diff
+	diffs = append(diffs, diffDeployOptions(old.MaxAutoRetries, new.MaxAutoRetries, old.SkipNoops, new.SkipNoops, old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing)...)
+	diffs = append(diffs,
+		diff.NewDiff(diff.WithKey("open_tofu_version"), diff.WithStringDiff(old.OpenTofuVersion, new.OpenTofuVersion)),
+		diff.NewDiff(diff.WithKey("drift_schedule"), diff.WithOptionalStringDiff(old.DriftSchedule, new.DriftSchedule)),
+		diff.NewDiff(diff.WithKey("build_timeout"), diff.WithStringDiff(old.BuildTimeout, new.BuildTimeout)),
+		diff.NewDiff(diff.WithKey("deploy_timeout"), diff.WithStringDiff(old.DeployTimeout, new.DeployTimeout)),
+	)
+
+	if d := diff.MapDiff("env_vars", old.EnvVarMap, new.EnvVarMap); d != nil {
+		diffs = append(diffs, d)
+	}
+	if d := diff.MapDiff("vars", old.VarsMap, new.VarsMap); d != nil {
+		diffs = append(diffs, d)
+	}
+
+	if d := diffTerraformVariablesFiles(old.VariablesFiles, new.VariablesFiles); d != nil {
+		diffs = append(diffs, d)
+	}
+
+	diffs = append(diffs, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
+	diffs = append(diffs, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
+	diffs = append(diffs, diffComponentTeardown("teardown", old.Teardown, new.Teardown)...)
 
 	return diffs
 }

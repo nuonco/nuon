@@ -95,6 +95,19 @@ export function getComponentConfigDisplayData(
       )
       break
 
+    case 'opentofu_module':
+      typeSpecificFields = [
+        {
+          label: 'OpenTofu version',
+          value: config.opentofu_module?.version,
+        },
+      ]
+      vcsInfo = getVCSInfo(
+        config.opentofu_module?.connected_github_vcs_config ||
+          config.opentofu_module?.public_git_vcs_config
+      )
+      break
+
     case 'pulumi':
       typeSpecificFields = [
         {

@@ -60,6 +60,8 @@ type AppSandboxConfig struct {
 	PulumiVersion string        `json:"pulumi_version,omitzero" gorm:"default null" temporaljson:"pulumi_version,omitzero,omitempty"`
 	PulumiConfig  pgtype.Hstore `json:"pulumi_config,omitzero" gorm:"type:hstore" swaggertype:"object,string" features:"template" temporaljson:"pulumi_config,omitzero,omitempty"`
 
+	OpenTofuVersion string `json:"open_tofu_version,omitzero" gorm:"default null" temporaljson:"open_tofu_version,omitzero,omitempty"`
+
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
 
@@ -153,6 +155,9 @@ func (a *AppSandboxConfig) GetAutoApproveOnPoliciesPassing() bool {
 func (c *AppSandboxConfig) JobType() RunnerJobType {
 	if c.Type == config.AppSandboxTypePulumi {
 		return RunnerJobTypeSandboxPulumi
+	}
+	if c.Type == config.AppSandboxTypeOpentofu {
+		return RunnerJobTypeSandboxOpentofu
 	}
 	return RunnerJobTypeSandboxTerraform
 }

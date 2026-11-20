@@ -48,6 +48,9 @@ const (
 	// AppRunnerJobTypePulumiDashBuild captures enum value "pulumi-build"
 	AppRunnerJobTypePulumiDashBuild AppRunnerJobType = "pulumi-build"
 
+	// AppRunnerJobTypeOpentofuDashModuleDashBuild captures enum value "opentofu-module-build"
+	AppRunnerJobTypeOpentofuDashModuleDashBuild AppRunnerJobType = "opentofu-module-build"
+
 	// AppRunnerJobTypeNoopDashBuild captures enum value "noop-build"
 	AppRunnerJobTypeNoopDashBuild AppRunnerJobType = "noop-build"
 
@@ -77,6 +80,9 @@ const (
 
 	// AppRunnerJobTypePulumiDashDeploy captures enum value "pulumi-deploy"
 	AppRunnerJobTypePulumiDashDeploy AppRunnerJobType = "pulumi-deploy"
+
+	// AppRunnerJobTypeOpentofuDashDeploy captures enum value "opentofu-deploy"
+	AppRunnerJobTypeOpentofuDashDeploy AppRunnerJobType = "opentofu-deploy"
 
 	// AppRunnerJobTypeNoopDashDeploy captures enum value "noop-deploy"
 	AppRunnerJobTypeNoopDashDeploy AppRunnerJobType = "noop-deploy"
@@ -114,6 +120,9 @@ const (
 	// AppRunnerJobTypeSandboxDashPulumi captures enum value "sandbox-pulumi"
 	AppRunnerJobTypeSandboxDashPulumi AppRunnerJobType = "sandbox-pulumi"
 
+	// AppRunnerJobTypeSandboxDashOpentofu captures enum value "sandbox-opentofu"
+	AppRunnerJobTypeSandboxDashOpentofu AppRunnerJobType = "sandbox-opentofu"
+
 	// AppRunnerJobTypeSandboxDashSyncDashSecrets captures enum value "sandbox-sync-secrets"
 	AppRunnerJobTypeSandboxDashSyncDashSecrets AppRunnerJobType = "sandbox-sync-secrets"
 
@@ -135,7 +144,7 @@ var appRunnerJobTypeEnum []any
 
 func init() {
 	var res []AppRunnerJobType
-	if err := json.Unmarshal([]byte(`["health-check","container-image-build","terraform-module-build","helm-chart-build","kubernetes-manifest-build","pulumi-build","noop-build","sandbox-build","oci-sync","noop-sync","fetch-image-metadata","terraform-deploy","helm-chart-deploy","job-deploy","kubernetes-manifest-deploy","pulumi-deploy","noop-deploy","shut-down","update-version","noop","mng-vm-shut-down","mng-shut-down","mng-runner-update-version","mng-runner-restart","mng-fetch-token","sandbox-terraform","sandbox-terraform-plan","sandbox-pulumi","sandbox-sync-secrets","runner-helm","runner-terraform","runner-local","actions-workflow"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["health-check","container-image-build","terraform-module-build","helm-chart-build","kubernetes-manifest-build","pulumi-build","opentofu-module-build","noop-build","sandbox-build","oci-sync","noop-sync","fetch-image-metadata","terraform-deploy","helm-chart-deploy","job-deploy","kubernetes-manifest-deploy","pulumi-deploy","opentofu-deploy","noop-deploy","shut-down","update-version","noop","mng-vm-shut-down","mng-shut-down","mng-runner-update-version","mng-runner-restart","mng-fetch-token","sandbox-terraform","sandbox-terraform-plan","sandbox-pulumi","sandbox-opentofu","sandbox-sync-secrets","runner-helm","runner-terraform","runner-local","actions-workflow"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

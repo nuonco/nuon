@@ -6,6 +6,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 
+	opentofusandbox "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/opentofu"
 	pulumisandbox "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/pulumi"
 	syncsecrets "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/sync_secrets"
 	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/terraform"
@@ -17,6 +18,7 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobs.AsJobHandler("sandbox", terraform.New)),
 		fx.Provide(jobs.AsJobHandler("sandbox", syncsecrets.New)),
 		fx.Provide(jobs.AsJobHandler("sandbox", pulumisandbox.New)),
+		fx.Provide(jobs.AsJobHandler("sandbox", opentofusandbox.New)),
 	}
 	return providers
 }

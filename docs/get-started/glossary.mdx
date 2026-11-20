@@ -27,7 +27,7 @@ This page defines terms you will see throughout our product and documentation.
 | Build | An OCI artifact packaging a Component. Stored in a private OCI registry alongside the Nuon Control Plane. |
 | Inputs | A Vendor-defined input for an App, that can be set by a Customer when creating an Install. Input values can be used by the Sandbox, Components, and Action Workflows of the App. |
 | Sandbox | The “root” component of an App. Defines the base infrastructure required by the App Components. |
-| Component | Part of an App. Nuon supports Terraform modules, Helm charts, Kubernetes manifests, container images, and Pulumi programs. Can be deployed and updated independently of the rest of the app. |
+| Component | Part of an App. Nuon supports Terraform modules, OpenTofu modules, Helm charts, Kubernetes manifests, container images, and Pulumi programs. Can be deployed and updated independently of the rest of the app. |
 | Action Workflow | A series of commands, defined by a Vendor, that can be run in an Install. |
 | Install Runner | The Nuon Runner deployed in the Customer Account for an Install. It executes tasks to sync artifacts, provision, maintain, and deprovision the sandbox and components, and run actions in the Install. Single-tenant. |
 | Install | A single-tenant deployment of an App Template. Typically deployed into a cloud account owned by a Customer. |

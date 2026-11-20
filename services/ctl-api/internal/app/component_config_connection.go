@@ -64,6 +64,7 @@ type ComponentConfigConnection struct {
 	LatestBuildID generics.NullString `json:"latest_build_id,omitzero" gorm:"type:text;index;column:latest_build_id" swaggertype:"string" temporaljson:"latest_build_id,omitzero,omitempty"`
 
 	TerraformModuleComponentConfig    *TerraformModuleComponentConfig    `json:"terraform_module,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"terraform_module_component_config,omitzero,omitempty"`
+	OpentofuModuleComponentConfig     *OpentofuModuleComponentConfig     `json:"opentofu_module,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"opentofu_module_component_config,omitzero,omitempty"`
 	HelmComponentConfig               *HelmComponentConfig               `json:"helm,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"helm_component_config,omitzero,omitempty"`
 	ExternalImageComponentConfig      *ExternalImageComponentConfig      `json:"external_image,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`
 	JobComponentConfig                *JobComponentConfig                `json:"job,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
@@ -343,6 +344,9 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	if c.PulumiComponentConfig != nil {
 		c.Type = ComponentTypePulumi
 	}
+	if c.OpentofuModuleComponentConfig != nil {
+		c.Type = ComponentTypeOpentofuModule
+	}
 
 	// set the vcs connection type, by parsing the subfields on the relationship
 	if c.TerraformModuleComponentConfig != nil {
@@ -357,6 +361,9 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	} else if c.PulumiComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.PulumiComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.PulumiComponentConfig.PublicGitVCSConfig
+	} else if c.OpentofuModuleComponentConfig != nil {
+		c.ConnectedGithubVCSConfig = c.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig
+		c.PublicGitVCSConfig = c.OpentofuModuleComponentConfig.PublicGitVCSConfig
 	}
 
 	// set the vcs connection type correctly

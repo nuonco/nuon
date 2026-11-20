@@ -46,6 +46,9 @@ type PlantypesBuildPlan struct {
 	// kubernetes manifest build plan
 	KubernetesManifestBuildPlan *PlantypesKubernetesManifestBuildPlan `json:"kubernetes_manifest_build_plan,omitempty"`
 
+	// opentofu build plan
+	OpentofuBuildPlan *PlantypesOpentofuBuildPlan `json:"opentofu_build_plan,omitempty"`
+
 	// pulumi build plan
 	PulumiBuildPlan *PlantypesPulumiBuildPlan `json:"pulumi_build_plan,omitempty"`
 
@@ -84,6 +87,10 @@ func (m *PlantypesBuildPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubernetesManifestBuildPlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOpentofuBuildPlan(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -234,6 +241,29 @@ func (m *PlantypesBuildPlan) validateKubernetesManifestBuildPlan(formats strfmt.
 	return nil
 }
 
+func (m *PlantypesBuildPlan) validateOpentofuBuildPlan(formats strfmt.Registry) error {
+	if swag.IsZero(m.OpentofuBuildPlan) { // not required
+		return nil
+	}
+
+	if m.OpentofuBuildPlan != nil {
+		if err := m.OpentofuBuildPlan.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("opentofu_build_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("opentofu_build_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesBuildPlan) validatePulumiBuildPlan(formats strfmt.Registry) error {
 	if swag.IsZero(m.PulumiBuildPlan) { // not required
 		return nil
@@ -347,6 +377,10 @@ func (m *PlantypesBuildPlan) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidateKubernetesManifestBuildPlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOpentofuBuildPlan(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -484,6 +518,31 @@ func (m *PlantypesBuildPlan) contextValidateKubernetesManifestBuildPlan(ctx cont
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_manifest_build_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesBuildPlan) contextValidateOpentofuBuildPlan(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.OpentofuBuildPlan != nil {
+
+		if swag.IsZero(m.OpentofuBuildPlan) { // not required
+			return nil
+		}
+
+		if err := m.OpentofuBuildPlan.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("opentofu_build_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("opentofu_build_plan")
 			}
 
 			return err

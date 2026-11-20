@@ -5,7 +5,10 @@ import { Icon } from '../atoms/Icon'
 import { Text, type IText } from '../atoms/Text'
 import { Tooltip } from '../atoms/Tooltip'
 
-export type TComponentTypeValue = TComponentType | 'pulumi_module' | 'unknown'
+export type TComponentTypeValue =
+  | TComponentType
+  | 'pulumi_module'
+  | 'unknown'
 export type TComponentTypeDisplay = 'abbr' | 'name' | 'icon'
 
 export interface IComponentType extends Omit<IText, 'children'> {
@@ -36,6 +39,11 @@ const COMPONENT_TYPES: Record<TComponentTypeValue, IComponentTypeConfig> = {
     abbr: 'TF',
     brand: 'Terraform',
     name: 'Terraform',
+  },
+  opentofu_module: {
+    abbr: 'TO',
+    brand: 'Terraform',
+    name: 'OpenTofu',
   },
   job: {
     abbr: 'Job',

@@ -631,6 +631,13 @@ func (e *Engine) collectTerraform(grouped map[string][]*models.ServiceComponentH
 				zap.String("component_id", componentID))
 		}
 	}
+
+	for _, componentID := range e.idx.componentsOfType(componentTypeOpentofuModule) {
+		if len(grouped[componentID]) == 0 {
+			e.l.Debug("no opentofu state available for component this cycle",
+				zap.String("component_id", componentID))
+		}
+	}
 }
 
 // collectProbes runs every declared probe once per cycle, one row each. Collected

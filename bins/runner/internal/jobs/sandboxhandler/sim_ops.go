@@ -57,6 +57,35 @@ func simulatedOps(jobType models.AppRunnerJobType, jobOp models.AppRunnerJobOper
 		}
 		return []simOp{{op: "plan", fraction: 1.0, logs: []string{"(simulated) running terraform"}}}
 
+	case models.AppRunnerJobTypeSandboxDashOpentofu:
+		switch jobOp {
+		case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
+			return []simOp{
+				{op: "plan", fraction: 1.0, logs: []string{
+					"(simulated) initializing opentofu",
+					"(simulated) refreshing state",
+					"(simulated) plan: 3 to add, 1 to change, 0 to destroy",
+					"(simulated) writing tfplan",
+				}},
+			}
+		case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
+			return []simOp{
+				{op: "destroy_plan", fraction: 1.0, logs: []string{
+					"(simulated) refreshing state",
+					"(simulated) plan: 0 to add, 0 to change, 5 to destroy",
+				}},
+			}
+		case models.AppRunnerJobOperationTypeApplyDashPlan:
+			return []simOp{
+				{op: "apply_plan", fraction: 1.0, logs: []string{
+					"(simulated) applying plan",
+					"(simulated) creating resources",
+					"(simulated) apply complete: 3 added, 1 changed, 0 destroyed",
+				}},
+			}
+		}
+		return []simOp{{op: "plan", fraction: 1.0, logs: []string{"(simulated) running opentofu"}}}
+
 	case models.AppRunnerJobTypeHelmDashChartDashDeploy,
 		models.AppRunnerJobTypeRunnerDashHelm:
 		return []simOp{

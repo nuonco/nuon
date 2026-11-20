@@ -38,6 +38,12 @@ const COMPONENT_TYPE_CONFIG: Record<
     icon: 'Terraform',
     name: 'Terraform',
   },
+  opentofu_module: {
+    abbr: 'TO',
+    brandColorClass: 'text-[#A16207] dark:text-[#FACC15]',
+    icon: 'Terraform',
+    name: 'OpenTofu',
+  },
   job: {
     abbr: 'Job',
     brandColorClass: 'text-[#FF9900] dark:text-[#FFB340]',

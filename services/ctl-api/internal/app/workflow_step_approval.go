@@ -22,6 +22,7 @@ const (
 	NoopApprovalType               WorkflowStepApprovalType = "noop"
 	ApproveAllApprovalType         WorkflowStepApprovalType = "approve-all"
 	TerraformPlanApprovalType      WorkflowStepApprovalType = "terraform_plan"
+	OpentofuPlanApprovalType       WorkflowStepApprovalType = "opentofu_plan"
 	KubernetesManifestApprovalType WorkflowStepApprovalType = "kubernetes_manifest_approval"
 	HelmApprovalApprovalType       WorkflowStepApprovalType = "helm_approval"
 	PulumiApprovalType             WorkflowStepApprovalType = "pulumi_plan"

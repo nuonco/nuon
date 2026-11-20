@@ -185,6 +185,16 @@ func (s *Service) InitSampleComponents(ctx context.Context, genParams ConfigGenP
 						},
 					},
 				)
+			case "opentofu-module":
+				c.AddComponent(
+					generator.ConfigFileDefinition{
+						Name: "example_opentofu_module.toml",
+						Schemas: []generator.ConfigFileSchema{
+							{Instance: &config.Component{Type: config.OpentofuModuleComponentType}},
+							{Instance: &config.OpentofuModuleComponentConfig{}},
+						},
+					},
+				)
 			}
 		}
 	}
@@ -488,6 +498,103 @@ func (s *Service) InitTerraformModuleComponentConfig(ctx context.Context, genPar
 	err := gen.Gen(genParams.Path, customStructure)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate terraform module component config")
+	}
+
+	return nil
+}
+
+// OpentofuModuleComponentParams holds parameters for OpenTofu module component configuration
+type OpentofuModuleComponentParams struct {
+	Name             string
+	VarName          string
+	Dependencies     []string
+	OpenTofuVersion  string
+	EnvVars          map[string]string
+	Vars             map[string]string
+	VarFiles         []string
+	PublicRepo       string
+	PublicRepoDir    string
+	PublicRepoBranch string
+	ConnectedRepo    string
+	ConnectedRepoDir string
+	ConnectedBranch  string
+	DriftSchedule    string
+}
+
+func (s *Service) InitOpentofuModuleComponentConfig(ctx context.Context, genParams ConfigGenParams, params OpentofuModuleComponentParams) error {
+	gen := s.newGen(genParams)
+
+	// Build the opentofu module component config
+	tofuModuleConfig := &config.OpentofuModuleComponentConfig{
+		OpenTofuVersion: params.OpenTofuVersion,
+		EnvVarMap:       params.EnvVars,
+		VarsMap:         params.Vars,
+	}
+
+	// Set public repo if provided
+	if params.PublicRepo != "" {
+		tofuModuleConfig.PublicRepo = &config.PublicRepoConfig{
+			Repo:      params.PublicRepo,
+			Directory: params.PublicRepoDir,
+			Branch:    params.PublicRepoBranch,
+		}
+	}
+
+	// Set connected repo if provided
+	if params.ConnectedRepo != "" {
+		tofuModuleConfig.ConnectedRepo = &config.ConnectedRepoConfig{
+			Repo:      params.ConnectedRepo,
+			Directory: params.ConnectedRepoDir,
+			Branch:    params.ConnectedBranch,
+		}
+	}
+
+	// Set drift schedule if provided
+	if params.DriftSchedule != "" {
+		tofuModuleConfig.DriftSchedule = &params.DriftSchedule
+	}
+
+	// Set var files if provided
+	if len(params.VarFiles) > 0 {
+		tofuModuleConfig.VariablesFiles = make([]config.TerraformVariablesFile, len(params.VarFiles))
+		for i, vf := range params.VarFiles {
+			tofuModuleConfig.VariablesFiles[i] = config.TerraformVariablesFile{
+				Contents: vf,
+			}
+		}
+	}
+
+	// Build the component wrapper
+	component := &config.Component{
+		Type:           config.OpentofuModuleComponentType,
+		Name:           params.Name,
+		VarName:        params.VarName,
+		Dependencies:   params.Dependencies,
+		OpentofuModule: tofuModuleConfig,
+	}
+
+	customStructure := &generator.ConfigStructure{
+		Name: genParams.Path,
+		ConfigDirectories: []generator.ConfigDirectoryDefinition{
+			{
+				Name: "components",
+				Configs: []generator.ConfigFileDefinition{
+					{
+						Name: params.Name + ".toml",
+						Schemas: []generator.ConfigFileSchema{
+							{
+								Instance: component,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := gen.Gen(genParams.Path, customStructure)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate opentofu module component config")
 	}
 
 	return nil
@@ -854,6 +961,16 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 						Schemas: []generator.ConfigFileSchema{
 							{Instance: &config.Component{Type: config.PulumiComponentType}},
 							{Instance: &config.PulumiComponentConfig{}},
+						},
+					},
+				)
+			case "opentofu-module":
+				structure.AddComponent(
+					generator.ConfigFileDefinition{
+						Name: "example_opentofu_module.toml",
+						Schemas: []generator.ConfigFileSchema{
+							{Instance: &config.Component{Type: config.OpentofuModuleComponentType}},
+							{Instance: &config.OpentofuModuleComponentConfig{}},
 						},
 					},
 				)

@@ -1,10 +1,14 @@
 ---
-title: "Using Terraform CLI"
-description: "Run Terraform commands locally against your Nuon-managed sandbox and component workspaces."
+title: "Using Terraform/OpenTofu CLI"
+description: "Run Terraform or OpenTofu commands locally against your Nuon-managed sandbox and component workspaces."
 keywords: ["terraform cli", "terraform init", "terraform plan", "terraform apply", "terraform backend", "local terraform", "sandbox terraform", "component terraform", "terraform state", "terraform workspace"]
 ---
 
-The Nuon dashboard provides a **Use Terraform CLI** option on both the Sandbox and Terraform Component detail pages. This lets you run Terraform commands locally against the remote state managed by Nuon. It's useful for debugging, inspecting resources, importing state, or running targeted plans.
+The Nuon dashboard provides a **Use Terraform/OpenTofu CLI** option on both the Sandbox and Terraform Component detail pages. This lets you run Terraform (or OpenTofu) commands locally against the remote state managed by Nuon. It's useful for debugging, inspecting resources, importing state, or running targeted plans.
+
+<Note>
+OpenTofu sandboxes and components work the same way: the dashboard workspace is engine-agnostic, and every `terraform` command below has an identical `tofu` equivalent (for example `tofu init -reconfigure`).
+</Note>
 
 ## Prerequisites
 
@@ -95,7 +99,7 @@ The Nuon dashboard provides a **Use Terraform CLI** option on both the Sandbox a
 
 ## Setting Up the Backend
 
-Click the **\{\} Use Terraform CLI** button on the lower right part of Sandbox or Component detail page in the dashboard. This opens a modal, and click the Download button to retrieve a `nuon_backend.tf` file containing the HTTP backend configuration for that workspace.
+Click the **\{\} Use Terraform/OpenTofu CLI** button on the lower right part of Sandbox or Component detail page in the dashboard. This opens a modal, and click the Download button to retrieve a `nuon_backend.tf` file containing the HTTP backend configuration for that workspace.
 
 The generated file looks like this:
 
@@ -111,7 +115,7 @@ terraform {
 }
 ```
 
-Download this file and place it in your Terraform module directory alongside the other `.tf` files.
+Download this file and place it in your Terraform/OpenTofu module directory alongside the other `.tf` files.
 
 
 ## Set your Nuon API token
@@ -174,7 +178,7 @@ The customer still creates the install's [stack](/concepts/stacks) first, which 
 
 ## Unlocking State
 
-If a Terraform operation is interrupted (e.g., a network failure during apply), the workspace state may remain locked. You can unlock it from the dashboard using the **Unlock Terraform state** button on the Sandbox or Component detail page.
+If a Terraform/OpenTofu operation is interrupted (e.g., a network failure during apply), the workspace state may remain locked. You can unlock it from the dashboard using the **Unlock Terraform/OpenTofu state** button on the Sandbox or Component detail page.
 
 <Note>
 Only force unlock a workspace if you are certain no other operation is actively running. Force unlocking a workspace in use by a running job may cause state corruption.
@@ -182,9 +186,9 @@ Only force unlock a workspace if you are certain no other operation is actively 
 
 ## Viewing State in the Dashboard
 
-The dashboard displays the current Terraform state for both sandboxes and components, organized into two tabs:
+The dashboard displays the current Terraform/OpenTofu state for both sandboxes and components, organized into two tabs:
 
-- **Outputs** - all Terraform outputs and their current values
+- **Outputs** - all Terraform/OpenTofu outputs and their current values
 - **Resources** - all managed resources with their type, provider, mode, and attribute values
 
 This state view updates after each successful sandbox run or component deploy.

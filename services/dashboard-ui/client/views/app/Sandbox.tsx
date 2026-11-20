@@ -136,7 +136,9 @@ export const Sandbox = () => {
                 type={
                   sandboxConfig?.type === 'pulumi'
                     ? 'pulumi'
-                    : 'terraform_module'
+                    : sandboxConfig?.type === 'opentofu'
+                      ? 'opentofu_module'
+                      : 'terraform_module'
                 }
                 displayVariant="icon-only"
                 colorVariant="color"

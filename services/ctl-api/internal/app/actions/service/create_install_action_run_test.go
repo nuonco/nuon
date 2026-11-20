@@ -390,7 +390,7 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunCrossOrgIsolation()
 		AppID: app2.ID,
 	}
 	res = s.service.DB.WithContext(ctx2).
-		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+		Omit("app_config_id", "app_runner_config_id").
 		Create(install2)
 	require.NoError(s.T(), res.Error)
 
@@ -456,7 +456,7 @@ func (s *CreateInstallActionRunTestSuite) createInstall(appID, appConfigID strin
 	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
 	ctx = cctx.SetOrgContext(ctx, s.testOrg)
 	res := s.service.DB.WithContext(ctx).
-		Omit("app_sandbox_config_id", "app_runner_config_id").
+		Omit("app_runner_config_id").
 		Create(install)
 	if res.Error != nil {
 		s.T().Logf("FULL createInstall error: %+v", res.Error)

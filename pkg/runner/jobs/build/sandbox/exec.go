@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/rootfs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	opentofubuild "github.com/nuonco/nuon/pkg/runner/jobs/build/opentofu"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
 	"github.com/nuonco/nuon/pkg/runner/jobs/buildinputs"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
@@ -37,25 +38,44 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
 
-	if h.state.cfg != nil && h.state.cfg.VendorProviders {
+	opentofuCfg := h.state.plan.OpentofuBuildPlan
+	terraformCfg := h.state.cfg
+	vendor := (opentofuCfg != nil && opentofuCfg.VendorProviders) ||
+		(opentofuCfg == nil && terraformCfg != nil && terraformCfg.VendorProviders)
+	if vendor {
 		if _, ok := h.state.workspace.FS().(*rootfs.FS); !ok {
-			return fmt.Errorf("terraform provider vendoring requires a disk-backed workspace")
+			return fmt.Errorf("provider vendoring requires a disk-backed workspace")
 		}
-		l.Info("vendoring terraform providers via filesystem mirror")
-		opVendorCtx, endVendor := op.Tool(ctx, "terraform", "vendor")
 		var mirrorPlatforms []string
 		if h.cfg != nil {
 			mirrorPlatforms = h.cfg.TerraformMirrorPlatforms
 		}
-		err := terraformbuild.GenerateProviderMirror(opVendorCtx, src.AbsPath(), terraformbuild.MirrorConfig{
-			TerraformVersion: h.state.cfg.TerraformVersion,
-			MirrorPlatforms:  mirrorPlatforms,
-		})
-		endVendor(err)
-		if err != nil {
-			l.Error("failed to generate provider mirror", zap.Error(err))
-			h.writeErrorResult(ctx, "vendor providers", err)
-			return fmt.Errorf("unable to generate provider mirror: %w", err)
+		if opentofuCfg != nil {
+			l.Info("vendoring opentofu providers via filesystem mirror")
+			opVendorCtx, endVendor := op.Tool(ctx, "opentofu", "vendor")
+			err := opentofubuild.GenerateProviderMirror(opVendorCtx, src.AbsPath(), opentofubuild.MirrorConfig{
+				OpenTofuVersion: opentofuCfg.OpenTofuVersion,
+				MirrorPlatforms: mirrorPlatforms,
+			})
+			endVendor(err)
+			if err != nil {
+				l.Error("failed to generate provider mirror", zap.Error(err))
+				h.writeErrorResult(ctx, "vendor providers", err)
+				return fmt.Errorf("unable to generate provider mirror: %w", err)
+			}
+		} else {
+			l.Info("vendoring terraform providers via filesystem mirror")
+			opVendorCtx, endVendor := op.Tool(ctx, "terraform", "vendor")
+			err := terraformbuild.GenerateProviderMirror(opVendorCtx, src.AbsPath(), terraformbuild.MirrorConfig{
+				TerraformVersion: terraformCfg.TerraformVersion,
+				MirrorPlatforms:  mirrorPlatforms,
+			})
+			endVendor(err)
+			if err != nil {
+				l.Error("failed to generate provider mirror", zap.Error(err))
+				h.writeErrorResult(ctx, "vendor providers", err)
+				return fmt.Errorf("unable to generate provider mirror: %w", err)
+			}
 		}
 
 		l.Info("re-walking sandbox source files after provider mirror")
@@ -67,7 +87,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 	}
 
-	l.Info("packing sandbox terraform files into archive")
+	l.Info("packing sandbox source files into archive")
 	if err := h.state.arch.Pack(ctx, l, source, srcFiles); err != nil {
 		l.Error("failed to pack files", zap.Error(err))
 		h.writeErrorResult(ctx, "packing files", err)

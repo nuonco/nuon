@@ -148,6 +148,7 @@
                   "guides/image-signature-verification",
                   "guides/image-update-policies",
                   "guides/pulumi-components",
+                  "guides/opentofu-components",
                   "concepts/components/auto-retries"
                 ],
                 "expanded": false
@@ -370,6 +371,7 @@
                   "config-ref/helm",
                   "config-ref/kubernetes-manifest",
                   "config-ref/pulumi",
+                  "config-ref/opentofu",
                   "config-ref/terraform"
                 ]
               },

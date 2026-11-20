@@ -102,6 +102,14 @@ func decodeComponent(fromType reflect.Type, toType reflect.Type, from interface{
 			}
 		}
 		comp.Pulumi = &cmpCfg
+	case OpentofuModuleComponentType:
+		var cmpCfg OpentofuModuleComponentConfig
+		if err := mapstructure.Decode(obj, &cmpCfg); err != nil {
+			return from, ErrConfig{
+				Description: fmt.Sprintf("unable to parse opentofu module component: %s", err.Error()),
+			}
+		}
+		comp.OpentofuModule = &cmpCfg
 	case JobComponentType:
 		var cmpCfg JobComponentConfig
 		if err := mapstructure.Decode(obj, &cmpCfg); err != nil {

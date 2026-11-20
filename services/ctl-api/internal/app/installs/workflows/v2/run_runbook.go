@@ -520,7 +520,7 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 		return result, nil
 	}
 
-	applyStep, err := sg.installSignalStep(ctx, installID, applyLabel, pgtype.Hstore{}, applySignal, flw.PlanOnly, WithMaxAutoRetries(install.AppSandboxConfig.GetMaxAutoRetries()))
+	applyStep, err := sg.installSignalStep(ctx, installID, applyLabel, pgtype.Hstore{}, applySignal, flw.PlanOnly, WithMaxAutoRetries(install.AppConfig.SandboxConfig.GetMaxAutoRetries()))
 	if err != nil {
 		return nil, err
 	}

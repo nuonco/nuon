@@ -35,7 +35,7 @@ func (s *Helpers) validateResolvePlan(ctx context.Context, st *installResourceSy
 		return stderr.ErrUser{Err: fmt.Errorf("approved plan %s: %s", approvalID, description), Description: description}
 	}
 	switch approval.Type {
-	case app.TerraformPlanApprovalType, app.KubernetesManifestApprovalType, app.HelmApprovalApprovalType, app.PulumiApprovalType:
+	case app.TerraformPlanApprovalType, app.OpentofuPlanApprovalType, app.KubernetesManifestApprovalType, app.HelmApprovalApprovalType, app.PulumiApprovalType:
 	default:
 		return nil, invalid("this approval type cannot be reused to resolve drift")
 	}

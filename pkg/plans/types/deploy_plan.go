@@ -27,6 +27,7 @@ type DeployPlan struct {
 	KubernetesManifestDeployPlan *KubernetesManifestDeployPlan `json:"kubernetes_manifest"`
 	NoopDeployPlan               *NoopDeployPlan               `json:"noop"`
 	PulumiDeployPlan             *PulumiDeployPlan             `json:"pulumi"`
+	OpentofuDeployPlan           *OpentofuDeployPlan           `json:"opentofu"`
 
 	// The following field is for applying a plan that is already save
 	ApplyPlanContents string `json:"apply_plan_contents"`

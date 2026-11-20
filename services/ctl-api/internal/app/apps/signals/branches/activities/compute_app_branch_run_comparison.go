@@ -525,6 +525,8 @@ func componentRepoDirectory(c *app.ComponentConfigConnection) (string, string, s
 		return vcsRepoDirectory(c.HelmComponentConfig.ConnectedGithubVCSConfig, c.HelmComponentConfig.PublicGitVCSConfig)
 	case c.TerraformModuleComponentConfig != nil:
 		return vcsRepoDirectory(c.TerraformModuleComponentConfig.ConnectedGithubVCSConfig, c.TerraformModuleComponentConfig.PublicGitVCSConfig)
+	case c.OpentofuModuleComponentConfig != nil:
+		return vcsRepoDirectory(c.OpentofuModuleComponentConfig.ConnectedGithubVCSConfig, c.OpentofuModuleComponentConfig.PublicGitVCSConfig)
 	case c.KubernetesManifestComponentConfig != nil:
 		return vcsRepoDirectory(c.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig, c.KubernetesManifestComponentConfig.PublicGitVCSConfig)
 	case c.PulumiComponentConfig != nil:
@@ -549,7 +551,9 @@ func (a *Activities) loadComponentSources(ctx context.Context, appConfigID strin
 	err := a.db.WithContext(ctx).
 		Preload("Component").
 		Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("OpentofuModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("OpentofuModuleComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
 		Preload("KubernetesManifestComponentConfig.ConnectedGithubVCSConfig").

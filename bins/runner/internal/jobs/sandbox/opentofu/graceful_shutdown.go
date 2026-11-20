@@ -1,0 +1,38 @@
+package opentofu
+
+import (
+	"context"
+
+	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/runner/log"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+)
+
+func (p *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
+	hlog := log.NewHClog(l)
+	if p.state == nil {
+		return nil
+	}
+	if p.state.tfWorkspace != nil {
+		l.Info("attempting to update opentofu state before shutdown")
+		err := p.updateTerraformState(ctx, p.state.tfWorkspace, hlog)
+		if err != nil {
+			p.writeErrorResult(ctx, "update opentofu state", err)
+			// we don't return an error here because we want to allow the graceful shutdown to complete even when state update fails
+		}
+		l.Info("opentofu state updated during  graceful shutdown")
+	}
+
+	if p.state.plan != nil && p.state.plan.TerraformBackend != nil {
+		l.Info("attempting to unlock opentofu workspace before shutdown")
+		err := p.apiClient.UnlockTerraformWorkspace(ctx, p.state.plan.TerraformBackend.WorkspaceID)
+		if err != nil {
+			p.writeErrorResult(ctx, "unlock opentofu workspace", err)
+			// we don't return an error here because we want to allow the graceful shutdown to complete even when unlock fails
+		}
+		l.Info("opentofu workspace unlocked during graceful shutdown")
+	}
+
+	return nil
+}

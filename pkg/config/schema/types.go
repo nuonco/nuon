@@ -29,6 +29,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"kubernetes-contexts": KubernetesContextsConfigSchema,
 	"kubernetes-manifest": KubernetesManifestConfigSchema,
 	"metadata":            MetadataConfigSchema,
+	"opentofu":            OpentofuConfigSchema,
 	"permission":          PermissionSchema,
 	"permission-policy":   PermissionPolicySchema,
 	"permissions":         PermissionsConfigSchema,
@@ -47,6 +48,10 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 // normalizeSchemaType maps underscore-style names used in TOML component
 // types (e.g. container_image) onto the hyphenated schema keys.
 func normalizeSchemaType(typ string) string {
+	// opentofu_module has no hyphenated variant; its schema/doc slug is "opentofu".
+	if typ == "opentofu_module" {
+		return "opentofu"
+	}
 	return strings.ReplaceAll(typ, "_", "-")
 }
 
@@ -283,6 +288,14 @@ func PulumiConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return flattenedComponentSchema(config.PulumiComponentConfig{}, config.PulumiComponentType)
+}
+
+func OpentofuConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.OpentofuModuleComponentConfig{}); err != nil {
+		return nil, errors.Wrap(err, "OpentofuModuleComponentConfig validation failed")
+	}
+
+	return flattenedComponentSchema(config.OpentofuModuleComponentConfig{}, config.OpentofuModuleComponentType)
 }
 
 func MetadataConfigSchema() (*jsonschema.Schema, error) {

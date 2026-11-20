@@ -140,6 +140,16 @@ func SyntheticComponentOverrideInputs(components ComponentList) []SyntheticOverr
 				Index:     idx,
 			})
 			idx++
+		case OpentofuModuleComponentType:
+			// OpenTofu consumes the same tf_vars override input so
+			// install-level overrides work uniformly across TF module types.
+			out = append(out, SyntheticOverrideInput{
+				Name:      TFVarsOverrideInputName(comp.Name),
+				Kind:      ComponentOverrideKindTFVars,
+				Component: comp.Name,
+				Index:     idx,
+			})
+			idx++
 		}
 
 		// Every toggleable component (regardless of type) gets an enabled input

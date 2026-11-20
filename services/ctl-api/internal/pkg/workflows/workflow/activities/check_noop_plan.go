@@ -104,8 +104,14 @@ func (p *ApprovalPlan) IsNoopPlan() (bool, error) {
 	case app.RunnerJobTypeSandboxPulumi:
 		plan := approvalplan.NewPulumiApprovalPlan(p.PlanContents)
 		return plan.IsNoop()
+	case app.RunnerJobTypeSandboxOpentofu:
+		plan := approvalplan.NewOpentofuApprovalPlan(p.PlanContents)
+		return plan.IsNoop()
 	case app.RunnerJobTypeTerraformDeploy:
 		plan := approvalplan.NewTerraformApprovalPlan(p.PlanContents)
+		return plan.IsNoop()
+	case app.RunnerJobTypeOpentofuDeploy:
+		plan := approvalplan.NewOpentofuApprovalPlan(p.PlanContents)
 		return plan.IsNoop()
 	case app.RunnerJobTypeKubrenetesManifestDeploy:
 		plan := approvalplan.NewKubernetesApprovalPlan(p.PlanContents)

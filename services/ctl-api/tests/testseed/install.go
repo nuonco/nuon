@@ -49,13 +49,6 @@ func (s *Seeder) CreateInstall(ctx context.Context, t *testing.T, a *app.App) *a
 		i.CreatedByID = accountID
 	}
 
-	// Load latest configs from the app (created by CreateAppConfig).
-	var sandboxCfg app.AppSandboxConfig
-	require.NoError(t, s.db.WithContext(ctx).
-		Where("app_id = ?", a.ID).Order("created_at DESC").First(&sandboxCfg).Error,
-		"CreateInstall requires CreateAppConfig to have been called first")
-	i.AppSandboxConfigID = sandboxCfg.ID
-
 	var runnerCfg app.AppRunnerConfig
 	require.NoError(t, s.db.WithContext(ctx).
 		Where("app_id = ?", a.ID).Order("created_at DESC").First(&runnerCfg).Error)
@@ -63,8 +56,10 @@ func (s *Seeder) CreateInstall(ctx context.Context, t *testing.T, a *app.App) *a
 
 	var appCfg app.AppConfig
 	require.NoError(t, s.db.WithContext(ctx).
+		Preload("SandboxConfig").
 		Where("app_id = ?", a.ID).Order("created_at DESC").First(&appCfg).Error)
 	i.AppConfigID = appCfg.ID
+	i.AppConfig = appCfg
 
 	// Create associated objects inline (mirrors helpers.CreateInstall).
 	i.InstallSandbox = app.InstallSandbox{

@@ -171,11 +171,9 @@ func (s *UpdateInstallSandboxTestSuite) TestAdminUpdateSandbox() {
 				install2 := s.service.Seeder.CreateInstall(ctx, s.T(), app2)
 				seedInstallQueues(s.T(), s.service.DB, install2)
 
-				// Clear the install's sandbox config FK, then delete sandbox configs
-				err := s.service.DB.Model(&app.Install{}).Where("id = ?", install2.ID).
-					Update("app_sandbox_config_id", nil).Error
-				require.NoError(s.T(), err)
-				err = s.service.DB.Unscoped().Where("app_id = ?", app2.ID).Delete(&app.AppSandboxConfig{}).Error
+				// Delete the app's sandbox configs so the install has no sandbox
+				// config to resolve
+				err := s.service.DB.Unscoped().Where("app_id = ?", app2.ID).Delete(&app.AppSandboxConfig{}).Error
 				require.NoError(s.T(), err)
 
 				return install2.ID

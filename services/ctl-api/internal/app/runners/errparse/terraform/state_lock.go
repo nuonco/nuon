@@ -73,7 +73,7 @@ func parseStateLock(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 
 func init() {
 	errparse.Register(errparse.NewParser(errparse.LayerToolSpecific, parseStateLock,
-		errparse.WithTools(errparse.ToolTerraform),
+		errparse.WithTools(errparse.ToolTerraform, errparse.ToolOpentofu),
 		errparse.WithSignals(stateLockSignal),
 	))
 }

@@ -14,7 +14,7 @@ export const TerraformBackendConfigModal = ({
 }: ITerraformBackendConfigModal) => {
   return (
     <Modal
-      heading="Use Terraform CLI"
+      heading="Use Terraform/OpenTofu CLI"
       primaryActionTrigger={{
         children: 'Download nuon_backend.tf',
         onClick: onDownload,
@@ -25,10 +25,10 @@ export const TerraformBackendConfigModal = ({
     >
       <div className="flex flex-col gap-4">
         <Text>
-          Download the backend config and add it to your Terraform project. Then set your API token and initialize:
+          Download the backend config and add it to your Terraform/OpenTofu project. Then set your API token and initialize:
         </Text>
         <CodeBlock language="bash">{`export TF_HTTP_AUTHORIZATION="Bearer $(nuon orgs api-token -j | tr -d '\"')"
-terraform init -reconfigure`}</CodeBlock>
+terraform init -reconfigure  # OpenTofu: tofu init -reconfigure`}</CodeBlock>
         <CodeBlock language="hcl">{content}</CodeBlock>
       </div>
     </Modal>

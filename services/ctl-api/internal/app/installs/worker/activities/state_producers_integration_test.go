@@ -151,7 +151,7 @@ func (s *InstallStateIntegrationSuite) TestSourceCommitsReachStrictFreshReads() 
 			name: "sandbox_run",
 			commit: func() {
 				run := &app.InstallSandboxRun{
-					InstallID: s.install.ID, AppSandboxConfigID: s.install.AppSandboxConfigID,
+					InstallID: s.install.ID, AppSandboxConfigID: s.install.AppConfig.SandboxConfig.ID,
 					RunType: app.SandboxRunTypeProvision, Status: app.SandboxRunStatusActive, StatusDescription: "active",
 				}
 				s.create(run)

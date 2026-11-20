@@ -28,7 +28,12 @@ export const TerraformWorkspaceCard = ({
   componentType,
 }: ITerraformWorkspaceCard) => {
   const isPulumi = componentType === 'pulumi'
-  const heading = isPulumi ? 'Pulumi state' : 'Terraform state'
+  const isOpentofu = componentType === 'opentofu_module'
+  const heading = isPulumi
+    ? 'Pulumi state'
+    : isOpentofu
+      ? 'OpenTofu state'
+      : 'Terraform state'
 
   return (
     <div className="flex flex-col gap-4">

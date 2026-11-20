@@ -48,7 +48,7 @@ export const UnlockTerraformWorkspaceButton = ({
   return (
     <Button onClick={() => addModal(modal)} {...props}>
       {props?.isMenuButton ? null : <Icon variant="LockOpenIcon" />}
-      Unlock Terraform state
+      Unlock Terraform/OpenTofu state
       {props?.isMenuButton ? <Icon variant="LockOpenIcon" /> : null}
     </Button>
   )
@@ -78,8 +78,8 @@ export const UnlockTerraformWorkspaceModalContainer = ({
         props: { orgId: org.id, installId: install.id, workspaceId },
       })
       addToast(
-        <Toast heading="Terraform state unlocked" theme="success">
-          <Text>The Terraform workspace for {description} has been unlocked.</Text>
+        <Toast heading="Terraform/OpenTofu state unlocked" theme="success">
+          <Text>The Terraform/OpenTofu workspace for {description} has been unlocked.</Text>
         </Toast>
       )
       queryClient.invalidateQueries({

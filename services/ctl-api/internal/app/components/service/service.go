@@ -101,6 +101,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			configs := comp.Group("/configs")
 			{
 				configs.POST("/terraform-module", s.CreateAppTerraformModuleComponentConfig)
+				configs.POST("/opentofu-module", s.CreateAppOpentofuModuleComponentConfig)
 				configs.POST("/helm", s.CreateAppHelmComponentConfig)
 				configs.POST("/external-image", s.CreateAppExternalImageComponentConfig)
 				configs.POST("/job", s.CreateAppJobComponentConfig)

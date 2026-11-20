@@ -18,6 +18,8 @@ type VCS struct {
 	Public *app.PublicGitVCSConfig
 }
 
+const DefaultOpentofuVersion = "v1.13.9"
+
 func HelmComponentConfig(obj *config.HelmChartComponentConfig, vcs VCS) (*app.HelmComponentConfig, error) {
 	if obj == nil {
 		return nil, errors.New("helm_chart config is required")
@@ -84,6 +86,36 @@ func TerraformModuleComponentConfig(obj *config.TerraformModuleComponentConfig, 
 	}
 
 	return &app.TerraformModuleComponentConfig{
+		PublicGitVCSConfig:       vcs.Public,
+		ConnectedGithubVCSConfig: vcs.Github,
+		Version:                  version,
+		Variables:                Hstore(obj.VarsMap),
+		EnvVars:                  Hstore(obj.EnvVarMap),
+		VariablesFiles:           pq.StringArray(variablesFiles),
+	}, nil
+}
+
+func OpentofuModuleComponentConfig(obj *config.OpentofuModuleComponentConfig, vcs VCS, version string) (*app.OpentofuModuleComponentConfig, error) {
+	if obj == nil {
+		return nil, errors.New("opentofu_module config is required")
+	}
+	if vcs.Github == nil && vcs.Public == nil {
+		return nil, errors.New("opentofu_module requires either a connected repo or public repo configuration")
+	}
+	if version != "" {
+		if err := validation.ValidateOpentofuMinVersion(version); err != nil {
+			return nil, err
+		}
+	}
+
+	variablesFiles := make([]string, 0, len(obj.VariablesFiles))
+	for _, vf := range obj.VariablesFiles {
+		if vf.Contents != "" {
+			variablesFiles = append(variablesFiles, vf.Contents)
+		}
+	}
+
+	return &app.OpentofuModuleComponentConfig{
 		PublicGitVCSConfig:       vcs.Public,
 		ConnectedGithubVCSConfig: vcs.Github,
 		Version:                  version,
@@ -258,7 +290,7 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 }
 
 // AttachTypeConfig wires the per-type config onto the shared connection.
-func AttachTypeConfig(ccc *app.ComponentConfigConnection, comp *config.Component, vcs VCS, terraformVersion string) error {
+func AttachTypeConfig(ccc *app.ComponentConfigConnection, comp *config.Component, vcs VCS, terraformVersion, opentofuVersion string) error {
 	switch {
 	case comp.HelmChart != nil:
 		cfg, err := HelmComponentConfig(comp.HelmChart, vcs)
@@ -278,6 +310,12 @@ func AttachTypeConfig(ccc *app.ComponentConfigConnection, comp *config.Component
 			return err
 		}
 		ccc.PulumiComponentConfig = cfg
+	case comp.OpentofuModule != nil:
+		cfg, err := OpentofuModuleComponentConfig(comp.OpentofuModule, vcs, opentofuVersion)
+		if err != nil {
+			return err
+		}
+		ccc.OpentofuModuleComponentConfig = cfg
 	case comp.KubernetesManifest != nil:
 		cfg, err := KubernetesManifestComponentConfig(comp.KubernetesManifest, vcs)
 		if err != nil {

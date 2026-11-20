@@ -139,7 +139,7 @@ export const TerraformState = ({
                     </Text>
                   )
                 ) : (
-                  <Text>No Terraform resoucres</Text>
+                  <Text>No Terraform/OpenTofu resources</Text>
                 )}
               </div>
             </div>

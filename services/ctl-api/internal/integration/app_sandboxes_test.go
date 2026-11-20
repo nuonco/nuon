@@ -46,22 +46,6 @@ func (s *appSandboxesSuite) SetupTest() {
 }
 
 func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
-	s.T().Run("updates installs to reference new sandbox", func(t *testing.T) {
-		install := s.createInstall(s.appID)
-
-		req := s.fakeSandboxConfigReq(s.appID)
-		req.ConnectedGithubVcsConfig = nil
-
-		appSandboxCfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
-		require.NoError(t, err)
-		require.NotNil(t, appSandboxCfg)
-
-		updatedInstall, err := s.apiClient.GetInstall(s.ctx, install.ID)
-		require.NoError(t, err)
-		require.NotEmpty(t, updatedInstall)
-		require.Equal(t, updatedInstall.AppSandboxConfig.ID, appSandboxCfg.ID)
-	})
-
 	s.T().Run("successfully stores public vcs config", func(t *testing.T) {
 		req := s.fakeSandboxConfigReq(s.appID)
 		req.ConnectedGithubVcsConfig = nil

@@ -204,6 +204,8 @@ type ClientService interface {
 
 	CreateAppKubernetesManifestComponentConfig(params *CreateAppKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesManifestComponentConfigCreated, error)
 
+	CreateAppOpentofuModuleComponentConfig(params *CreateAppOpentofuModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppOpentofuModuleComponentConfigCreated, error)
+
 	CreateAppOperationRoleConfig(params *CreateAppOperationRoleConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppOperationRoleConfigCreated, error)
 
 	CreateAppPermissionsConfig(params *CreateAppPermissionsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppPermissionsConfigCreated, error)
@@ -479,6 +481,10 @@ type ClientService interface {
 	GetAppConfigs(params *GetAppConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigsOK, error)
 
 	GetAppConflgV2(params *GetAppConflgV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConflgV2OK, error)
+
+	GetAppFleet(params *GetAppFleetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetOK, error)
+
+	GetAppFleetInstalls(params *GetAppFleetInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetInstallsOK, error)
 
 	GetAppInputConfig(params *GetAppInputConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInputConfigOK, error)
 
@@ -3197,6 +3203,52 @@ func (a *Client) CreateAppKubernetesManifestComponentConfig(params *CreateAppKub
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateAppKubernetesManifestComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAppOpentofuModuleComponentConfig creates an opentofu component config
+
+Create an opentofu component config.
+*/
+func (a *Client) CreateAppOpentofuModuleComponentConfig(params *CreateAppOpentofuModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppOpentofuModuleComponentConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppOpentofuModuleComponentConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppOpentofuModuleComponentConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/configs/opentofu-module",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppOpentofuModuleComponentConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAppOpentofuModuleComponentConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAppOpentofuModuleComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -9616,6 +9668,98 @@ func (a *Client) GetAppConflgV2(params *GetAppConflgV2Params, authInfo runtime.C
 }
 
 /*
+GetAppFleet apps fleet summary branches and install groups
+
+Returns the app's installs grouped by app branch and install group, with counts per lane and the first installs of each group. Filters apply to counts and to the returned installs. Rollout compares each install's applied app config against the target run of its branch.
+*/
+func (a *Client) GetAppFleet(params *GetAppFleetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppFleetParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppFleet",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/fleet",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppFleetReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppFleetOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppFleet: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppFleetInstalls paginateds installs for an app fleet
+
+Returns the app's installs matching the fleet filters, ordered by rollout, health severity, then name. Pass app_branch_id and app_branch_group to page through one install group, for example when a lane card's panel is opened.
+*/
+func (a *Client) GetAppFleetInstalls(params *GetAppFleetInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetInstallsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppFleetInstallsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppFleetInstalls",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/fleet/installs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppFleetInstallsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppFleetInstallsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppFleetInstalls: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetAppInputConfig gets app input config
 
 Return an input config by id.
@@ -14407,7 +14551,7 @@ func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, au
 /*
 GetInstallOverview installs overview
 
-Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
 */
 func (a *Client) GetInstallOverview(params *GetInstallOverviewParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOverviewOK, error) {
 	// NOTE: parameters are not validated before sending

@@ -13,6 +13,8 @@ func ComponentRepos(comp *config.Component) (*config.ConnectedRepoConfig, *confi
 		return comp.KubernetesManifest.ConnectedRepo, comp.KubernetesManifest.PublicRepo
 	case comp.Pulumi != nil:
 		return comp.Pulumi.ConnectedRepo, comp.Pulumi.PublicRepo
+	case comp.OpentofuModule != nil:
+		return comp.OpentofuModule.ConnectedRepo, comp.OpentofuModule.PublicRepo
 	default:
 		return nil, nil
 	}
@@ -21,4 +23,8 @@ func ComponentRepos(comp *config.Component) (*config.ConnectedRepoConfig, *confi
 // NeedsTerraformVersion means the caller must resolve the latest release.
 func NeedsTerraformVersion(comp *config.Component) bool {
 	return comp.TerraformModule != nil && comp.TerraformModule.TerraformVersion == ""
+}
+
+func NeedsOpentofuVersion(comp *config.Component) bool {
+	return comp.OpentofuModule != nil && comp.OpentofuModule.OpenTofuVersion == ""
 }

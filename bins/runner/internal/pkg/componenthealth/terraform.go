@@ -21,6 +21,10 @@ const (
 	providerAzure = "azure"
 
 	componentTypeTerraformModule = "terraform_module"
+	// componentTypeOpentofuModule is handled identically to
+	// componentTypeTerraformModule: OpenTofu writes the same state JSON shape
+	// as terraform, so the same state→health rows path serves both engines.
+	componentTypeOpentofuModule = "opentofu_module"
 )
 
 // terraformClouds maps a provider's short name to its cloud. Absent providers

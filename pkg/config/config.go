@@ -274,8 +274,8 @@ func (a *AppConfig) resolveKubernetesContexts() error {
 			if !ok {
 				return fmt.Errorf("kubernetes_context %q references unknown component %q", ctx.Name, ctx.Component)
 			}
-			if source.Type != TerraformModuleComponentType && source.Type != PulumiComponentType {
-				return fmt.Errorf("kubernetes_context %q source component %q must be terraform_module or pulumi (got %q)", ctx.Name, ctx.Component, source.Type)
+			if source.Type != TerraformModuleComponentType && source.Type != PulumiComponentType && source.Type != OpentofuModuleComponentType {
+				return fmt.Errorf("kubernetes_context %q source component %q must be terraform_module, opentofu_module, or pulumi (got %q)", ctx.Name, ctx.Component, source.Type)
 			}
 			contextsByName[ctx.Name] = ctx
 		}

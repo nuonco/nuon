@@ -115,6 +115,7 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 				Description("Select component types to include in your app").
 				Options(
 					huh.NewOption("Terraform Module", "terraform-module"),
+					huh.NewOption("OpenTofu Module", "opentofu-module"),
 					huh.NewOption("Helm Chart", "helm-chart"),
 					huh.NewOption("Kubernetes Manifest", "kubernetes-manifest"),
 					huh.NewOption("Pulumi", "pulumi"),
@@ -207,6 +208,7 @@ func (c *ConfigInit) RunComponentsMenu(params *apps.SampleComponentParams) error
 				Description("Select component types to include in your app").
 				Options(
 					huh.NewOption("Terraform Module", "terraform-module"),
+					huh.NewOption("OpenTofu Module", "opentofu-module"),
 					huh.NewOption("Helm Chart", "helm-chart"),
 					huh.NewOption("Kubernetes Manifest", "kubernetes-manifest"),
 					huh.NewOption("Pulumi", "pulumi"),

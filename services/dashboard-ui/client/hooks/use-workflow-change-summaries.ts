@@ -12,6 +12,7 @@ import type {
 
 const SUMMARY_PLAN_TYPES: TStepChangePlanType[] = [
   'terraform_plan',
+  'opentofu_plan',
   'pulumi_plan',
   'helm_approval',
   'kubernetes_manifest_approval',

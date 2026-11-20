@@ -125,7 +125,7 @@ func (s *DeleteInstallActionRunLogsTestSuite) createFixture(status app.InstallAc
 		AppID: s.testApp.ID,
 	}
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).
-		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+		Omit("app_config_id", "app_runner_config_id").
 		Create(install).Error)
 
 	action := &app.ActionWorkflow{ID: domains.NewActionWorkflowID(), OrgID: s.testOrg.ID, AppID: s.testApp.ID, Name: "db-export-" + install.ID}

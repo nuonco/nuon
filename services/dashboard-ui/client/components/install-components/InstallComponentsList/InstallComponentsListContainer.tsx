@@ -41,6 +41,7 @@ import {
 const COMPONENT_TYPES: TComponentType[] = [
   'helm_chart',
   'terraform_module',
+  'opentofu_module',
   'kubernetes_manifest',
   'pulumi',
   'job',
@@ -49,6 +50,7 @@ const COMPONENT_TYPES: TComponentType[] = [
 const FILTER_TYPES: TComponentConfigTypeText[] = [
   'helm_chart',
   'terraform_module',
+  'opentofu_module',
   'kubernetes_manifest',
   'pulumi',
 ]

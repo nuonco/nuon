@@ -59,7 +59,7 @@ func (a KubernetesContext) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("data-cluster").
 		Example("shared-prod").
 		Field("component").Short("source peer component").Required().
-		Long("Name of the peer component that produces cluster connection details. Must be a terraform_module or pulumi component, and must expose a `cluster` output object").
+		Long("Name of the peer component that produces cluster connection details. Must be a terraform_module, opentofu_module, or pulumi component, and must expose a `cluster` output object").
 		Example("data-eks").
 		Example("shared-aks")
 }

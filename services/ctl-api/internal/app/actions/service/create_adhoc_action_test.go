@@ -132,7 +132,7 @@ func (s *CreateAdHocActionTestSuite) createInstall(appID string) *app.Install {
 	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
 	ctx = cctx.SetOrgContext(ctx, s.testOrg)
 	res := s.service.DB.WithContext(ctx).
-		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+		Omit("app_config_id", "app_runner_config_id").
 		Create(install)
 	require.NoError(s.T(), res.Error)
 	seedRunnableInstall(ctx, s.T(), s.service.DB, install.ID)
@@ -436,7 +436,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionCrossOrgIsolation() {
 		AppID: app2.ID,
 	}
 	res = s.service.DB.WithContext(ctx2).
-		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+		Omit("app_config_id", "app_runner_config_id").
 		Create(install2)
 	require.NoError(s.T(), res.Error)
 	seedRunnableInstall(ctx2, s.T(), s.service.DB, install2.ID)

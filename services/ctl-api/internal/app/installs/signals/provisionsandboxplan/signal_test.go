@@ -53,8 +53,11 @@ func (s *SignalTestSuite) TestExecutePlanFailureRecordsCompositeError() {
 	install := &app.Install{
 		ID:       "install-1",
 		RunnerID: "runner-1",
-		AppSandboxConfig: app.AppSandboxConfig{
-			ID: "sandbox-config-1",
+		AppConfig: app.AppConfig{
+			ID: "app-config-1",
+			SandboxConfig: app.AppSandboxConfig{
+				ID: "sandbox-config-1",
+			},
 		},
 	}
 	sandboxRun := &app.InstallSandboxRun{ID: "run-1", RunType: app.SandboxRunTypeProvision}
@@ -124,8 +127,11 @@ func (s *SignalTestSuite) TestExecutePlanFailureDoesNotRecordCompositeErrorForGe
 	install := &app.Install{
 		ID:       "install-1",
 		RunnerID: "runner-1",
-		AppSandboxConfig: app.AppSandboxConfig{
-			ID: "sandbox-config-1",
+		AppConfig: app.AppConfig{
+			ID: "app-config-1",
+			SandboxConfig: app.AppSandboxConfig{
+				ID: "sandbox-config-1",
+			},
 		},
 	}
 	sandboxRun := &app.InstallSandboxRun{ID: "run-1", RunType: app.SandboxRunTypeProvision}

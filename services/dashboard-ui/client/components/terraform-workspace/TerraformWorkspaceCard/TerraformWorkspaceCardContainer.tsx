@@ -97,7 +97,7 @@ export const TerraformWorkspaceCardContainer = ({
               variant="secondary"
               size="sm"
             >
-              Use Terraform CLI
+              Use Terraform/OpenTofu CLI
             </TerraformBackendConfigButton>
             <UnlockTerraformWorkspaceButton
               workspaceId={workspaceId}

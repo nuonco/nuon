@@ -20,6 +20,7 @@ import type { TDeployOutletContext } from './types'
 function getDiffForComponentType(componentType: TComponentType, plan: any) {
   switch (componentType) {
     case 'terraform_module':
+    case 'opentofu_module':
       return <TerraformDiff plan={plan} />
     case 'helm_chart':
       return <HelmDiff plan={plan} />

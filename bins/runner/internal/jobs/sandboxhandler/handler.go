@@ -125,7 +125,7 @@ func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 // toolAndServiceForJobType maps a runner job.Type to the (nuon.tool,
 // service.name) pair the dashboard log filters key off. Tool labels match the
-// real deploy-mode handlers (terraform/helm/kubernetes_manifest/job/pulumi/
+// real deploy-mode handlers (terraform/opentofu/helm/kubernetes_manifest/job/pulumi/
 // sync_secrets/action) so a single filter value covers both real and
 // sandbox-mode logs; service.name is namespaced under runner.sandbox.* so
 // users can still distinguish them when needed.
@@ -137,6 +137,10 @@ func toolAndServiceForJobType(jobType models.AppRunnerJobType) (string, string) 
 		models.AppRunnerJobTypeSandboxDashTerraformDashPlan,
 		models.AppRunnerJobTypeTerraformDashModuleDashBuild:
 		return "terraform", "runner.sandbox.terraform"
+	case models.AppRunnerJobTypeOpentofuDashDeploy,
+		models.AppRunnerJobTypeOpentofuDashModuleDashBuild,
+		models.AppRunnerJobTypeSandboxDashOpentofu:
+		return "opentofu", "runner.sandbox.opentofu"
 	case models.AppRunnerJobTypeHelmDashChartDashDeploy,
 		models.AppRunnerJobTypeRunnerDashHelm,
 		models.AppRunnerJobTypeHelmDashChartDashBuild:

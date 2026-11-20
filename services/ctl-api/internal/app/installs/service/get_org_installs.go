@@ -87,7 +87,6 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels(views.TableOrViewName(s.db, &app.Install{}, ".labels"), lbls)).
-		Preload("AppSandboxConfig").
 		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
 			return db.Order("active DESC, created_at DESC, id DESC")
 		}).
@@ -105,8 +104,6 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 			return db.Scopes(scopes.WithOverrideTable(views.CustomViewName(s.db, &app.AppRunnerConfig{}, "latest_view_v1")))
 		}).
 		Preload("App.Org").
-		Preload("AppSandboxConfig.PublicGitVCSConfig").
-		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOverrideTable(views.CustomViewName(s.db, &app.InstallSandboxRun{}, "state_view_v1"))).

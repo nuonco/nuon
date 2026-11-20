@@ -14,6 +14,7 @@ export interface IAppSandbox {
 export const AppSandbox = ({ appConfig }: IAppSandbox) => {
   const sandboxConfig = appConfig?.sandbox as TSandboxConfig | undefined
   const isPulumi = sandboxConfig?.type === 'pulumi'
+  const isOpenTofu = sandboxConfig?.type === 'opentofu'
   const sandboxConfigRepo =
     sandboxConfig?.connected_github_vcs_config ||
     sandboxConfig?.public_git_vcs_config ||
@@ -36,6 +37,12 @@ export const AppSandbox = ({ appConfig }: IAppSandbox) => {
               </LabeledValue>
             )}
           </>
+        ) : isOpenTofu ? (
+          sandboxConfig?.open_tofu_version && (
+            <LabeledValue label="OpenTofu">
+              {sandboxConfig.open_tofu_version}
+            </LabeledValue>
+          )
         ) : (
           sandboxConfig?.terraform_version && (
             <LabeledValue label="Terraform">

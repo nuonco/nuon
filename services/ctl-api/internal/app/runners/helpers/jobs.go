@@ -26,6 +26,7 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		app.RunnerJobTypeContainerImageBuild:  time.Minute * 10,
 		app.RunnerJobTypeHelmChartBuild:       time.Minute * 5,
 		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 10,
+		app.RunnerJobTypeOpentofuModuleBuild:  time.Minute * 10,
 		app.RunnerJobTypePulumiBuild:          time.Minute * 5,
 
 		// sync timeouts
@@ -34,6 +35,7 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 
 		// deploy timeouts
 		app.RunnerJobTypeTerraformDeploy:          time.Minute * 60,
+		app.RunnerJobTypeOpentofuDeploy:           time.Minute * 60,
 		app.RunnerJobTypeHelmChartDeploy:          time.Minute * 30,
 		app.RunnerJobTypeKubrenetesManifestDeploy: time.Minute * 15,
 		app.RunnerJobTypePulumiDeploy:             time.Minute * 60,
@@ -42,6 +44,7 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		// sandbox timeouts
 		app.RunnerJobTypeSandboxTerraform: time.Minute * 60,
 		app.RunnerJobTypeSandboxPulumi:    time.Minute * 60,
+		app.RunnerJobTypeSandboxOpentofu:  time.Minute * 60,
 		app.RunnerJobTypeRunnerTerraform:  time.Minute * 15,
 		app.RunnerJobTypeRunnerHelm:       time.Minute * 5,
 	}

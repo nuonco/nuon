@@ -11,7 +11,7 @@ title: 'Helm'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, container_image, kubernetes_manifest, or job) | **✅ Required**<br/>`"helm_chart"` | - |
+| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, opentofu_module, container_image, kubernetes_manifest, or job) | **✅ Required**<br/>`"helm_chart"` | - |
 | **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
 | **`chart_name`**<br/>string | Helm release name Sets the Helm release name, which need not match the chart's own name. The chart itself comes from helm_repo.chart or the repo path. Must be a valid DNS label, 5-62 characters | **✅ Required** | `"karpenter-nodepools"`, `"prometheus"`, `"cert-manager"` |
 | **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |

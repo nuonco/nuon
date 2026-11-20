@@ -29,6 +29,7 @@ Nuon supports policies for different component types, each with its own input fo
 | `helm_chart` | Helm chart components | OPA | Build + Deploy | Kubernetes AdmissionReview |
 | `kubernetes_manifest` | Kubernetes manifest components | OPA | Deploy | Kubernetes AdmissionReview |
 | `terraform_module` | Terraform module components | OPA | Deploy | Terraform JSON plan |
+| `opentofu_module` | OpenTofu module components | OPA | Deploy | Terraform JSON plan |
 | `kubernetes_cluster` | Kubernetes cluster resources | Kyverno | Deploy | Kubernetes resources |
 | `sandbox` | Sandbox infrastructure | OPA | Sandbox run | Terraform JSON plan |
 
@@ -42,7 +43,7 @@ The input structure varies by policy type:
 
 | Policy Type | Input Structure |
 |-------------|-----------------|
-| `terraform_module`, `sandbox` | `input.plan.resource_changes`, `input.plan.terraform_version` |
+| `terraform_module`, `opentofu_module`, `sandbox` | `input.plan.resource_changes`, `input.plan.terraform_version` |
 | `helm_chart`, `kubernetes_manifest` | `input.review.object`, `input.review.kind` |
 | `container_image` | `input.image`, `input.tag`, `input.metadata` |
 
@@ -161,7 +162,7 @@ contents          = "./policies/no-destructive-changes.rego"
 
 This policy still denies a deploy that would delete or replace a stateful resource, including a deploy that removes the resource from the component's config. It doesn't run when the component is torn down.
 
-`apply_on_teardown` is supported for `terraform_module`, `helm_chart`, `kubernetes_manifest`, `pulumi` and `sandbox` policies, which are the types evaluated against teardown plans.
+`apply_on_teardown` is supported for `terraform_module`, `opentofu_module`, `helm_chart`, `kubernetes_manifest`, `pulumi` and `sandbox` policies, which are the types evaluated against teardown plans.
 
 <Note>
 Branch runs parse your config in the control plane, so `apply_on_teardown` does not depend on your CLI version. To
@@ -184,6 +185,7 @@ If a `deny` rule matches during build-time evaluation, the build fails with stat
 Deploy-time policies are evaluated after the plan is generated, before applying changes:
 
 - **`terraform_module`**: Policies evaluate the Terraform JSON plan
+- **`opentofu_module`**: Policies evaluate the OpenTofu plan, which uses the same Terraform JSON plan format
 - **`helm_chart`**: Policies evaluate the Kubernetes AdmissionReview objects
 - **`kubernetes_manifest`**: Policies evaluate the Kubernetes AdmissionReview objects
 

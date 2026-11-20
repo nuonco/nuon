@@ -61,6 +61,7 @@ export type IAppConfigFilesDiff = {
 const componentIcons: Record<string, TIconVariant> = {
   helm_chart: 'Helm',
   terraform_module: 'Terraform',
+  opentofu_module: 'Terraform',
 }
 
 const sourceLanguage = (path: string) => {

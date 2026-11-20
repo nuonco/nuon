@@ -159,7 +159,6 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
-		Preload("AppSandboxConfig").
 		UpdateColumns(&updateObj)
 
 	if res.Error != nil {

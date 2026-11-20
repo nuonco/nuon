@@ -727,7 +727,7 @@ func TestAttachTypeConfigSupportsJob(t *testing.T) {
 	ccc, err := ComponentConnection(in)
 	require.NoError(t, err)
 
-	require.NoError(t, AttachTypeConfig(ccc, comp, VCS{}, ""))
+	require.NoError(t, AttachTypeConfig(ccc, comp, VCS{}, "", ""))
 	require.NotNil(t, ccc.JobComponentConfig)
 	assert.Equal(t, "ghcr.io/acme/migrate", ccc.JobComponentConfig.ImageURL)
 }

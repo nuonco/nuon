@@ -108,6 +108,8 @@ const (
 	AppPolicyTypeContainerImage AppPolicyType = "container_image"
 	// AppPolicyTypePulumi applies to pulumi components
 	AppPolicyTypePulumi AppPolicyType = "pulumi"
+	// AppPolicyTypeOpentofuModule applies to opentofu module components
+	AppPolicyTypeOpentofuModule AppPolicyType = "opentofu_module"
 	// AppPolicyTypeSandbox applies to sandbox infrastructure
 	AppPolicyTypeSandbox AppPolicyType = "sandbox"
 )
@@ -120,6 +122,7 @@ var AllAppPolicyTypes = []AppPolicyType{
 	AppPolicyTypeKubernetesManifest,
 	AppPolicyTypeContainerImage,
 	AppPolicyTypePulumi,
+	AppPolicyTypeOpentofuModule,
 	AppPolicyTypeSandbox,
 }
 
@@ -227,10 +230,12 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 			string(AppPolicyTypeKubernetesManifest),
 			string(AppPolicyTypeContainerImage),
 			string(AppPolicyTypePulumi),
+			string(AppPolicyTypeOpentofuModule),
 			string(AppPolicyTypeSandbox),
 		).
 		Example("kubernetes_cluster").
 		Example("terraform_module").
+		Example("opentofu_module").
 		Field("engine").Short("policy engine").
 		Long("The policy engine used to evaluate the policy. Must be compatible with the policy type.").
 		Enum(string(AppPolicyEngineKyverno), string(AppPolicyEngineOPA)).
@@ -248,7 +253,7 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Names of the components this policy applies to. Omit to apply to all components of the specified type. Ignored when type is 'sandbox'.").
 		Example("rds_cluster").
 		Field("apply_on_teardown").Short("run on teardown").
-		Long("Whether this policy is evaluated when a component is torn down or the sandbox is deprovisioned. Set to false to allow deletes during a teardown that the policy denies during a deploy. Defaults to true. Supported for terraform_module, helm_chart, kubernetes_manifest, pulumi and sandbox policies.").
+		Long("Whether this policy is evaluated when a component is torn down or the sandbox is deprovisioned. Set to false to allow deletes during a teardown that the policy denies during a deploy. Defaults to true. Supported for terraform_module, opentofu_module, helm_chart, kubernetes_manifest, pulumi and sandbox policies.").
 		Example("false")
 }
 

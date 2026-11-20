@@ -53,6 +53,9 @@ type PlantypesDeployPlan struct {
 	// noop
 	Noop PlantypesNoopDeployPlan `json:"noop,omitempty"`
 
+	// opentofu
+	Opentofu *PlantypesOpentofuDeployPlan `json:"opentofu,omitempty"`
+
 	// pulumi
 	Pulumi *PlantypesPulumiDeployPlan `json:"pulumi,omitempty"`
 
@@ -93,6 +96,10 @@ func (m *PlantypesDeployPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubernetesManifest(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOpentofu(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -163,6 +170,29 @@ func (m *PlantypesDeployPlan) validateKubernetesManifest(formats strfmt.Registry
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_manifest")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesDeployPlan) validateOpentofu(formats strfmt.Registry) error {
+	if swag.IsZero(m.Opentofu) { // not required
+		return nil
+	}
+
+	if m.Opentofu != nil {
+		if err := m.Opentofu.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("opentofu")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("opentofu")
 			}
 
 			return err
@@ -294,6 +324,10 @@ func (m *PlantypesDeployPlan) ContextValidate(ctx context.Context, formats strfm
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateOpentofu(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePulumi(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -361,6 +395,31 @@ func (m *PlantypesDeployPlan) contextValidateKubernetesManifest(ctx context.Cont
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_manifest")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesDeployPlan) contextValidateOpentofu(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Opentofu != nil {
+
+		if swag.IsZero(m.Opentofu) { // not required
+			return nil
+		}
+
+		if err := m.Opentofu.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("opentofu")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("opentofu")
 			}
 
 			return err

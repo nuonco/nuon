@@ -556,6 +556,12 @@ func formatExample(prop *jsonschema.Schema) string {
 }
 
 func formatTitle(schemaName string) string {
+	specialCases := map[string]string{
+		"opentofu": "OpenTofu",
+	}
+	if title, ok := specialCases[schemaName]; ok {
+		return title
+	}
 	words := strings.Split(schemaName, "-")
 	caser := cases.Title(language.English)
 	for i, word := range words {

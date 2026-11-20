@@ -162,11 +162,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get OCI registry for sandbox build: %w", err)
 	}
 
-	tfPlan := buildsource.SandboxInputs(sandboxConfig)
-	tfPlan.Labels = map[string]string{
+	buildPlan := buildsource.SandboxPlan(sandboxConfig, map[string]string{
 		"app_id":               appConfig.AppID,
 		"app_sandbox_build_id": build.ID,
-	}
+	})
 
 	isSandboxOrg, err := activities.AwaitIsOrgSandboxMode(ctx, activities.IsOrgSandboxModeRequest{
 		OrgID: run.OrgID,
@@ -181,7 +180,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			SourceIdentity:     source.SourceIdentity,
 			Dst:                dstCfg,
 			DstTag:             build.ID,
-			TerraformBuildPlan: tfPlan,
+			TerraformBuildPlan: buildPlan.TerraformBuildPlan,
+			OpentofuBuildPlan:  buildPlan.OpentofuBuildPlan,
 		},
 	}
 	if isSandboxOrg {

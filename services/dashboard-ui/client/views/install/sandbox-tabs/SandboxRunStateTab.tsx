@@ -9,6 +9,7 @@ export const SandboxRunStateTab = () => {
   const { sandboxRun } = useSandboxRun()
 
   const isPulumi = sandboxRun?.app_sandbox_config?.type === 'pulumi'
+  const isOpenTofu = sandboxRun?.app_sandbox_config?.type === 'opentofu'
   const workspaceId = install?.sandbox?.terraform_workspace?.id
 
   return (
@@ -21,13 +22,17 @@ export const SandboxRunStateTab = () => {
           emptyMessage={
             isPulumi
               ? 'No Pulumi workspace found for this sandbox.'
-              : 'No Terraform workspace found for this sandbox.'
+              : isOpenTofu
+                ? 'No OpenTofu workspace found for this sandbox.'
+                : 'No Terraform workspace found for this sandbox.'
           }
         />
       ) : (
         <TerraformWorkspaceCard
           workspaceId={workspaceId}
-          componentType={isPulumi ? 'pulumi' : 'terraform_module'}
+          componentType={
+            isPulumi ? 'pulumi' : isOpenTofu ? 'opentofu_module' : 'terraform_module'
+          }
         />
       )}
     </>

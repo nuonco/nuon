@@ -41,7 +41,7 @@ func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate
 	if cfg == nil {
 		return nil, fmt.Errorf("app config is required")
 	}
-	if cfg.SandboxConfig.Type != "terraform" {
+	if cfg.SandboxConfig.Type != "terraform" && cfg.SandboxConfig.Type != "opentofu" {
 		return nil, fmt.Errorf("unsupported sandbox type %q", cfg.SandboxConfig.Type)
 	}
 	cfgJSON, err := json.Marshal(cfg)
@@ -106,6 +106,9 @@ func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate
 		return nil, err
 	}
 	sandboxType := "sandbox-terraform"
+	if cfg.SandboxConfig.Type == "opentofu" {
+		sandboxType = "sandbox-opentofu"
+	}
 	if refs := componentTokenRefs(sandboxComposite, componentRefs); len(refs) > 0 {
 		return nil, fmt.Errorf("sandbox config references component outputs, which do not exist before components apply: %s", strings.Join(componentRefStrings(refs), ", "))
 	}
@@ -668,6 +671,9 @@ func compileDeployPlan(planner *planpkg.Planner, l *zap.Logger, cfg *app.AppConf
 	case app.ComponentTypeTerraformModule:
 		jobType = "terraform-deploy"
 		result.TerraformDeployPlan, err = planner.RenderTerraformDeployPlan(l, &planpkg.RenderTerraformDeployPlanInput{Stack: stack, State: st, StateData: stateData, InstallDeploy: deploy, CompBuild: build, WorkspaceID: virtualID("vtfw", deploy.ID), RoleSelection: role, ResolveClusterInfo: cluster})
+	case app.ComponentTypeOpentofuModule:
+		jobType = "opentofu-deploy"
+		result.OpentofuDeployPlan, err = planner.RenderOpentofuDeployPlan(l, &planpkg.RenderOpentofuDeployPlanInput{Stack: stack, State: st, StateData: stateData, InstallDeploy: deploy, CompBuild: build, WorkspaceID: virtualID("vtfw", deploy.ID), RoleSelection: role, ResolveClusterInfo: cluster})
 	case app.ComponentTypeHelmChart:
 		jobType = "helm-chart-deploy"
 		result.HelmDeployPlan, err = planner.RenderHelmDeployPlan(l, &planpkg.RenderHelmDeployPlanInput{Stack: stack, State: st, StateData: stateData, InstallDeploy: deploy, CompBuild: build, RoleSelection: role, GetHelmChartID: func(string) (string, error) { return virtualID("vhlm", deploy.ID), nil }, ResolveClusterInfo: cluster})
@@ -779,12 +785,21 @@ func compileDriftTemplates(steps []appbundle.Step, components []appbundle.Compon
 	}
 	result := []appbundle.DriftTemplate{}
 	for _, step := range steps {
-		if step.JobType != "terraform-deploy" || step.JobOperation != "create-apply-plan" {
+		var clearPlanArtifacts func(json.RawMessage) (json.RawMessage, error)
+		switch step.JobType {
+		case "terraform-deploy":
+			clearPlanArtifacts = clearTerraformPlanArtifacts
+		case "opentofu-deploy":
+			clearPlanArtifacts = clearOpentofuPlanArtifacts
+		default:
+			continue
+		}
+		if step.JobOperation != "create-apply-plan" {
 			continue
 		}
 		name := strings.TrimSuffix(strings.TrimPrefix(step.ID, "deploy-"), "-plan")
 		component := byName[name]
-		plan, err := clearTerraformPlanArtifacts(step.CompositePlan)
+		plan, err := clearPlanArtifacts(step.CompositePlan)
 		if err != nil {
 			return nil, err
 		}

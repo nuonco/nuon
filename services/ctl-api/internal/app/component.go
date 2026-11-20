@@ -32,6 +32,7 @@ const (
 	ComponentTypeJob                ComponentType = "job"
 	ComponentTypeKubernetesManifest ComponentType = "kubernetes_manifest"
 	ComponentTypePulumi             ComponentType = "pulumi"
+	ComponentTypeOpentofuModule     ComponentType = "opentofu_module"
 	ComponentTypeUnknown            ComponentType = "unknown"
 )
 
@@ -47,7 +48,8 @@ func (c ComponentType) SyncJobType() RunnerJobType {
 		ComponentTypeExternalImage,
 		ComponentTypeHelmChart,
 		ComponentTypeKubernetesManifest,
-		ComponentTypePulumi:
+		ComponentTypePulumi,
+		ComponentTypeOpentofuModule:
 		return RunnerJobTypeOCISync
 
 	case ComponentTypeJob:
@@ -62,6 +64,8 @@ func (c ComponentType) DeployJobType() RunnerJobType {
 	switch c {
 	case ComponentTypeTerraformModule:
 		return RunnerJobTypeTerraformDeploy
+	case ComponentTypeOpentofuModule:
+		return RunnerJobTypeOpentofuDeploy
 	case ComponentTypeHelmChart:
 		return RunnerJobTypeHelmChartDeploy
 	case ComponentTypeJob:
@@ -92,6 +96,8 @@ func (c ComponentType) DeployPlanJobType() RunnerJobType {
 		return RunnerJobTypeKubrenetesManifestDeploy
 	case ComponentTypePulumi:
 		return RunnerJobTypePulumiDeploy
+	case ComponentTypeOpentofuModule:
+		return RunnerJobTypeOpentofuDeploy
 	default:
 	}
 
@@ -112,6 +118,8 @@ func (c ComponentType) BuildJobType() RunnerJobType {
 		return RunnerJobTypeNOOPBuild
 	case ComponentTypePulumi:
 		return RunnerJobTypePulumiBuild
+	case ComponentTypeOpentofuModule:
+		return RunnerJobTypeOpentofuModuleBuild
 	default:
 	}
 

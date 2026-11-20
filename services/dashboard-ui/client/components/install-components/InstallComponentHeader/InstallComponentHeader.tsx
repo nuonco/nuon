@@ -88,9 +88,16 @@ export const InstallComponentHeader = ({
                   <Button>
                     Teardown component <Icon variant="CloudArrowDownIcon" />
                   </Button>
-                  {installComponent?.component?.type === 'terraform_module' ? (
+                  {installComponent?.component?.type ===
+                  'terraform_module' ||
+                  installComponent?.component?.type ===
+                    'opentofu_module' ? (
                     <Button>
-                      Unlock Terraform state <Icon variant="LockOpenIcon" />
+                      Unlock{' '}
+                      {installComponent?.component?.type === 'opentofu_module'
+                        ? 'OpenTofu'
+                        : 'Terraform'}{' '}
+                      state <Icon variant="LockOpenIcon" />
                     </Button>
                   ) : null}
                 </Menu>

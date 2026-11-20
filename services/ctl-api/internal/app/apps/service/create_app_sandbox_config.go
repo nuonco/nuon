@@ -25,6 +25,7 @@ type CreateAppSandboxConfigRequest struct {
 	TerraformVersion             string  `json:"terraform_version,omitempty"`
 	Runtime                      string  `json:"runtime,omitempty"`
 	PulumiVersion                string  `json:"pulumi_version,omitempty"`
+	OpenTofuVersion              string  `json:"open_tofu_version,omitempty"`
 	DriftSchedule                *string `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 	MaxAutoRetries               *int    `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool   `json:"skip_noops,omitempty"`
@@ -68,6 +69,7 @@ func (c *CreateAppSandboxConfigRequest) buildInput(appID string) build.SandboxIn
 		TerraformVersion:             c.TerraformVersion,
 		Runtime:                      c.Runtime,
 		PulumiVersion:                c.PulumiVersion,
+		OpenTofuVersion:              c.OpenTofuVersion,
 		PulumiConfig:                 build.DerefMap(c.PulumiConfig),
 		Variables:                    build.DerefMap(c.Variables),
 		EnvVars:                      build.DerefMap(c.EnvVars),
@@ -179,7 +181,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get app sandbox: %w", res.Error)
 	}
 
-	if _, err := build.ResolveSandboxType(req.Type, req.TerraformVersion, req.Runtime); err != nil {
+	if _, err := build.ResolveSandboxType(req.Type, req.TerraformVersion, req.Runtime, req.OpenTofuVersion); err != nil {
 		return nil, stderr.NewInvalidRequest(err)
 	}
 

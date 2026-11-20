@@ -73,9 +73,6 @@ type Install struct {
 	AppBranchGroup                 string                                `json:"app_branch_group,omitzero" gorm:"-" temporaljson:"app_branch_group,omitzero,omitempty"`
 	AppBranchGroupAssignmentSource InstallAppBranchGroupAssignmentSource `json:"app_branch_group_assignment_source,omitzero" gorm:"-" temporaljson:"app_branch_group_assignment_source,omitzero,omitempty"`
 
-	AppSandboxConfigID string           `json:"-" swaggerignore:"true" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
-	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`
-
 	AppRunnerConfigID string          `json:"-" swaggerignore:"true" temporaljson:"app_runner_config_id,omitzero,omitempty"`
 	AppRunnerConfig   AppRunnerConfig `json:"app_runner_config,omitzero" temporaljson:"app_runner_config,omitzero,omitempty"`
 
@@ -215,10 +212,6 @@ func (i *Install) Views(db *gorm.DB) []migrations.View {
 			Name:          views.DefaultViewName(db, &Install{}, 9),
 			SQL:           viewsql.InstallsViewV9,
 			AlwaysReapply: true,
-		},
-		{
-			Name: views.CustomViewName(db, &Install{}, "migration_test"),
-			SQL:  `SELECT * FROM installs ORDER BY created_at DESC`,
 		},
 		{
 			Name:          views.CustomViewName(db, &Install{}, "fleet_view_v1"),
