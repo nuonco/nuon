@@ -95,6 +95,42 @@ func (s *InstallsServiceTestSuite) TestGetAppFleetRollout() {
 	assert.Equal(s.T(), behind.ID, filtered.Branches[0].Groups[0].Installs[0].ID)
 }
 
+func (s *InstallsServiceTestSuite) TestGetAppFleetRolloutByComponent() {
+	branch := s.seedFleetBranch("fleet-component", false)
+	comp := s.getSeededComponent(app.ComponentTypeHelmChart)
+
+	install := s.createTestInstall()
+	s.setFleetAppliedConfig(install, s.testAppConfig.ID)
+	s.connectFleetInstall(install, branch)
+	ic := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, comp.ID)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.InstallComponent{}).
+		Where("id = ?", ic.ID).
+		Update("app_config_ref", app.AppConfigRef{AppliedConfigID: "cfg-older-component"}).Error)
+
+	rr := s.makeRequest(http.MethodGet, fmt.Sprintf("/v1/apps/%s/fleet", s.testApp.ID), nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	var whole AppFleetResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &whole))
+	assert.Equal(s.T(), int64(1), whole.Summary.Applied)
+	assert.Equal(s.T(), int64(0), whole.Summary.Behind)
+
+	rr = s.makeRequest(http.MethodGet, fmt.Sprintf("/v1/apps/%s/fleet?component_id=%s", s.testApp.ID, comp.ID), nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	var scoped AppFleetResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &scoped))
+	assert.Equal(s.T(), int64(0), scoped.Summary.Applied)
+	assert.Equal(s.T(), int64(1), scoped.Summary.Behind)
+
+	path := fmt.Sprintf("/v1/apps/%s/fleet/installs?component_id=%s&rollout=behind", s.testApp.ID, comp.ID)
+	rr = s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	var installs []AppFleetInstall
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &installs))
+	require.Len(s.T(), installs, 1)
+	assert.Equal(s.T(), install.ID, installs[0].ID)
+}
+
 func (s *InstallsServiceTestSuite) TestGetAppFleetInstallsPaginates() {
 	branch := s.seedFleetBranch("fleet-page", false)
 	for i := 0; i < 3; i++ {
