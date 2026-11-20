@@ -76,6 +76,58 @@ test('shows the git commit time beside the branch run time', () => {
   expect(screen.getAllByText(/ago$/)).toHaveLength(2)
 })
 
+test('hides the commit body behind a toggle and keeps the subject', () => {
+  render(
+    <RunCommitSummary
+      source={source}
+      title="Manual run"
+      commit={{
+        sha: 'abc123',
+        message: 'feat: add cache\n\nAdds a cache chart with inline values.',
+      }}
+    />,
+  )
+
+  expect(screen.getByText('feat: add cache')).toBeTruthy()
+  const toggle = screen.getByRole('button', { name: 'Show commit message' })
+  expect(toggle.getAttribute('aria-expanded')).toBe('false')
+  expect(screen.queryByText(/Adds a cache chart/)).toBeNull()
+
+  fireEvent.click(toggle)
+
+  expect(toggle.getAttribute('aria-expanded')).toBe('true')
+  expect(screen.getByText(/Adds a cache chart/)).toBeTruthy()
+})
+
+test('renders a single-line commit without a toggle', () => {
+  render(
+    <RunCommitSummary
+      source={source}
+      title="Manual run"
+      commit={{ message: 'feat: add cache' }}
+    />,
+  )
+
+  expect(screen.queryByRole('button', { name: 'Show commit message' })).toBeNull()
+})
+
+test('links the trailing pull request number in the subject', () => {
+  render(
+    <RunCommitSummary
+      source={source}
+      title="Manual run"
+      commit={{
+        message: 'feat: add cache (#325)',
+        pullRequest: { number: 325, url: 'https://github.com/acme/platform/pull/325' },
+      }}
+    />,
+  )
+
+  const link = screen.getByRole('link', { name: 'Pull request 325' })
+  expect(link.getAttribute('href')).toBe('https://github.com/acme/platform/pull/325')
+  expect(link.textContent).toBe('#325')
+})
+
 test('shows a short commit message without a toggle', () => {
   render(
     <RunSourceCard
