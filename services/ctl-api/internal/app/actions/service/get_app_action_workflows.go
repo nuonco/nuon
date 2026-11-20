@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -79,13 +80,13 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	branchID := ctx.Query("branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	appID := ctx.Param("app_id")
-	_, err = s.findApp(ctx, org.ID, appID)
+	currentApp, err := applookup.ByRef(ctx, s.db, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, branchID, q, triggerTypes, lbls)
+	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, currentApp.ID, branchID, q, triggerTypes, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", appID, err))
 		return
@@ -159,17 +160,16 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, 
 	return actionWorkflows, nil
 }
 
-func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
-	app := app.App{}
+func (s *service) findAppByID(ctx context.Context, orgID, appID string) (*app.App, error) {
+	var currentApp app.App
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Org.VCSConnections").
-		Where("name = ? AND org_id = ?", appID, orgID).
-		Or("id = ?", appID).
-		First(&app)
+		Where(&app.App{ID: appID, OrgID: orgID}, "ID", "OrgID").
+		First(&currentApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return &app, nil
+	return &currentApp, nil
 }

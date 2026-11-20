@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -55,7 +56,10 @@ func (s *service) GetAppSandboxConfigs(ctx *gin.Context) {
 }
 
 func (s *service) findAppSandboxConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppSandboxConfig, error) {
-	app := app.App{}
+	currentApp, err := applookup.ByRef(ctx, s.db, orgID, appID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app: %w", err)
+	}
 	res := s.db.WithContext(ctx).
 		// sandbox configs
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
@@ -65,19 +69,18 @@ func (s *service) findAppSandboxConfigs(ctx *gin.Context, orgID, appID string) (
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
-		First(&app)
+		Where(&app.App{ID: currentApp.ID, OrgID: currentApp.OrgID}, "ID", "OrgID").
+		First(currentApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	cfgs, err := db.HandlePaginatedResponse(ctx, app.AppSandboxConfigs)
+	cfgs, err := db.HandlePaginatedResponse(ctx, currentApp.AppSandboxConfigs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get app sandbox configs: %w", err)
 	}
 
-	app.AppSandboxConfigs = cfgs
+	currentApp.AppSandboxConfigs = cfgs
 
-	return app.AppSandboxConfigs, nil
+	return currentApp.AppSandboxConfigs, nil
 }

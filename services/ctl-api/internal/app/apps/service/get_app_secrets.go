@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -51,7 +52,10 @@ func (s *service) GetAppSecrets(ctx *gin.Context) {
 }
 
 func (s *service) getAppSecrets(ctx *gin.Context, orgID, appID string) ([]app.AppSecret, error) {
-	var currentApp app.App
+	currentApp, err := applookup.ByRef(ctx, s.db, orgID, appID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app secrets: %w", err)
+	}
 
 	res := s.db.WithContext(ctx).
 		Preload("AppSecrets.CreatedBy").
@@ -60,9 +64,8 @@ func (s *service) getAppSecrets(ctx *gin.Context, orgID, appID string) ([]app.Ap
 				Scopes(scopes.WithOffsetPagination).
 				Order("app_secrets.created_at DESC")
 		}).
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
-		First(&currentApp)
+		Where(&app.App{ID: currentApp.ID, OrgID: currentApp.OrgID}, "ID", "OrgID").
+		First(currentApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app secrets: %w", res.Error)
 	}
