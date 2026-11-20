@@ -78,6 +78,12 @@ func (a *AppBranchConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"app_branch_id",
 			},
 		},
+		{
+			Name:         indexes.Name(db, &AppBranchConfig{}, "app_branch_id_created_at"),
+			Columns:      []string{"app_branch_id", "created_at DESC", "id DESC"},
+			Option:       "WHERE deleted_at = 0",
+			Concurrently: true,
+		},
 	}
 }
 

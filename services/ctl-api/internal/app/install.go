@@ -220,6 +220,11 @@ func (i *Install) Views(db *gorm.DB) []migrations.View {
 			Name: views.CustomViewName(db, &Install{}, "migration_test"),
 			SQL:  `SELECT * FROM installs ORDER BY created_at DESC`,
 		},
+		{
+			Name:          views.CustomViewName(db, &Install{}, "fleet_view_v1"),
+			SQL:           viewsql.InstallsFleetViewV1,
+			AlwaysReapply: true,
+		},
 	}
 }
 
@@ -236,6 +241,12 @@ func (i *Install) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"last_health_report_at",
 			},
+		},
+		{
+			Name:         indexes.Name(db, &Install{}, "org_id_app_id"),
+			Columns:      []string{"org_id", "app_id"},
+			Option:       "WHERE deleted_at = 0",
+			Concurrently: true,
 		},
 	}
 }
