@@ -14,53 +14,26 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ServiceInstallAlignmentPlan service install alignment plan
+// ServiceInstallResourceSyncStatusOpenDeployment service install resource sync status open deployment
 //
-// swagger:model service.InstallAlignmentPlan
-type ServiceInstallAlignmentPlan struct {
-
-	// approval id
-	ApprovalID string `json:"approval_id,omitempty"`
-
-	// changes create
-	ChangesCreate int64 `json:"changes_create,omitempty"`
-
-	// changes delete
-	ChangesDelete int64 `json:"changes_delete,omitempty"`
-
-	// changes noop
-	ChangesNoop int64 `json:"changes_noop,omitempty"`
-
-	// changes replace
-	ChangesReplace int64 `json:"changes_replace,omitempty"`
-
-	// changes update
-	ChangesUpdate int64 `json:"changes_update,omitempty"`
+// swagger:model service.InstallResourceSyncStatusOpenDeployment
+type ServiceInstallResourceSyncStatusOpenDeployment struct {
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
-	// owner id
-	OwnerID string `json:"owner_id,omitempty"`
+	// id
+	ID string `json:"id,omitempty"`
 
-	// owner type
-	OwnerType string `json:"owner_type,omitempty"`
-
-	// plan only
-	PlanOnly bool `json:"plan_only,omitempty"`
-
-	// step id
-	StepID string `json:"step_id,omitempty"`
+	// status
+	Status string `json:"status,omitempty"`
 
 	// type
-	Type AppWorkflowStepApprovalType `json:"type,omitempty"`
-
-	// workflow id
-	WorkflowID string `json:"workflow_id,omitempty"`
+	Type AppWorkflowType `json:"type,omitempty"`
 }
 
-// Validate validates this service install alignment plan
-func (m *ServiceInstallAlignmentPlan) Validate(formats strfmt.Registry) error {
+// Validate validates this service install resource sync status open deployment
+func (m *ServiceInstallResourceSyncStatusOpenDeployment) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateType(formats); err != nil {
@@ -73,7 +46,7 @@ func (m *ServiceInstallAlignmentPlan) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ServiceInstallAlignmentPlan) validateType(formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusOpenDeployment) validateType(formats strfmt.Registry) error {
 	if swag.IsZero(m.Type) { // not required
 		return nil
 	}
@@ -94,8 +67,8 @@ func (m *ServiceInstallAlignmentPlan) validateType(formats strfmt.Registry) erro
 	return nil
 }
 
-// ContextValidate validate this service install alignment plan based on the context it is used
-func (m *ServiceInstallAlignmentPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service install resource sync status open deployment based on the context it is used
+func (m *ServiceInstallResourceSyncStatusOpenDeployment) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateType(ctx, formats); err != nil {
@@ -108,7 +81,7 @@ func (m *ServiceInstallAlignmentPlan) ContextValidate(ctx context.Context, forma
 	return nil
 }
 
-func (m *ServiceInstallAlignmentPlan) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceInstallResourceSyncStatusOpenDeployment) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Type) { // not required
 		return nil
@@ -131,7 +104,7 @@ func (m *ServiceInstallAlignmentPlan) contextValidateType(ctx context.Context, f
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceInstallAlignmentPlan) MarshalBinary() ([]byte, error) {
+func (m *ServiceInstallResourceSyncStatusOpenDeployment) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -139,8 +112,8 @@ func (m *ServiceInstallAlignmentPlan) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceInstallAlignmentPlan) UnmarshalBinary(b []byte) error {
-	var res ServiceInstallAlignmentPlan
+func (m *ServiceInstallResourceSyncStatusOpenDeployment) UnmarshalBinary(b []byte) error {
+	var res ServiceInstallResourceSyncStatusOpenDeployment
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
