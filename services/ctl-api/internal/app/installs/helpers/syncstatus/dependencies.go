@@ -91,6 +91,9 @@ func (s *Helpers) loadDependencyState(ctx context.Context, st *installResourceSy
 
 	if st.stack != nil && st.install.AppConfigID != "" {
 		applied := st.stack.AppConfigRef.AppliedConfigID
+		if st.appliedStack != nil && st.appliedStack.AppConfigID != "" {
+			applied = st.appliedStack.AppConfigID
+		}
 		if applied != "" && applied != st.install.AppConfigID {
 			st.stackChanged, st.stackErr = configdiff.StackChanged(blobstore.WithBlobService(ctx, s.blobSvc), s.db, applied, st.install.AppConfigID)
 			if st.stackErr != nil {

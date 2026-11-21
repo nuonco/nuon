@@ -11,6 +11,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type InstallStackVersion struct {
@@ -150,6 +152,16 @@ func (a *InstallStackVersion) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+	}
+}
+
+func (a *InstallStackVersion) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &InstallStackVersion{}, "live_view_v1"),
+			SQL:           viewsql.InstallStackVersionsLiveViewV1,
+			AlwaysReapply: true,
 		},
 	}
 }
