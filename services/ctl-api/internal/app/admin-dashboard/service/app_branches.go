@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 const appBranchesPerPage = 20
@@ -146,6 +147,7 @@ func (s *service) attachLatestAppBranchRuns(ctx context.Context, branches []*app
 		Model(&app.AppBranchRun{}).
 		Select("DISTINCT ON (app_branch_id) id").
 		Where("app_branch_id IN ?", branchIDs).
+		Scopes(scopes.ExcludeIgnoredPreviewRuns).
 		Order("app_branch_id, created_at DESC")
 
 	var runs []app.AppBranchRun

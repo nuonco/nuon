@@ -5,10 +5,29 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v50/github"
+	"go.temporal.io/sdk/temporal"
+
+	ghrepo "github.com/nuonco/nuon/pkg/github/repo"
 )
 
 const maxChangedFilePaths = 3000
 const maxComparedFilePaths = 300
+
+func validateChangedFilePathsInput(input *FetchChangedFilePathsInput) error {
+	if !ghrepo.IsCommitSHA(input.CommitSHA) {
+		return fmt.Errorf("commit_sha must be a full commit SHA")
+	}
+	if input.BaseSHA != "" && !ghrepo.IsCommitSHA(input.BaseSHA) {
+		return fmt.Errorf("base_sha must be a full commit SHA")
+	}
+	if input.BaseBranch != "" && !ghrepo.IsSafeGitRef(input.BaseBranch) {
+		return fmt.Errorf("base_branch is not a valid git ref")
+	}
+	if input.PRNumber != nil && *input.PRNumber <= 0 {
+		return fmt.Errorf("pr_number must be positive")
+	}
+	return nil
+}
 
 type FetchChangedFilePathsInput struct {
 	VcsConfigID string `json:"vcs_config_id" validate:"required"`
@@ -33,6 +52,10 @@ type ChangedFilePaths struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 60s
 func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChangedFilePathsInput) (*ChangedFilePaths, error) {
+	if err := validateChangedFilePathsInput(input); err != nil {
+		return nil, temporal.NewNonRetryableApplicationError(err.Error(), "InvalidChangedFilePathsInput", err)
+	}
+
 	owner, repo, client, err := a.resolveGithubClient(ctx, input.VcsConfigID)
 	if err != nil {
 		return nil, err

@@ -60,6 +60,8 @@ func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, na
 			Mode:        string(latest.RunConfig.Mode),
 			TagPrefix:   latest.RunConfig.TagPrefix,
 			GithubLabel: latest.RunConfig.GithubLabel,
+			Paths:       latest.RunConfig.Paths,
+			PathsIgnore: latest.RunConfig.PathsIgnore,
 		})
 	}
 
@@ -163,6 +165,12 @@ func normalizeRunConfig(in *config.AppBranchRunConfig) *config.AppBranchRunConfi
 		out.Mode = string(models.AppAppBranchRunModePush)
 	case "on_tag_prefix":
 		out.Mode = string(models.AppAppBranchRunModeOnTag)
+	}
+	if len(out.Paths) == 0 {
+		out.Paths = nil
+	}
+	if len(out.PathsIgnore) == 0 {
+		out.PathsIgnore = nil
 	}
 	return out
 }
