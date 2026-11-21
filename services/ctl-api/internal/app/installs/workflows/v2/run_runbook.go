@@ -83,6 +83,18 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
 		return nil, err
 	}
+	targets, err := flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
+	if targets != nil {
+		if err := targets.CheckInstall(install); err != nil {
+			return nil, err
+		}
+		if targets.RunbookConfigID != rbConfig.ID || rbConfig.OrgID != targets.OrgID || rbConfig.AppID != targets.AppID || rbConfig.AppConfigID != targets.AppConfigID {
+			return nil, errors.New("runbook config does not match prepared targets")
+		}
+	}
 
 	var enabledInputs map[string]*string
 	if install.CurrentInstallInputs != nil {
@@ -95,6 +107,11 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
+	if targets != nil {
+		if err := hydrateRunbookComponentTargets(rbAppCfg, targets); err != nil {
+			return nil, err
+		}
+	}
 	cccIDByComp := make(map[string]string, len(rbAppCfg.ComponentConfigConnections))
 	for i := range rbAppCfg.ComponentConfigConnections {
 		ccc := &rbAppCfg.ComponentConfigConnections[i]
@@ -104,6 +121,25 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	// Generate steps for each runbook step
 	for _, stepCfg := range runbookSteps {
 		stepWorkflow := runbookStepWorkflow(flw, &stepCfg)
+		if targets != nil && (stepCfg.Type == app.RunbookStepTypeComponentDeploy || stepCfg.Type == app.RunbookStepTypeComponentTearDown) {
+			ids, ok := targets.StepComponents[stepCfg.ID]
+			if !ok || len(ids) == 0 {
+				return nil, errors.New("missing prepared runbook component targets")
+			}
+			for _, id := range ids {
+				var childSteps []*app.WorkflowStep
+				if stepCfg.Type == app.RunbookStepTypeComponentDeploy {
+					childSteps, err = runbookDeploySingleComponent(ctx, installID, id, stepCfg.Name, sg, stepWorkflow, enabledInputs, cccIDByComp, rbAppCfg)
+				} else {
+					childSteps, err = runbookTearDownSingleComponent(ctx, installID, id, stepCfg.Name, sg, flw, priorRunbookDeployType(steps, rbAppCfg, id))
+				}
+				if err != nil {
+					return nil, err
+				}
+				steps = append(steps, childSteps...)
+			}
+			continue
+		}
 		switch stepCfg.Type {
 		case app.RunbookStepTypeComponentDeploy:
 			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, stepWorkflow, enabledInputs, cccIDByComp)
@@ -195,13 +231,22 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 	return result, nil
 }
 
-func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string, cccIDByComp map[string]string) ([]*app.WorkflowStep, error) {
+func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string, cccIDByComp map[string]string, preparedConfig ...*app.AppConfig) ([]*app.WorkflowStep, error) {
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
 		ComponentID: componentID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install component")
+	}
+	targets, err := flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
+	if targets != nil {
+		if err := targets.CheckComponent(componentID, installComp); err != nil {
+			return nil, err
+		}
 	}
 
 	var installComponentID string
@@ -212,6 +257,21 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 	component, err := activities.AwaitGetComponentByComponentID(ctx, componentID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component")
+	}
+	if len(preparedConfig) > 0 {
+		found := false
+		for _, ccc := range preparedConfig[0].ComponentConfigConnections {
+			if ccc.ComponentID == componentID {
+				component = &ccc.Component
+				component.Type = ccc.Type
+				component.ComponentConfigs = []app.ComponentConfigConnection{ccc}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, errors.New("component is not in the prepared runbook config")
+		}
 	}
 
 	name := fmt.Sprintf("%s/%s", stepName, component.Name)
@@ -344,7 +404,30 @@ func runbookTearDownSteps(ctx workflow.Context, installID string, stepCfg *app.R
 	return result, nil
 }
 
-func runbookTearDownSingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func priorRunbookDeployType(steps []*app.WorkflowStep, cfg *app.AppConfig, componentID string) app.ComponentType {
+	for _, step := range steps {
+		if step.QueueSignal == nil {
+			continue
+		}
+		id := ""
+		switch sig := step.QueueSignal.Signal.(type) {
+		case *componentdeployapplyplan.Signal:
+			id = sig.ComponentID
+		case *componentsyncimage.Signal:
+			id = sig.ComponentID
+		}
+		if id == componentID {
+			for _, ccc := range cfg.ComponentConfigConnections {
+				if ccc.ComponentID == componentID {
+					return ccc.Type
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func runbookTearDownSingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow, priorDeployType ...app.ComponentType) ([]*app.WorkflowStep, error) {
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
 		ComponentID: componentID,
@@ -361,6 +444,24 @@ func runbookTearDownSingleComponent(ctx workflow.Context, installID, componentID
 	component, err := activities.AwaitGetComponentByComponentID(ctx, componentID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component")
+	}
+	targets, err := flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
+	if targets != nil {
+		if err := targets.CheckComponent(componentID, installComp); err != nil {
+			return nil, err
+		}
+		target, ok := targets.TeardownComponents[componentID]
+		if !ok || component.AppID != targets.AppID || component.OrgID != targets.OrgID {
+			return nil, errors.New("missing prepared runbook teardown target")
+		}
+		component.Name = target.Name
+		component.Type = target.Type
+		if len(priorDeployType) > 0 && !priorDeployType[0].IsImage() && priorDeployType[0].DeployJobType() != app.RunnerJobTypeUnknown {
+			component.Type = priorDeployType[0]
+		}
 	}
 
 	name := fmt.Sprintf("%s/%s", stepName, component.Name)
@@ -423,6 +524,23 @@ func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.Runb
 	sg.nextGroupNamed(fmt.Sprintf("action: %s", stepCfg.Name))
 
 	if stepCfg.ActionWorkflowID.ValueString() != "" {
+		targets, err := flw.ExecutionTargets()
+		if err != nil {
+			return nil, err
+		}
+		if targets != nil {
+			target, ok := targets.Actions[stepCfg.ActionWorkflowID.ValueString()]
+			if !ok {
+				return nil, errors.New("missing prepared runbook action target")
+			}
+			sig := &executeactionworkflow.Signal{Signal: &actionworkflowrun.Signal{
+				InstallID: installID, InstallActionWorkflowID: target.InstallActionWorkflowID,
+				AppConfigID: targets.AppConfigID, ActionWorkflowConfigID: target.ConfigID,
+				TriggerType: app.ActionWorkflowTriggerTypeManual, TriggeredByID: triggeredByID, TriggeredByType: "runbook",
+				RunEnvVars: dbgenerics.ToStringMap(stepCfg.EnvVars),
+			}}
+			return sg.installSignalStep(ctx, installID, fmt.Sprintf("action: %s", stepCfg.Name), pgtype.Hstore{}, sig, false)
+		}
 		iaw, err := activities.AwaitGetInstallActionWorkflow(ctx, activities.GetInstallActionWorkflowRequest{
 			InstallID:        installID,
 			ActionWorkflowID: stepCfg.ActionWorkflowID.ValueString(),
@@ -479,6 +597,13 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 	sandbox, err := activities.AwaitGetInstallSandboxByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install sandbox")
+	}
+	targets, err := flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
+	if targets != nil && (sandbox.ID != targets.InstallSandboxID || sandbox.OrgID != targets.OrgID || sandbox.InstallID != targets.InstallID) {
+		return nil, errors.New("install sandbox changed after the runbook was requested")
 	}
 
 	role := stepCfg.Role
@@ -540,6 +665,21 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
+	if targets != nil {
+		if err := hydrateRunbookComponentTargets(appCfg, targets); err != nil {
+			return nil, err
+		}
+		selected := make([]*app.InstallActionWorkflow, 0, len(targets.Actions))
+		for _, action := range awData {
+			if target, ok := targets.Actions[action.ActionWorkflowID]; ok && target.InstallActionWorkflowID == action.ID {
+				selected = append(selected, action)
+			}
+		}
+		if len(selected) != len(targets.Actions) {
+			return nil, errors.New("prepared runbook action is no longer installed")
+		}
+		awData = selected
+	}
 
 	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 	deploySteps, err := deployAllComponents(ctx, dg, true)
@@ -549,4 +689,32 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 	result = append(result, deploySteps...)
 
 	return result, nil
+}
+
+func hydrateRunbookComponentTargets(cfg *app.AppConfig, targets *app.InstallExecutionTargets) error {
+	if cfg.ID != targets.AppConfigID || cfg.AppID != targets.AppID || cfg.OrgID != targets.OrgID || len(cfg.ComponentConfigConnections) != len(targets.Components) {
+		return errors.New("app config does not match prepared runbook targets")
+	}
+	for i := range cfg.ComponentConfigConnections {
+		ccc := &cfg.ComponentConfigConnections[i]
+		target, ok := targets.Components[ccc.ComponentID]
+		if !ok || target.ConfigID != ccc.ID || ccc.OrgID != targets.OrgID || ccc.Component.OrgID != targets.OrgID || ccc.Component.AppID != targets.AppID {
+			return errors.New("component does not match prepared runbook target")
+		}
+		ccc.Component.Name = target.Name
+		ccc.Component.Type = ccc.Type
+	}
+	for id, target := range targets.Actions {
+		found := false
+		for _, action := range cfg.ActionWorkflowConfigs {
+			if action.ActionWorkflowID == id && action.ID == target.ConfigID && action.AppConfigID == targets.AppConfigID && action.AppID == targets.AppID && action.OrgID == targets.OrgID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New("action config does not match prepared execution target")
+		}
+	}
+	return nil
 }

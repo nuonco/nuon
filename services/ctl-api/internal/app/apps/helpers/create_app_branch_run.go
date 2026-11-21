@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateAppBranchRunRequest struct {
@@ -29,6 +30,38 @@ type CreateAppBranchRunRequest struct {
 }
 
 func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRunRequest) (*app.AppBranchRun, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var branch app.AppBranch
+	if err := h.db.WithContext(ctx).Preload("App").
+		Where(&app.AppBranch{ID: req.AppBranchID, OrgID: orgID}, "ID", "OrgID").First(&branch).Error; err != nil {
+		return nil, fmt.Errorf("unable to load app branch: %w", err)
+	}
+	if branch.App.ID == "" || branch.App.OrgID != orgID {
+		return nil, fmt.Errorf("app branch does not belong to a live app in this org")
+	}
+	var branchConfig app.AppBranchConfig
+	if err := h.db.WithContext(ctx).
+		Where(&app.AppBranchConfig{ID: req.AppBranchConfigID, AppBranchID: branch.ID, OrgID: orgID}, "ID", "AppBranchID", "OrgID").First(&branchConfig).Error; err != nil {
+		return nil, fmt.Errorf("unable to load app branch config: %w", err)
+	}
+	previewInput := MapLegacyPlanOnlyToPreviewInput(req)
+	configIDs := []string{req.AppConfigID}
+	if previewInput != nil && previewInput.InputAppConfigID != req.AppConfigID {
+		configIDs = append(configIDs, previewInput.InputAppConfigID)
+	}
+	for _, configID := range configIDs {
+		if configID == "" {
+			continue
+		}
+		var config app.AppConfig
+		if err := h.db.WithContext(ctx).
+			Where(&app.AppConfig{ID: configID, AppID: branch.AppID, OrgID: orgID}, "ID", "AppID", "OrgID").First(&config).Error; err != nil {
+			return nil, fmt.Errorf("unable to load app config for branch run: %w", err)
+		}
+	}
 	runType := req.RunType
 	if runType == "" {
 		runType = app.AppBranchRunTypeManual
@@ -71,34 +104,14 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 		Request:                req.Request,
 	}
 
-	previewInput := MapLegacyPlanOnlyToPreviewInput(req)
 	if previewInput != nil {
-		var branchConfig app.AppBranchConfig
-		configErr := h.db.WithContext(ctx).First(&branchConfig, "id = ?", req.AppBranchConfigID).Error
-		var branch app.AppBranch
-		branchErr := h.db.WithContext(ctx).First(&branch, "id = ?", req.AppBranchID).Error
-
-		if req.Preview != nil {
-			if configErr != nil {
-				return nil, fmt.Errorf("unable to load app branch config for preview: %w", configErr)
-			}
-			if branchErr != nil {
-				return nil, fmt.Errorf("unable to load app branch for preview: %w", branchErr)
-			}
-			preview, err := h.BuildAppBranchRunPreview(ctx, branch.AppID, &branchConfig, previewInput)
-			if err != nil {
+		preview, err := h.BuildAppBranchRunPreview(ctx, branch.AppID, &branchConfig, previewInput)
+		if err != nil {
+			if req.Preview != nil || runType == app.AppBranchRunTypeGitPreview {
 				return nil, err
 			}
+		} else {
 			run.Preview = preview
-		} else if configErr == nil && branchErr == nil {
-			preview, err := h.BuildAppBranchRunPreview(ctx, branch.AppID, &branchConfig, previewInput)
-			if err != nil {
-				if runType == app.AppBranchRunTypeGitPreview {
-					return nil, err
-				}
-			} else {
-				run.Preview = preview
-			}
 		}
 	}
 

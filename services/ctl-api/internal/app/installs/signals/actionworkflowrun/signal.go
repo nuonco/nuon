@@ -42,6 +42,8 @@ type Signal struct {
 	InstallWorkflowID       string
 	WorkflowStepID          string
 	InstallActionWorkflowID string
+	AppConfigID             string `json:",omitempty"`
+	ActionWorkflowConfigID  string `json:",omitempty"`
 	AdhocActionRunID        string
 	TriggerType             app.ActionWorkflowTriggerType
 	TriggeredByID           string
@@ -147,27 +149,34 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get install action workflow")
 	}
+	if (s.AppConfigID != "" || s.ActionWorkflowConfigID != "") && installActionWorkflow.InstallID != s.InstallID {
+		return fmt.Errorf("prepared action does not belong to the selected install")
+	}
 
 	slimInstall, err := activities.AwaitGetSlimInstallByInstallID(ctx, installActionWorkflow.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	found, err := activities.AwaitActionWorkflowInAppConfig(ctx, activities.ActionWorkflowInAppConfigRequest{
-		AppConfigID:      slimInstall.AppConfigID,
-		ActionWorkflowID: installActionWorkflow.ActionWorkflowID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to check action workflow in app config")
-	}
+	if s.AppConfigID == "" && s.ActionWorkflowConfigID == "" {
+		found, err := activities.AwaitActionWorkflowInAppConfig(ctx, activities.ActionWorkflowInAppConfigRequest{
+			AppConfigID:      slimInstall.AppConfigID,
+			ActionWorkflowID: installActionWorkflow.ActionWorkflowID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to check action workflow in app config")
+		}
 
-	if !found {
-		return fmt.Errorf("action workflow %s is not part of install's current app config", installActionWorkflow.ActionWorkflowID)
+		if !found {
+			return fmt.Errorf("action workflow %s is not part of install's current app config", installActionWorkflow.ActionWorkflowID)
+		}
 	}
 
 	actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
 		InstallActionWorkflowID: installActionWorkflow.ID,
 		ActionWorkflowID:        installActionWorkflow.ActionWorkflowID,
+		AppConfigID:             s.AppConfigID,
+		ActionWorkflowConfigID:  s.ActionWorkflowConfigID,
 		InstallID:               installActionWorkflow.InstallID,
 		InstallWorkflowID:       s.InstallWorkflowID,
 		TriggerType:             s.TriggerType,

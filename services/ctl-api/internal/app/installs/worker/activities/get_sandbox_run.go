@@ -18,10 +18,17 @@ func (a *Activities) GetSandboxRun(ctx context.Context, req GetSandboxRunRequest
 	var run app.InstallSandboxRun
 
 	res := a.db.WithContext(ctx).
+		Preload("Install").
+		Preload("InstallWorkflow").
 		Preload("AppSandboxConfig").
 		First(&run, "id = ?", req.RunID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install sandbox run")
+	}
+	if run.InstallWorkflow != nil {
+		if _, err := run.InstallWorkflow.PreparedInstallConfigID(run.Install); err != nil {
+			return nil, err
+		}
 	}
 
 	return &run, nil

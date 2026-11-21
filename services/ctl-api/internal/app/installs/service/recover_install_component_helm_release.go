@@ -89,7 +89,7 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 		return
 	}
 
-	installComponent, err := s.helpers.GetInstallComponent(ctx, installID, componentID)
+	installComponent, err := s.helpers.GetInstallComponent(ctx, install.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install component: %w", err))
 		return
@@ -170,7 +170,7 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 		}
 
 		if created && createdDeploy != nil {
-			s.emitRecoveryDeployAudit(ctx, installID, component.ID, createdDeploy.ID, deploy.ComponentBuildID, installComponent.ID)
+			s.emitRecoveryDeployAudit(ctx, install.ID, component.ID, createdDeploy.ID, deploy.ComponentBuildID, installComponent.ID)
 		}
 
 		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
@@ -182,7 +182,7 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create recovery deploy: %w", err))
 		return
 	}
-	s.emitRecoveryDeployAudit(ctx, installID, component.ID, recoveryDeploy.ID, deploy.ComponentBuildID, installComponent.ID)
+	s.emitRecoveryDeployAudit(ctx, install.ID, component.ID, recoveryDeploy.ID, deploy.ComponentBuildID, installComponent.ID)
 
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
@@ -205,7 +205,7 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 		return
 	}
 
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
 		return

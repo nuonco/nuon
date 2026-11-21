@@ -78,7 +78,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	installComponent, err := s.helpers.GetInstallComponent(ctx, installID, componentID)
+	installComponent, err := s.helpers.GetInstallComponent(ctx, install.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install component: %w", err))
 		return
@@ -142,7 +142,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
