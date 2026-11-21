@@ -1,14 +1,14 @@
 {
   "announcements": [
     {
-      "id": "release-rollouts-runner-control-043",
-      "title": "App Branch Triggers and Runner Control",
-      "date": "October 22, 2026",
-      "description": "App branch triggers, GitHub Actions for branch runs, and per-install runner and stack control",
+      "id": "run-more-installs-045",
+      "title": "Run More Installs With Less Overhead",
+      "date": "November 20, 2026",
+      "description": "Private images pull through cloud connections, with no pull secret to manage. One page shows which installs are current and which need attention.",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/043-release-rollouts-runner-control",
-      "image": "/images/announcements/nuon-changelog-043.png",
-      "imageDark": "/images/announcements/nuon-changelog-043.png",
+      "ctaUrl": "https://docs.nuon.co/updates/045-run-more-installs-with-less-overhead",
+      "image": "/images/announcements/nuon-changelog-045.png",
+      "imageDark": "/images/announcements/nuon-changelog-045.png",
       "dismissible": false
     },
     {
