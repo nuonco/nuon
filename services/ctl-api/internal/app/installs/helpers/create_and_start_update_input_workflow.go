@@ -15,6 +15,7 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 	changedInputValues string,
 	role string,
 	deployDependents bool,
+	tearDownDependents bool,
 	inputsOnly bool,
 	planOnly bool,
 	workflowType app.WorkflowType,
@@ -25,8 +26,9 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
 		// rendering things in the UI and other such things, which is why we are just using a string slice here,
 		// maybe that will change at some point, but this metadata should not be abused.
-		"inputs":            strings.Join(changedInputs, ","),
-		"deploy_dependents": strconv.FormatBool(deployDependents),
+		"inputs":               strings.Join(changedInputs, ","),
+		"deploy_dependents":    strconv.FormatBool(deployDependents),
+		"tear_down_dependents": strconv.FormatBool(tearDownDependents),
 	}
 	if inputsOnly {
 		metadata[app.WorkflowMetadataKeyInputsOnly] = strconv.FormatBool(true)

@@ -8,6 +8,10 @@ func (dg *genCtx) effectiveEnabled(compID string) bool {
 	return dg.enablement.EffectiveEnabled(compID)
 }
 
+func (dg *genCtx) ownEnabled(compID string) bool {
+	return dg.enablement.OwnEnabled(compID)
+}
+
 func (dg *genCtx) transitiveDependentsClosure(rootIDs []string) []string {
 	return dg.enablement.TransitiveDependentsClosure(rootIDs)
 }

@@ -48,6 +48,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
 	deployDependents := generics.FromPtrStr(flw.Metadata["deploy_dependents"]) == strconv.FormatBool(true)
+	tearDownDependents := generics.FromPtrStr(flw.Metadata["tear_down_dependents"]) == strconv.FormatBool(true)
 
 	appConfig, err := activities.AwaitGetAppConfig(ctx, activities.GetAppConfigRequest{
 		ID: install.AppConfigID,
@@ -138,6 +139,17 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		sandboxNeedsReprovision = false
 	}
 
+	if tearDownDependents && len(disableComps) > 0 {
+		expanded, err := activeDependentsToDisable(ctx, dg, disableComps)
+		if err != nil {
+			return nil, err
+		}
+		if len(expanded) > 0 {
+			disableComps = dg.reverseTopoSort(append(disableComps, expanded...))
+			componentIDs = removeComponentIDs(componentIDs, disableComps, skipComps)
+		}
+	}
+
 	needsRunner := sandboxNeedsReprovision ||
 		slices.ContainsFunc(componentIDs, func(id string) bool {
 			_, ok := dg.cccByComp[id]
@@ -204,6 +216,40 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps = append(steps, lifecycleSteps...)
 
 	return sg.Result(steps), nil
+}
+
+func activeDependentsToDisable(ctx workflow.Context, dg *genCtx, disableComps []string) ([]string, error) {
+	have := make(map[string]struct{}, len(disableComps))
+	for _, id := range disableComps {
+		have[id] = struct{}{}
+	}
+	var need []string
+	for _, id := range dg.transitiveDependentsClosure(disableComps) {
+		if _, ok := have[id]; ok {
+			continue
+		}
+		if _, ok := dg.cccByComp[id]; !ok {
+			continue
+		}
+		need = append(need, id)
+	}
+	if len(need) == 0 {
+		return nil, nil
+	}
+	installComps, err := activities.AwaitGetInstallComponentsBatch(ctx, activities.GetInstallComponentsBatchRequest{
+		InstallID:    dg.installID,
+		ComponentIDs: need,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to batch get install components for dependent teardown")
+	}
+	var active []string
+	for _, id := range need {
+		if ic, ok := installComps[id]; ok && ic != nil && ic.Status == app.InstallComponentStatusActive {
+			active = append(active, id)
+		}
+	}
+	return active, nil
 }
 
 // classifyEnabledTransitions inspects the changed synthetic enabled inputs and

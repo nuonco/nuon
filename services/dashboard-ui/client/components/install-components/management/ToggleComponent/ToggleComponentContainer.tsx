@@ -34,11 +34,12 @@ export const ToggleComponentModalContainer = ({
   const pastAction = enabling ? 'enabled' : 'disabled'
 
   const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { planOnly: boolean }) =>
+    mutationFn: (params: { planOnly: boolean; tearDownDependents: boolean }) =>
       toggleComponent({
         body: {
           enabled: enabling,
           plan_only: params.planOnly,
+          tear_down_dependents: params.tearDownDependents,
         },
         componentId: component.id,
         installId: install.id,
@@ -78,8 +79,8 @@ export const ToggleComponentModalContainer = ({
       enabling={enabling}
       isPending={isPending}
       error={error as any}
-      onSubmit={({ planOnly }) => {
-        execute({ planOnly })
+      onSubmit={({ planOnly, tearDownDependents }) => {
+        execute({ planOnly, tearDownDependents })
       }}
       onClose={() => {
         removeModal(props.modalId)

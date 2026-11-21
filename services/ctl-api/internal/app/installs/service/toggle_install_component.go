@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,13 +14,15 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type ToggleInstallComponentRequest struct {
-	Enabled  *bool `json:"enabled" validate:"required"`
-	PlanOnly bool  `json:"plan_only"`
+	Enabled            *bool `json:"enabled" validate:"required"`
+	PlanOnly           bool  `json:"plan_only"`
+	TearDownDependents bool  `json:"tear_down_dependents"`
 }
 
 func (c *ToggleInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -98,6 +101,17 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 	patch := map[string]*string{
 		config.EnabledOverrideInputName(component.Name): generics.ToPtr(strconv.FormatBool(*req.Enabled)),
 	}
+	tearDownDependents := !*req.Enabled && req.TearDownDependents
+	if tearDownDependents {
+		dependents, err := s.disabledDependentToggles(ctx, install, component.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		for name, value := range dependents {
+			patch[name] = value
+		}
+	}
 
 	// Drive the toggle through the shared install-inputs update flow, but tag
 	// the workflow with a dedicated type so it surfaces as "Enabling/Disabling
@@ -105,11 +119,13 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 	// enabled input remains the source of truth; the dedicated workflows
 	// delegate to the same reconcile logic.
 	workflowType := app.WorkflowTypeComponentEnabled
+	deployDependents := true
 	if !*req.Enabled {
 		workflowType = app.WorkflowTypeComponentDisabled
+		deployDependents = false
 	}
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, "", true, false, req.PlanOnly, workflowType, nil)
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, "", deployDependents, tearDownDependents, false, req.PlanOnly, workflowType, nil)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -120,4 +136,28 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 		workflowID = *inputs.WorkflowID
 	}
 	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflowID})
+}
+
+func (s *service) disabledDependentToggles(ctx context.Context, install *app.Install, componentID string) (map[string]*string, error) {
+	appCfg, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, true)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app config: %w", err)
+	}
+	cccByID := make(map[string]*app.ComponentConfigConnection, len(appCfg.ComponentConfigConnections))
+	for i := range appCfg.ComponentConfigConnections {
+		ccc := &appCfg.ComponentConfigConnections[i]
+		cccByID[ccc.ComponentID] = ccc
+	}
+	patch := map[string]*string{}
+	for _, id := range appconfiggraph.NewGraph(cccByID).TransitiveDependentsClosure([]string{componentID}) {
+		if id == componentID {
+			continue
+		}
+		ccc := cccByID[id]
+		if ccc == nil || !ccc.IsToggleable() {
+			continue
+		}
+		patch[config.EnabledOverrideInputName(ccc.Component.Name)] = generics.ToPtr("false")
+	}
+	return patch, nil
 }
