@@ -42,6 +42,8 @@ func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 		switch outcome.Status {
 		case app.StatusFailedPendingRetry:
 			return
+		case app.AwaitingApproval:
+			return
 		case app.StatusError, app.StatusCancelled:
 			result = callback.Result{
 				Status:            string(outcome.Status),

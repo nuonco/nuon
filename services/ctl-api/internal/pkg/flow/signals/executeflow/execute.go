@@ -1,6 +1,7 @@
 package executeflow
 
 import (
+	"strings"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -13,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -790,17 +792,67 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		l.Error("unable to update finished at", zap.Error(err))
 	}
 
+	finalStatus := app.CompositeStatus{
+		Status:                 app.StatusSuccess,
+		StatusHumanDescription: "successfully executed workflow",
+	}
+	failedStatus, err := s.skippedStepsFailedStatus(ctx)
+	if err != nil {
+		return err
+	}
+	if failedStatus != nil {
+		finalStatus = *failedStatus
+	}
+
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: s.WorkflowID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusSuccess,
-			StatusHumanDescription: "successfully executed workflow",
-		},
+		ID:     s.WorkflowID,
+		Status: finalStatus,
 	}); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Signal) skippedStepsFailedStatus(ctx workflow.Context) (*app.CompositeStatus, error) {
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.WorkflowID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get workflow steps")
+	}
+
+	var failed []flowerrors.FailedStep
+	for _, step := range steps {
+		if step.Retried || !step.SkipOnFailure || step.Status.Status != app.StatusError {
+			continue
+		}
+		failed = append(failed, flowerrors.FailedStep{
+			StepID: step.ID,
+			Name:   step.Name,
+			Detail: step.Status.StatusHumanDescription,
+		})
+	}
+	if len(failed) == 0 {
+		return nil, nil
+	}
+
+	ce := &flowerrors.SkippedStepsFailedError{Steps: failed}
+	data, err := compositeerrors.New(ce, compositeerrors.WithSource((&app.Workflow{}).TableName(), s.WorkflowID))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to build skipped steps composite error")
+	}
+
+	names := make([]string, 0, len(failed))
+	for _, step := range failed {
+		names = append(names, step.Name)
+	}
+	return &app.CompositeStatus{
+		Status:                 app.StatusError,
+		StatusHumanDescription: "workflow completed with failed steps: " + strings.Join(names, ", "),
+		CompositeError:         data,
+		Metadata: map[string]any{
+			"failed_step_names": names,
+		},
+	}, nil
 }
 
 // isGroupParallel returns true if any step in the group has GroupParallel=true.

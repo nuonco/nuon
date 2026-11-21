@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
@@ -525,7 +526,7 @@ func (e *FlowTestSuite) TestFailCancelWhileParked() {
 	}, 5*time.Second, pollInterval, "cancelled workflow must not run further steps")
 }
 
-// SkipOnFailure exhaustion marks the step failed (skipped_on_failure) and the workflow continues.
+// SkipOnFailure exhaustion marks the step failed (skipped_on_failure), the workflow continues, and it finishes as error.
 func (e *FlowTestSuite) TestSkipOnFailureContinuesWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -550,10 +551,13 @@ func (e *FlowTestSuite) TestSkipOnFailureContinuesWorkflow() {
 	flw, queueID := e.setupLifecycleTest(ctx, ownerID, ownerType, steps)
 	e.enqueueLifecycleFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 	step := e.getStep(ctx, steps[0].ID)
 	require.Equal(e.T(), app.StatusError, step.Status.Status)
 	require.Equal(e.T(), true, step.Status.Metadata["skipped_on_failure"])
+	finished := e.getWorkflow(ctx, flw.ID)
+	require.NotNil(e.T(), finished.Status.CompositeError)
+	require.Equal(e.T(), flowerrors.SkippedStepsFailedType, finished.Status.CompositeError.Type)
 	for _, s := range e.getStepsByWorkflow(ctx, flw.ID) {
 		if s.Name == "after-skippable-failure" {
 			require.Equal(e.T(), app.StatusSuccess, s.Status.Status,
