@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
+	"github.com/nuonco/nuon/pkg/runner/launcher"
+	launcherkubernetes "github.com/nuonco/nuon/pkg/runner/launcher/kubernetes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -42,10 +44,35 @@ func (a *Activities) newExecutor(ctx context.Context, job *app.RunnerJob) (*runn
 		return nil, fmt.Errorf("unable to mint install runner token: %w", err)
 	}
 
+	actionsLauncher, err := a.actionsLauncher()
+	if err != nil {
+		return nil, fmt.Errorf("unable to build actions launcher: %w", err)
+	}
+
 	return runnercontrolplane.NewInstallExecutor(a, a.l, runnercontrolplane.InstallConfig{
 		Config:       runnercontrolplane.Config{GitRef: a.cfg.GitRef},
 		RunnerAPIURL: a.cfg.RunnerAPIURL,
 		RunnerID:     job.RunnerID,
 		APIToken:     token.Token,
+		Launcher:     actionsLauncher,
 	})
+}
+
+// actionsLauncher builds the launcher.Launcher backend for image-backed
+// Action steps on runnerless installs, selected by
+// RunnerActionsLauncherBackend ("kubernetes", the default for deployed
+// control planes on EKS/GKE, or "docker" for local dev on a Mac with Docker).
+func (a *Activities) actionsLauncher() (launcher.Launcher, error) {
+	switch a.cfg.RunnerActionsLauncherBackend {
+	case "docker":
+		// local dev only -- see launcher.DockerLauncher's doc comment.
+		return launcher.NewDockerLauncher(launcher.NewImageCache()), nil
+	case "kubernetes", "":
+		return launcherkubernetes.New(launcherkubernetes.Params{
+			Namespace: a.cfg.RunnerActionsLauncherNamespace,
+			L:         a.l,
+		})
+	default:
+		return nil, fmt.Errorf("unknown runner actions launcher backend %q", a.cfg.RunnerActionsLauncherBackend)
+	}
 }

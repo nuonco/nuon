@@ -60,6 +60,12 @@ const gateMaxAutoRetries = 3
 
 const runnableProbesVersion = "await-component-healthy-runnable-probes-v1"
 
+// ensureInstallComponentHealthVersion gates the self-healing start call added
+// below: without it, a replay of a workflow history recorded before this
+// change would execute an activity its original run never scheduled, which
+// Temporal's replayer rejects as nondeterministic.
+const ensureInstallComponentHealthVersion = "await-component-healthy-ensure-install-health-v1"
+
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return gateMaxAutoRetries }
 
 func (s *Signal) WithParams(params *signal.Params) {
@@ -136,6 +142,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	if ccc == nil || !ccc.HealthCheckEnabled() || !ccc.HealthBlocksDeploy() {
 		return nil
+	}
+
+	// Runnerless installs (runner status not-used) have no Runner process to
+	// drive componenthealth.Engine, so the reports this gate waits on below
+	// come from InstallComponentHealthWorkflow instead. That workflow is
+	// normally started by ReconcileUseRunner on the not-used transition, but
+	// that start is best-effort, so confirm it is running (idempotently;
+	// already-started is not an error) before waiting for its reports rather
+	// than risk the gate timing out for a workflow that never started.
+	if workflow.GetVersion(ctx, ensureInstallComponentHealthVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitEnsureInstallComponentHealth(ctx, &activities.EnsureInstallComponentHealthRequest{
+			InstallID: s.InstallID,
+		}); err != nil {
+			l.Warn("unable to ensure install component health workflow is running", zap.Error(err))
+		}
 	}
 
 	// Required checks wait exactly like probes, except the runner cannot produce

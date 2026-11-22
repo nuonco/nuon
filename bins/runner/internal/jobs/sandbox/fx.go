@@ -6,8 +6,8 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 
-	pulumisandbox "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/pulumi"
-	syncsecrets "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/sync_secrets"
+	pulumisandbox "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/pulumi"
+	syncsecrets "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/sync_secrets"
 	terraform "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/terraform"
 )
 

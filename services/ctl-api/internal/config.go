@@ -231,6 +231,12 @@ func init() {
 
 	config.RegisterDefault("cors_allow_all_origins", false)
 	config.RegisterDefault("cors_allow_loopback_origins", false)
+
+	// Runnerless install Actions: kubernetes is the default so deployed
+	// control planes (EKS, GKE) work without a host Docker daemon. Override to
+	// "docker" for local dev on a Mac running ctl-api outside a container.
+	config.RegisterDefault("runner_actions_launcher_backend", "kubernetes")
+	config.RegisterDefault("runner_actions_launcher_namespace", "nuon-actions")
 }
 
 type Config struct {
@@ -432,6 +438,16 @@ type Config struct {
 	PublicAPIURL            string `config:"public_api_url" validate:"required"`
 	AdminAPIURL             string `config:"admin_api_url" validate:"required"`
 	TemporalUIURL           string `config:"temporal_ui_url" validate:"required"`
+
+	// RunnerActionsLauncherBackend selects how control-plane workers run
+	// image-backed Action steps for runnerless installs: "kubernetes" (the
+	// default, cloud-agnostic, works on EKS/GKE) or "docker" (shells the host
+	// docker CLI; local dev only, requires Docker Desktop on the ctl-api host).
+	RunnerActionsLauncherBackend string `config:"runner_actions_launcher_backend" validate:"required,oneof=kubernetes docker"`
+	// RunnerActionsLauncherNamespace is the Kubernetes namespace the
+	// kubernetes launcher backend creates action pods and secrets in. Unused
+	// by the docker backend.
+	RunnerActionsLauncherNamespace string `config:"runner_actions_launcher_namespace"`
 
 	// flags for controlling the background workers
 	ForceSandboxMode           bool          `config:"force_sandbox_mode"`

@@ -18,6 +18,12 @@ import (
 // DockerLauncher runs action containers via the host docker CLI. It mirrors the
 // mechanism mng already uses to launch the install container (shelling docker),
 // rather than adding a docker Go SDK dependency.
+//
+// This backend only works where the process has a local Docker daemon on
+// PATH/socket — VM runners, and a ctl-api dev loop running directly on a
+// developer's Mac. It does NOT work in Nuon Cloud or Nuon BYOC deployments of
+// the control plane, which run ctl-api as containers with no Docker daemon
+// available; those use pkg/runner/launcher/kubernetes instead.
 type DockerLauncher struct {
 	dockerPath string
 	cache      *ImageCache

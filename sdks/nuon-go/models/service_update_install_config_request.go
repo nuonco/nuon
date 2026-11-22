@@ -44,6 +44,14 @@ type ServiceUpdateInstallConfigRequest struct {
 	// telemetry
 	Telemetry *ConfigInstallTelemetry `json:"telemetry,omitempty"`
 
+	// UseRunner changes the install's desired runner mode: nil leaves it
+	// unchanged. Changing it enqueues a reprovision_stack workflow and is rejected with a 409
+	// if the install has any unfinished workflow, or if the install's latest
+	// stack outputs report the runner as disabled. Setting it to false also
+	// requires a cloud_connection_id on the install, an AWS install, and the
+	// org's runnerless-installs feature, exactly like install creation.
+	UseRunner *bool `json:"use_runner,omitempty"`
+
 	// vpc nested template url
 	VpcNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
 }

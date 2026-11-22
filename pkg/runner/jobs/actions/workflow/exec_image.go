@@ -11,10 +11,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	"github.com/nuonco/nuon/pkg/actions/supervisor"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/runner/launcher"
 	"github.com/nuonco/nuon/pkg/runner/oci"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"

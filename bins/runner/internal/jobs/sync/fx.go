@@ -3,10 +3,10 @@ package sync
 import (
 	"go.uber.org/fx"
 
-	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/sync/noop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"github.com/nuonco/nuon/pkg/runner/jobs/sync/imagemetadata"
+	noop "github.com/nuonco/nuon/pkg/runner/jobs/sync/noop"
 	oci "github.com/nuonco/nuon/pkg/runner/jobs/sync/oci"
 )
 

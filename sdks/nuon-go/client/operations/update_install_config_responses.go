@@ -55,6 +55,12 @@ func (o *UpdateInstallConfigReader) ReadResponse(response runtime.ClientResponse
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewUpdateInstallConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewUpdateInstallConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *UpdateInstallConfigNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *UpdateInstallConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewUpdateInstallConfigConflict creates a UpdateInstallConfigConflict with default headers values
+func NewUpdateInstallConfigConflict() *UpdateInstallConfigConflict {
+	return &UpdateInstallConfigConflict{}
+}
+
+/*
+UpdateInstallConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type UpdateInstallConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this update install config conflict response has a 2xx status code
+func (o *UpdateInstallConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update install config conflict response has a 3xx status code
+func (o *UpdateInstallConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update install config conflict response has a 4xx status code
+func (o *UpdateInstallConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update install config conflict response has a 5xx status code
+func (o *UpdateInstallConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update install config conflict response a status code equal to that given
+func (o *UpdateInstallConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the update install config conflict response
+func (o *UpdateInstallConfigConflict) Code() int {
+	return 409
+}
+
+func (o *UpdateInstallConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[PATCH /v1/installs/{install_id}/configs/{config_id}][%d] updateInstallConfigConflict %s", 409, payload)
+}
+
+func (o *UpdateInstallConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[PATCH /v1/installs/{install_id}/configs/{config_id}][%d] updateInstallConfigConflict %s", 409, payload)
+}
+
+func (o *UpdateInstallConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *UpdateInstallConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

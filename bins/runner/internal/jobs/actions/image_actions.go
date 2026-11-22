@@ -7,10 +7,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	workflow "github.com/nuonco/nuon/bins/runner/internal/jobs/actions/workflow"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	workflow "github.com/nuonco/nuon/pkg/runner/jobs/actions/workflow"
+	"github.com/nuonco/nuon/pkg/runner/launcher"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )

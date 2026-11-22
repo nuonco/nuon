@@ -18,6 +18,7 @@ import (
 	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/installcomponenthealth"
 )
 
 const (
@@ -47,6 +48,14 @@ type WorkerParams struct {
 
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
+
+	// InstallHealthActs and InstallHealthWorkflows drive the runnerless-install
+	// component health workflow on the control-plane-installs task queue built
+	// below. They are registered here, not in SharedActs/SharedWorkflows,
+	// because they must run only on that queue, not the installs namespace's
+	// primary worker.
+	InstallHealthActs      *installcomponenthealth.Activities
+	InstallHealthWorkflows *installcomponenthealth.Workflows
 }
 
 func New(params WorkerParams) (*Worker, error) {
@@ -120,6 +129,15 @@ func buildWorker(params WorkerParams, namespace string, taskQueue string, logNam
 		WorkflowPanicPolicy:                panicPolicy,
 		TaskQueue:                          controlplanejob.TaskQueueInstalls,
 	}, params.SharedActs.AllActivities()...)
+
+	// InstallComponentHealthWorkflow runs on this same control-plane-installs
+	// queue (installcomponenthealth.TaskQueue), started directly by
+	// ReconcileUseRunner rather than as a child workflow, so it needs its own
+	// workflow registration here alongside its activity.
+	cpWkr.RegisterWorkflow(params.InstallHealthWorkflows.InstallComponentHealthWorkflow)
+	for _, act := range params.InstallHealthActs.AllActivities() {
+		cpWkr.RegisterActivity(act)
+	}
 
 	params.Lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {

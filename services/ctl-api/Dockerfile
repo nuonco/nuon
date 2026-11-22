@@ -2,6 +2,7 @@
 
 ARG BUILD_IMAGE=buildimage
 ARG RUNTIME_IMAGE=runtimeimage
+ARG PULUMI_VERSION=3.271.0
 
 ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
@@ -62,6 +63,16 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     else \
       echo "Go cache already current"; \
     fi
+
+# --- Pulumi CLI (needed at runtime for control-plane deploy/sandbox Pulumi jobs) ---
+
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.27-alpine AS pulumi
+
+ARG PULUMI_VERSION
+
+RUN apk add --update --no-cache curl ca-certificates
+WORKDIR /opt
+RUN curl -sSL "https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz" | tar xz
 
 # --- Admin dashboard React SPA build ---
 
@@ -220,10 +231,19 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
 
 # Use the provided runtime image
 FROM ${RUNTIME_IMAGE} AS final
+ARG BUILD_IMAGE
 
 WORKDIR /src/services/ctl-api
 
-ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
+# Pulumi deploy/sandbox jobs run in-process on control-plane workers (no Runner VM),
+# so the runtime image needs the Pulumi CLI (matches bins/runner/Dockerfile's PULUMI_VERSION)
+# and a Go toolchain (pulumi's Go Automation API shells out to `go build`/`go run` for the
+# user's Pulumi program). The Go toolchain is copied from BUILD_IMAGE, which is already a
+# golang image used to build this service, so it's guaranteed to be present there.
+COPY --from=pulumi /opt/pulumi /opt/pulumi
+COPY --from=${BUILD_IMAGE} /usr/local/go /usr/local/go
+
+ENV PATH=/opt/pulumi:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 
 # expected as --build-args flags
 ARG VERSION

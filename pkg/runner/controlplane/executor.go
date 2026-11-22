@@ -26,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	actionsworkflow "github.com/nuonco/nuon/pkg/runner/jobs/actions/workflow"
 	containerimagebuild "github.com/nuonco/nuon/pkg/runner/jobs/build/containerimage"
 	helmbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/helm"
 	kubernetesmanifestbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/kubernetes_manifest"
@@ -34,11 +35,18 @@ import (
 	sandboxbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/sandbox"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
 	deployhelm "github.com/nuonco/nuon/pkg/runner/jobs/deploy/helm"
+	deployjob "github.com/nuonco/nuon/pkg/runner/jobs/deploy/job"
 	deploykubernetesmanifest "github.com/nuonco/nuon/pkg/runner/jobs/deploy/kubernetes_manifest"
+	deploynoop "github.com/nuonco/nuon/pkg/runner/jobs/deploy/noop"
+	deploypulumi "github.com/nuonco/nuon/pkg/runner/jobs/deploy/pulumi"
 	deployterraform "github.com/nuonco/nuon/pkg/runner/jobs/deploy/terraform"
+	sandboxpulumi "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/pulumi"
+	sandboxsyncsecrets "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/sync_secrets"
 	sandboxterraform "github.com/nuonco/nuon/pkg/runner/jobs/sandbox/terraform"
 	imagemetadatasync "github.com/nuonco/nuon/pkg/runner/jobs/sync/imagemetadata"
+	syncnoop "github.com/nuonco/nuon/pkg/runner/jobs/sync/noop"
 	ocisync "github.com/nuonco/nuon/pkg/runner/jobs/sync/oci"
+	"github.com/nuonco/nuon/pkg/runner/launcher"
 	runnerlog "github.com/nuonco/nuon/pkg/runner/log"
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
 	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
@@ -118,16 +126,30 @@ type InstallConfig struct {
 	// APIToken is a token minted for RunnerID, scoped per job (see
 	// controlplanejob.newExecutor). It is never cached beyond this executor.
 	APIToken string
+
+	// Launcher runs image-backed Action steps for the actions/workflow
+	// handler. Nil disables the handler (see NewInstallExecutor's doc), which
+	// is only expected for callers that haven't wired a launcher backend yet.
+	Launcher launcher.Launcher
 }
 
 // NewInstallExecutor builds an executor for install jobs: every handler
-// NewExecutor registers, plus the sandbox, Terraform, Helm, Kubernetes manifest
-// and OCI sync handlers moved from bins/runner. Unlike NewExecutor, runnerCfg points at the install's real
-// runner API and carries a per-job token, and apiClient delegates the methods
-// clientAdapter can't satisfy from the database (GetAppConfig,
-// Lock/UnlockTerraformWorkspace, UpdateTerraformStateJSON, ...) to a real
-// nuon-runner-go client built from the same URL, runner ID and token, so the
-// runner API's existing org/app scoping applies unchanged.
+// NewExecutor registers, plus the sandbox, Terraform, Pulumi, sync secrets,
+// Helm, Kubernetes manifest, job-deploy, noop deploy/sync, and OCI sync
+// handlers moved from bins/runner. Unlike NewExecutor, runnerCfg points at
+// the install's real runner API and carries a per-job token, and apiClient
+// delegates the methods clientAdapter can't satisfy from the database
+// (GetAppConfig, Lock/UnlockTerraformWorkspace, UpdateTerraformStateJSON,
+// ...) to a real nuon-runner-go client built from the same URL, runner ID and
+// token, so the runner API's existing org/app scoping applies unchanged.
+//
+// The actions/workflow handler is registered here when cfg.Launcher is set,
+// using whichever launcher.Launcher backend the caller built (docker or
+// kubernetes — see pkg/runner/launcher). Command/inline Action steps without a
+// source image keep executing directly in this process either way; only
+// image-backed steps go through the launcher. If cfg.Launcher is nil, Action
+// jobs for runnerless installs fail with "job handler not found" instead of
+// silently skipping the launcher.
 func NewInstallExecutor(client Client, l *zap.Logger, cfg InstallConfig) (*Executor, error) {
 	cfg.Config = cfg.Config.withDefaults()
 	if l == nil {
@@ -209,6 +231,52 @@ func NewInstallExecutor(client Client, l *zap.Logger, cfg InstallConfig) (*Execu
 		return nil, err
 	}
 	handlers = append(handlers, manifestHandler)
+
+	syncSecretsHandler, err := sandboxsyncsecrets.New(sandboxsyncsecrets.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, syncSecretsHandler)
+
+	jobDeployHandler, err := deployjob.New(deployjob.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, jobDeployHandler)
+
+	pulumiDeployHandler, err := deploypulumi.New(deploypulumi.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, pulumiDeployHandler)
+
+	sandboxPulumiHandler, err := sandboxpulumi.New(sandboxpulumi.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, ErrRecorder: recorder})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, sandboxPulumiHandler)
+
+	noopDeployHandler, err := deploynoop.New(deploynoop.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, noopDeployHandler)
+
+	noopSyncHandler, err := syncnoop.New(syncnoop.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg})
+	if err != nil {
+		return nil, err
+	}
+	handlers = append(handlers, noopSyncHandler)
+
+	if cfg.Launcher != nil {
+		actionsHandler := actionsworkflow.New(actionsworkflow.HandlerParams{
+			V:         v,
+			APIClient: apiClient,
+			Settings:  &settings.Settings{},
+			Launcher:  cfg.Launcher,
+		})
+		handlers = append(handlers, actionsHandler)
+	}
 
 	return &Executor{client: client, l: l, handlers: handlers}, nil
 }

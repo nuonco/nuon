@@ -73,10 +73,7 @@ func (a *Templates) getRoleResources(inp *stacks.TemplateInput, role app.AppAWSI
 
 	trustPolicies := make([]map[string]any, 0)
 
-	// The cloud connection's role is trusted whenever the install has one,
-	// regardless of use_runner: moving to runnerless must not leave a gap
-	// where neither the runner nor the control plane can assume these roles.
-	if inp.CloudConnectionPrincipalARN != "" {
+	if !a.useRunner(inp) && inp.CloudConnectionPrincipalARN != "" {
 		trustPolicies = append(trustPolicies, map[string]any{
 			"Effect": "Allow",
 			"Principal": map[string]any{

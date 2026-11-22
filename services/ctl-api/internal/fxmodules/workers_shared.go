@@ -20,6 +20,7 @@ import (
 	signalhooks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/hooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/installcomponenthealth"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -77,11 +78,13 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(workflowstepawaitingretry.NewNotifier),
 	fx.Provide(releasedrunbooks.NewNotifier),
 	fx.Provide(controlplanejob.NewActivities),
+	fx.Provide(installcomponenthealth.NewActivities),
 	fx.Provide(onboardingactivities.New),
 
 	// workflows
 	fx.Provide(job.New),
 	fx.Provide(controlplanejob.NewWorkflows),
+	fx.Provide(installcomponenthealth.NewWorkflows),
 	fx.Provide(workflowsflow.New),
 	fx.Provide(workflows.NewActivities),
 	fx.Provide(workflows.NewWorkflows),

@@ -15,7 +15,7 @@ import (
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
+	"github.com/nuonco/nuon/pkg/runner/launcher"
 )
 
 type deadlineRecordingLauncher struct {

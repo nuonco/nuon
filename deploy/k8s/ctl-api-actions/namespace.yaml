@@ -1,0 +1,13 @@
+# Namespace the ctl-api control-plane worker's kubernetes launcher
+# (pkg/runner/launcher/kubernetes) creates one pod per Action step in.
+#
+# This repo has no existing ctl-api Kubernetes manifests or Helm chart to
+# place this alongside (bins/runner/bundle/helm is the runner's chart, for
+# customer clusters). Apply these manifests to the same cluster ctl-api's
+# control-plane worker runs in.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nuon-actions
+  labels:
+    app.kubernetes.io/managed-by: nuon-actions

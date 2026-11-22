@@ -60,6 +60,9 @@ type AppAWSStackOutputs struct {
 	// runner subnet
 	RunnerSubnet string `json:"runner_subnet,omitempty"`
 
+	// Nil when the stack predates use_runner, which must read as using a runner.
+	UseRunner bool `json:"use_runner,omitempty"`
+
 	// vpc id
 	VpcID string `json:"vpc_id,omitempty"`
 }

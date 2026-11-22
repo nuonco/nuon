@@ -83,12 +83,81 @@ func (a *Activities) injectInstallCredentials(ctx context.Context, jobID string,
 	}
 
 	sessionName := truncateSessionName(fmt.Sprintf("nuon-install-job-%s", jobID))
-	minted, err := a.cloudConnections.Credentials(ctx, &connection, sessionName)
+	return mintAndInjectCredentials(ctx, a.cloudConnections, &connection, sessionName, authConfigs)
+}
+
+// InjectAWSAuthCredentials mints short-lived cloud connection credentials for
+// install and sets them as the two-step source credentials on every AWS auth
+// config in authConfigs, the same substitution injectInstallCredentials makes
+// for a control-plane job's plan. It is the shared path for anything running
+// AWS auth on behalf of a runnerless install without a runner process in the
+// customer's account -- today that is control-plane install jobs
+// (injectInstallCredentials, above) and the install component health
+// workflow's report activity (installcomponenthealth.Activities).
+//
+// A no-op when the install has no cloud connection, or the connection is not
+// AWS: callers should treat that as nothing-to-inject rather than an error.
+func InjectAWSAuthCredentials(
+	ctx context.Context,
+	db *gorm.DB,
+	cc cloudConnectionsCredentialsHelper,
+	installID string,
+	authConfigs []*awscredentials.Config,
+) error {
+	if len(authConfigs) == 0 {
+		return nil
+	}
+
+	var install app.Install
+	if err := db.WithContext(ctx).
+		Where(&app.Install{ID: installID}).
+		First(&install).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("unable to get install for credential injection: %w", err)
+	}
+	if install.CloudConnectionID == nil || *install.CloudConnectionID == "" {
+		return nil
+	}
+
+	var connection app.CloudConnection
+	if err := db.WithContext(ctx).
+		Where(&app.CloudConnection{ID: *install.CloudConnectionID}).
+		First(&connection).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("unable to get cloud connection for credential injection: %w", err)
+	}
+	if connection.Platform != app.CloudPlatformAWS {
+		return nil
+	}
+
+	sessionName := truncateSessionName(fmt.Sprintf("nuon-install-%s", installID))
+	return mintAndInjectCredentials(ctx, cc, &connection, sessionName, authConfigs)
+}
+
+// cloudConnectionsCredentialsHelper is the one method InjectAWSAuthCredentials
+// needs, so callers outside this package (installcomponenthealth) don't have
+// to depend on the full cloudconnectionshelpers.Helpers type.
+type cloudConnectionsCredentialsHelper interface {
+	Credentials(ctx context.Context, connection *app.CloudConnection, sessionName string) (*awscredentials.Config, error)
+}
+
+func mintAndInjectCredentials(
+	ctx context.Context,
+	cc cloudConnectionsCredentialsHelper,
+	connection *app.CloudConnection,
+	sessionName string,
+	authConfigs []*awscredentials.Config,
+) error {
+	minted, err := cc.Credentials(ctx, connection, sessionName)
 	if err != nil {
-		return fmt.Errorf("unable to mint install job credentials: %w", err)
+		return fmt.Errorf("unable to mint install credentials: %w", err)
 	}
 	if minted.Static == nil {
-		return fmt.Errorf("cloud connection credentials for install job did not include static credentials")
+		return fmt.Errorf("cloud connection credentials for install did not include static credentials")
 	}
 
 	src := assumerole.StaticCredentials{

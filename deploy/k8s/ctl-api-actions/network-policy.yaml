@@ -1,0 +1,49 @@
+# Default-deny NetworkPolicy for the nuon-actions namespace: action pods (one
+# per Action workflow step, see pkg/runner/launcher/kubernetes) get egress
+# only to the public internet. This blocks:
+#   - traffic to any pod/service inside the cluster (every in-cluster CIDR),
+#     so an action can't reach other workloads or the Kubernetes API server
+#     over the pod network,
+#   - the cloud metadata endpoint (169.254.169.254), so an action can't mint
+#     node/instance credentials.
+# DNS (port 53) is allowed so the pod can still resolve the public hosts it's
+# allowed to reach. Ingress is denied entirely -- nothing calls into an action
+# pod.
+#
+# Adjust the blocked CIDRs in `except` to match the cluster's actual pod and
+# service CIDR ranges before applying.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nuon-actions-default-deny
+  namespace: nuon-actions
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              # RFC 1918 private ranges: covers most cluster pod/service CIDRs.
+              # Replace with the cluster's actual CIDRs if they differ.
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              # cloud instance metadata endpoint (AWS, GCP, Azure)
+              - 169.254.169.254/32
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

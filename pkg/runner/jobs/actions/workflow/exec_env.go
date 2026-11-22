@@ -9,8 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/git"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/runner/git"
 )
 
 func (h *handler) createExecEnv(ctx context.Context, l *zap.Logger, src *plantypes.GitSource, cfg *models.AppActionWorkflowStepConfig) error {

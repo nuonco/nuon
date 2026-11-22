@@ -22,6 +22,23 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
+	// Best-effort: a runnerless install may have a live
+	// InstallComponentHealthWorkflow (started by ReconcileUseRunner) reporting
+	// health through a control-plane runner-API token for this install. That
+	// workflow has nothing to stop for once deprovisioning starts, and
+	// wouldn't naturally see the runner's eventual terminal status, so stop it
+	// up front. Not finding one running is not an error.
+	//
+	// Gated by GetVersion: an in-flight Deprovision execution started before
+	// this activity existed must not replay a call its history never recorded.
+	if workflow.GetVersion(ctx, "deprovision-stops-install-component-health-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitStopByInstallID(ctx, activities.StopByInstallIDRequest{
+			Req: &activities.StopInstallComponentHealthRequest{InstallID: installID},
+		}); err != nil {
+			workflow.GetLogger(ctx).Warn("unable to stop install component health workflow before deprovision", "install_id", installID, "error", err.Error())
+		}
+	}
+
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")

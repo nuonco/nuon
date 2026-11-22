@@ -15,8 +15,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/runner/launcher"
 	pkgplantypes "github.com/nuonco/nuon/pkg/runner/plantypes"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"

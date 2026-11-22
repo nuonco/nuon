@@ -68,6 +68,10 @@ type AppInstallConfig struct {
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
+	// UseRunner is the desired runner mode; nil means true. The runner's status
+	// (not-used) reflects what the applied stack actually has.
+	UseRunner *bool `json:"use_runner,omitempty"`
+
 	// Per-install stack template overrides (nil = use app config default)
 	VpcNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
 }

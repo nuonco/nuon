@@ -62,13 +62,13 @@ GetInstallOverviewParams contains all the parameters to send to the API endpoint
 */
 type GetInstallOverviewParams struct {
 
-	/* IncludeAlignment.
+	/* IncludeResourceSyncStatus.
 
-	   include per-resource alignment; set false for branch tracking and config drift only
+	   include per-resource sync status; set false for branch tracking and config drift only
 
 	   Default: true
 	*/
-	IncludeAlignment *bool
+	IncludeResourceSyncStatus *bool
 
 	/* InstallID.
 
@@ -94,11 +94,11 @@ func (o *GetInstallOverviewParams) WithDefaults() *GetInstallOverviewParams {
 // All values with no default are reset to their zero value.
 func (o *GetInstallOverviewParams) SetDefaults() {
 	var (
-		includeAlignmentDefault = bool(true)
+		includeResourceSyncStatusDefault = bool(true)
 	)
 
 	val := GetInstallOverviewParams{
-		IncludeAlignment: &includeAlignmentDefault,
+		IncludeResourceSyncStatus: &includeResourceSyncStatusDefault,
 	}
 
 	val.timeout = o.timeout
@@ -140,15 +140,15 @@ func (o *GetInstallOverviewParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithIncludeAlignment adds the includeAlignment to the get install overview params
-func (o *GetInstallOverviewParams) WithIncludeAlignment(includeAlignment *bool) *GetInstallOverviewParams {
-	o.SetIncludeAlignment(includeAlignment)
+// WithIncludeResourceSyncStatus adds the includeResourceSyncStatus to the get install overview params
+func (o *GetInstallOverviewParams) WithIncludeResourceSyncStatus(includeResourceSyncStatus *bool) *GetInstallOverviewParams {
+	o.SetIncludeResourceSyncStatus(includeResourceSyncStatus)
 	return o
 }
 
-// SetIncludeAlignment adds the includeAlignment to the get install overview params
-func (o *GetInstallOverviewParams) SetIncludeAlignment(includeAlignment *bool) {
-	o.IncludeAlignment = includeAlignment
+// SetIncludeResourceSyncStatus adds the includeResourceSyncStatus to the get install overview params
+func (o *GetInstallOverviewParams) SetIncludeResourceSyncStatus(includeResourceSyncStatus *bool) {
+	o.IncludeResourceSyncStatus = includeResourceSyncStatus
 }
 
 // WithInstallID adds the installID to the get install overview params
@@ -170,18 +170,18 @@ func (o *GetInstallOverviewParams) WriteToRequest(r runtime.ClientRequest, reg s
 	}
 	var res []error
 
-	if o.IncludeAlignment != nil {
+	if o.IncludeResourceSyncStatus != nil {
 
-		// query param include_alignment
-		var qrIncludeAlignment bool
+		// query param include_resource_sync_status
+		var qrIncludeResourceSyncStatus bool
 
-		if o.IncludeAlignment != nil {
-			qrIncludeAlignment = *o.IncludeAlignment
+		if o.IncludeResourceSyncStatus != nil {
+			qrIncludeResourceSyncStatus = *o.IncludeResourceSyncStatus
 		}
-		qIncludeAlignment := swag.FormatBool(qrIncludeAlignment)
-		if qIncludeAlignment != "" {
+		qIncludeResourceSyncStatus := swag.FormatBool(qrIncludeResourceSyncStatus)
+		if qIncludeResourceSyncStatus != "" {
 
-			if err := r.SetQueryParam("include_alignment", qIncludeAlignment); err != nil {
+			if err := r.SetQueryParam("include_resource_sync_status", qIncludeResourceSyncStatus); err != nil {
 				return err
 			}
 		}

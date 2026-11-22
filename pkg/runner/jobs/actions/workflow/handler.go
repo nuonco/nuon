@@ -10,8 +10,8 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	"github.com/nuonco/nuon/pkg/runner/launcher"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 )

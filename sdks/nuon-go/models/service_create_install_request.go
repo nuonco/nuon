@@ -65,6 +65,13 @@ type ServiceCreateInstallRequest struct {
 	// StackOnly provisions the install stack and runner, then stops. The sandbox
 	// and components stay unprovisioned until the install is provisioned again.
 	StackOnly bool `json:"stack_only,omitempty"`
+
+	// UseRunner sets the install's desired runner mode: nil or true means jobs
+	// run on a runner in the install's cloud account (the default). False means
+	// jobs run on control-plane install workers instead; it requires a
+	// cloud_connection_id, an AWS app, and the org's runnerless-installs
+	// feature.
+	UseRunner *bool `json:"use_runner,omitempty"`
 }
 
 // Validate validates this service create install request
