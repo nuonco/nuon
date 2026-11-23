@@ -131,6 +131,9 @@ func Decide(in Input) (*Decision, error) {
 		for _, m := range in.Manifests {
 			if _, ok := kept[m.Digest]; ok {
 				for _, child := range m.Children {
+					if _, ok := byDigest[child]; !ok {
+						continue
+					}
 					if keep(child, KeepReasonParent) {
 						changed = true
 					}
