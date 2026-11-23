@@ -3958,12 +3958,7 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
-      /**
-       * @description IgnoreChangesRegex is an RE2 pattern matched against every changed file path
-       * in a git-run or git-preview run. When every changed file matches, the run is
-       * marked not-attempted instead of building and deploying. Empty disables the
-       * check, and a forced run bypasses it.
-       */
+      /** @description Deprecated: use run.paths or run.paths_ignore. */
       ignore_changes_regex?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       /**
@@ -3980,6 +3975,10 @@ export interface components {
       post_deploy_runbook_ids?: string[];
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      /**
+       * @description paths and paths_ignore are mutually exclusive, and neither list accepts a
+       * pattern starting with "!". AutoMigrate creates the check; it is not a migration.
+       */
       run_config?: components["schemas"]["app.AppBranchRunConfig"];
       runbook_ids?: string[];
       /**
@@ -8866,11 +8865,7 @@ export interface components {
     "service.CreateAppBranchConfigRequest": {
       clear_preview_config?: boolean;
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
-      /**
-       * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
-       * it matches this RE2 pattern. Omit to carry the current setting forward; send
-       * an empty string to clear it.
-       */
+      /** @description Deprecated: use run_config.paths or run_config.paths_ignore. */
       ignore_changes_regex?: string | null;
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
       /**
@@ -10495,10 +10490,7 @@ export interface components {
       name?: string;
     };
     "service.UpdateAppBranchConfigRequest": {
-      /**
-       * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
-       * it matches this RE2 pattern. Send an empty string to clear it.
-       */
+      /** @description Deprecated: use run_config.paths or run_config.paths_ignore. */
       ignore_changes_regex?: string | null;
       /** @description SendStatusesOnIgnore posts a successful commit status for ignored runs. */
       send_statuses_on_ignore?: boolean | null;
