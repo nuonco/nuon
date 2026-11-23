@@ -67,21 +67,15 @@ type CheckContext struct {
 const (
 	WorkflowMetadataResolveDrift    = app.WorkflowMetadataKeyResolveDrift
 	WorkflowMetadataReuseApprovalID = "reuse_approval_id"
-
-	resolveDriftApprovalReuseVersion  = "resolve-drift-approval-reuse-v1"
-	resolveDriftApprovalPolicyVersion = "resolve-drift-approval-policy-v1"
 )
 
 func ResolveDrift(ctx workflow.Context, flw *app.Workflow) bool {
 	v := flw.Metadata[WorkflowMetadataResolveDrift]
-	if v == nil || *v != "true" {
-		return false
-	}
-	return workflow.GetVersion(ctx, resolveDriftApprovalReuseVersion, workflow.DefaultVersion, 1) == 1
+	return v != nil && *v == "true"
 }
 
 func ResolveDriftApprovalPolicy(ctx workflow.Context, flw *app.Workflow) bool {
-	return ResolveDrift(ctx, flw) && workflow.GetVersion(ctx, resolveDriftApprovalPolicyVersion, workflow.DefaultVersion, 1) == 1
+	return ResolveDrift(ctx, flw)
 }
 
 func ReuseApprovalID(flw *app.Workflow) string {

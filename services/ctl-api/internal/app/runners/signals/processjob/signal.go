@@ -24,19 +24,10 @@ import (
 
 const SignalType signal.SignalType = "process_job"
 
-const lifecycleCompositeErrorVersion = "process-job-lifecycle-composite-error-v1"
-
 const (
 	minPollPeriod = time.Second
 	maxPollPeriod = 10 * time.Second
 )
-
-// Existing process_job histories did not schedule lifecycle-error activities
-// or stop retrying on cancellation. The version guard keeps their replay
-// deterministic during rollout.
-func lifecycleCompositeErrorsEnabled(ctx workflow.Context) bool {
-	return workflow.GetVersion(ctx, lifecycleCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-}
 
 // pollPeriod backs off 1s→10s (1,2,4,8,10,...) so fast jobs are detected quickly
 // while long jobs stay cheap on workflow history.
@@ -148,7 +139,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Check if runner has any active process
 	if !execData.HasActiveProcess {
-		if runnerJob.Status == app.RunnerJobStatusCancelled && lifecycleCompositeErrorsEnabled(ctx) {
+		if runnerJob.Status == app.RunnerJobStatusCancelled {
 			l.Info("job was already cancelled, not attempting")
 			return nil
 		}
@@ -608,10 +599,7 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 			l.Error("job was cancelled")
 			s.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusCancelled)
 			tags["status"] = "cancelled"
-			if lifecycleCompositeErrorsEnabled(ctx) {
-				return false, "", nil
-			}
-			return true, "", nil
+			return false, "", nil
 		}
 
 		// if the runner has no active process, the job execution is marked as failed.
@@ -676,7 +664,7 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 }
 
 func (s *Signal) recordJobLifecycleCompositeError(ctx workflow.Context, jobID string, reason joberrors.LifecycleFailureReason) {
-	if reason == "" || !lifecycleCompositeErrorsEnabled(ctx) {
+	if reason == "" {
 		return
 	}
 
@@ -694,13 +682,7 @@ func (s *Signal) recordJobLifecycleCompositeError(ctx workflow.Context, jobID st
 		zap.Error(err))
 }
 
-const sandboxJobExecutionVersion = "process-job-sandbox-execution-v1"
-
 func (s *Signal) recordSandboxJobExecution(ctx workflow.Context) {
-	if workflow.GetVersion(ctx, sandboxJobExecutionVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return
-	}
-
 	if err := activities.AwaitCreateSandboxJobExecution(ctx, activities.CreateSandboxJobExecutionRequest{
 		JobID: s.JobID,
 	}); err != nil {

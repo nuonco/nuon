@@ -186,8 +186,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if workflow.GetVersion(ctx, "stack-wait-release-group-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
-		!shouldCreateManagedAWSCloudFormationStack(s.CreateManagedStack, install, appCfg) &&
+	if !shouldCreateManagedAWSCloudFormationStack(s.CreateManagedStack, install, appCfg) &&
 		!install.SandboxMode.Bool {
 		if _, err := activities.AwaitSendInstallGroupDirective(ctx, activities.SendInstallGroupDirectiveRequest{
 			InstallID: install.ID,

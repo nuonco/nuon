@@ -31,8 +31,8 @@ func (s *SignalTestSuite) TestExecute() {
 	s.T().Skip("not yet implemented")
 }
 
-// TestSetStackVersionCompositeRenderError_Enabled verifies that when composite
-// errors are enabled the helper fires the recording activity with the right fields.
+// TestSetStackVersionCompositeRenderError_Enabled verifies that the helper fires
+// the recording activity with the right fields.
 func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Enabled() {
 	env := s.NewTestWorkflowEnvironment()
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
@@ -48,7 +48,7 @@ func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Enabled() {
 		Return(nil).Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		setStackVersionCompositeRenderError(ctx, "sv-1", "aws", "bad template var: {{.Missing}}", true)
+		setStackVersionCompositeRenderError(ctx, "sv-1", "aws", "bad template var: {{.Missing}}")
 		return nil
 	})
 
@@ -56,21 +56,6 @@ func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Enabled() {
 	require.Equal(s.T(), "sv-1", capturedReq.StackVersionID)
 	require.Equal(s.T(), "aws", capturedReq.Platform)
 	require.Equal(s.T(), "bad template var: {{.Missing}}", capturedReq.Detail)
-	env.AssertExpectations(s.T())
-}
-
-// TestSetStackVersionCompositeRenderError_Disabled verifies that when composite
-// errors are disabled the helper skips the recording activity entirely.
-func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Disabled() {
-	env := s.NewTestWorkflowEnvironment()
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
-
-	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		setStackVersionCompositeRenderError(ctx, "sv-1", "aws", "some error", false)
-		return nil
-	})
-
-	require.NoError(s.T(), env.GetWorkflowError())
 	env.AssertExpectations(s.T())
 }
 
@@ -85,7 +70,7 @@ func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_ActivityError(
 		Return(temporal.NewNonRetryableApplicationError("db error", "TEST", nil)).Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		setStackVersionCompositeRenderError(ctx, "sv-1", "gcp", "render error", true)
+		setStackVersionCompositeRenderError(ctx, "sv-1", "gcp", "render error")
 		return nil
 	})
 

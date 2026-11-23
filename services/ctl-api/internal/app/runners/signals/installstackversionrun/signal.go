@@ -9,11 +9,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "install_stack_version_run"
-const atomicRunnerStatusVersion = "install-stack-version-run-atomic-runner-status-v1"
 
 type Signal struct {
 	RunnerID                 string `json:"runner_id"`
@@ -76,20 +74,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	statusVersion := workflow.GetVersion(ctx, atomicRunnerStatusVersion, workflow.DefaultVersion, 1)
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            app.RunnerStatusAwaitingHeartbeat,
 		StatusDescription: "runner install stack was run, waiting for the runner to report in",
 	}); err != nil {
 		return err
-	}
-	if statusVersion == workflow.DefaultVersion {
-		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
-			RunnerID:          s.RunnerID,
-			Status:            app.RunnerStatusAwaitingHeartbeat,
-			StatusDescription: "runner install stack was run, waiting for the runner to report in",
-		})
 	}
 
 	return nil
