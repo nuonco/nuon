@@ -170,19 +170,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	var installRun *app.InstallSandboxRun
-	if workflow.GetVersion(ctx, "deprovision-sandbox-apply-plan-authorization-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		installRun, err = activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
-			InstallWorkflowID: s.FlowID,
-			InstallID:         install.ID,
-		})
-	} else {
-		installRun, err = activities.AwaitGetApprovedInstallSandboxRunForApplyStep(ctx, activities.GetApprovedInstallSandboxRunForApplyStepRequest{
-			InstallWorkflowID: s.FlowID,
-			InstallID:         install.ID,
-			ApplyStepID:       s.FlowStepID,
-		})
-	}
+	installRun, err := activities.AwaitGetApprovedInstallSandboxRunForApplyStep(ctx, activities.GetApprovedInstallSandboxRunForApplyStepRequest{
+		InstallWorkflowID: s.FlowID,
+		InstallID:         install.ID,
+		ApplyStepID:       s.FlowStepID,
+	})
 	if err != nil {
 		return errors.Wrap(err, "unable to get install deploy")
 	}
@@ -216,11 +208,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	baselineErr := activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
 		SandboxRunID: installRun.ID,
 	})
-	if baselineErr != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if baselineErr != nil {
 		baselineErr = errors.Wrap(baselineErr, "unable to record sandbox teardown baseline")
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "applied, but unable to record the applied baseline")
 	} else {
-		baselineErr = nil
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 	}
 

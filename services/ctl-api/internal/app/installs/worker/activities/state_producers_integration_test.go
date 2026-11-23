@@ -2,7 +2,6 @@ package activities_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
-	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -333,50 +331,41 @@ func (s *InstallStateIntegrationSuite) TestOutputRacesInvalidateAfterBothCommits
 }
 
 func (s *InstallStateIntegrationSuite) TestRegenerateWorkflowRepublishesFromCurrentHead() {
-	for _, legacy := range []bool{false, true} {
-		s.Run(fmt.Sprintf("legacy_%t", legacy), func() {
-			require.NoError(s.T(), s.renameApp("before-upload"))
-			var once sync.Once
-			ctx := s.withUploadHook(func() error {
-				var err error
-				once.Do(func() { err = s.renameApp("during-upload") })
-				return err
-			})
-			var workflowSuite testsuite.WorkflowTestSuite
-			env := workflowSuite.NewTestWorkflowEnvironment()
-			env.SetTestTimeout(time.Minute)
-			env.SetDataConverter(converter.NewCompositeDataConverter(
-				converter.NewNilPayloadConverter(),
-				converter.NewByteSlicePayloadConverter(),
-				pkgdataconverter.NewJSONConverter(),
-			))
-			env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
-			env.RegisterActivityWithOptions(s.activities, activity.RegisterOptions{SkipInvalidStructFunctions: true})
-			if legacy {
-				env.OnGetVersion("install-state-publication", workflow.DefaultVersion, 2).Return(workflow.DefaultVersion)
-			}
-			env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
-				InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
-				Targets: []pkgstate.PartialTarget{{Name: pkgstate.PartialInputs}},
-			})
-			require.True(s.T(), env.IsWorkflowCompleted())
-			require.NoError(s.T(), env.GetWorkflowError())
-			var result pkgstate.ExecuteRegenerationResponse
-			require.NoError(s.T(), env.GetWorkflowResult(&result))
-			if !legacy {
-				require.Equal(s.T(), "during-upload", result.State.App.Name)
-				require.Contains(s.T(), result.UpdatedPartials, pkgstate.PartialApp)
-			}
+	require.NoError(s.T(), s.renameApp("before-upload"))
+	var once sync.Once
+	ctx := s.withUploadHook(func() error {
+		var err error
+		once.Do(func() { err = s.renameApp("during-upload") })
+		return err
+	})
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetTestTimeout(time.Minute)
+	env.SetDataConverter(converter.NewCompositeDataConverter(
+		converter.NewNilPayloadConverter(),
+		converter.NewByteSlicePayloadConverter(),
+		pkgdataconverter.NewJSONConverter(),
+	))
+	env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
+	env.RegisterActivityWithOptions(s.activities, activity.RegisterOptions{SkipInvalidStructFunctions: true})
+	env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
+		InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
+		Targets: []pkgstate.PartialTarget{{Name: pkgstate.PartialInputs}},
+	})
+	require.True(s.T(), env.IsWorkflowCompleted())
+	require.NoError(s.T(), env.GetWorkflowError())
+	var result pkgstate.ExecuteRegenerationResponse
+	require.NoError(s.T(), env.GetWorkflowResult(&result))
+	require.Equal(s.T(), "during-upload", result.State.App.Name)
+	require.Contains(s.T(), result.UpdatedPartials, pkgstate.PartialApp)
 
-			head := s.head()
-			require.True(s.T(), head.StaleAt.Empty())
-			stored, fromBlob := s.currentRow().GetState(s.ctx, true)
-			require.True(s.T(), fromBlob)
-			require.Equal(s.T(), "during-upload", stored.App.Name)
-			require.Equal(s.T(), "during-upload", s.fresh().App.Name)
-			require.Equal(s.T(), head, s.head(), "a strict read of the published head must not republish")
-		})
-	}
+	head := s.head()
+	require.True(s.T(), head.StaleAt.Empty())
+	stored, fromBlob := s.currentRow().GetState(s.ctx, true)
+	require.True(s.T(), fromBlob)
+	require.Equal(s.T(), "during-upload", stored.App.Name)
+	require.Equal(s.T(), "during-upload", s.fresh().App.Name)
+	require.Equal(s.T(), head, s.head(), "a strict read of the published head must not republish")
 }
 
 func (s *InstallStateIntegrationSuite) cleanHead() app.InstallStateHead {

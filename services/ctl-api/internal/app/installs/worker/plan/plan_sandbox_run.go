@@ -53,8 +53,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
-	if workflow.GetVersion(ctx, "sandbox-plan-selected-config-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
-		run.AppSandboxConfig.AppConfigID != "" && run.AppSandboxConfig.AppConfigID != appCfg.ID {
+	if run.AppSandboxConfig.AppConfigID != "" && run.AppSandboxConfig.AppConfigID != appCfg.ID {
 		target, err := activities.AwaitGetAppConfigByID(ctx, run.AppSandboxConfig.AppConfigID)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get sandbox run app config")
@@ -102,9 +101,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				// Only a missing build falls back to git, which resolves branch HEAD rather
 				// than the commit the artifact was built from.
 				l.Info("checking for active sandbox build OCI artifact")
-				buildReq := activities.GetLatestActiveSandboxBuildRequest{AppConfigID: appCfg.ID}
-				if workflow.GetVersion(ctx, "sandbox-run-build-snapshot-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-					buildReq.SandboxRunID = run.ID
+				buildReq := activities.GetLatestActiveSandboxBuildRequest{
+					AppConfigID:  appCfg.ID,
+					SandboxRunID: run.ID,
 				}
 				sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuild(ctx, buildReq)
 				if sbErr != nil {

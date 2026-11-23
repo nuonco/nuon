@@ -71,26 +71,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	var componentBuild *app.ComponentBuild
 	var err error
-	if workflow.GetVersion(ctx, "drift-check-app-config-build-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		componentBuild, err = activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
-	} else {
-		install, loadErr := activities.AwaitGetByInstallID(ctx, s.InstallID)
-		if loadErr != nil {
-			return loadErr
+	install, loadErr := activities.AwaitGetByInstallID(ctx, s.InstallID)
+	if loadErr != nil {
+		return loadErr
+	}
+	cfg, loadErr := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if loadErr != nil {
+		return loadErr
+	}
+	for _, ccc := range cfg.ComponentConfigConnections {
+		if ccc.ComponentID == s.ComponentID {
+			componentBuild, err = activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, ccc.ID)
+			break
 		}
-		cfg, loadErr := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-		if loadErr != nil {
-			return loadErr
-		}
-		for _, ccc := range cfg.ComponentConfigConnections {
-			if ccc.ComponentID == s.ComponentID {
-				componentBuild, err = activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, ccc.ID)
-				break
-			}
-		}
-		if componentBuild == nil && err == nil {
-			err = fmt.Errorf("no selected build for component %s in app config %s", s.ComponentID, cfg.ID)
-		}
+	}
+	if componentBuild == nil && err == nil {
+		err = fmt.Errorf("no selected build for component %s in app config %s", s.ComponentID, cfg.ID)
 	}
 	if err != nil {
 		l.Warn("drift-check: unable to resolve component build, skipping",
