@@ -405,6 +405,7 @@ type dryRunInputsAPI struct {
 	fetched        []string
 	branches       []*models.AppAppBranch
 	listedBranches bool
+	upstream       string
 }
 
 func (a *dryRunInputsAPI) GetAppBranches(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
@@ -426,6 +427,9 @@ func (a *dryRunInputsAPI) GetInstallCurrentInputs(context.Context, string) (*mod
 }
 
 func (a *dryRunInputsAPI) GenerateCLIInstallConfig(context.Context, string) ([]byte, error) {
+	if a.upstream != "" {
+		return []byte(a.upstream), nil
+	}
 	return []byte("name = \"acme\"\n"), nil
 }
 
@@ -522,6 +526,31 @@ func TestSyncExistingInstallDryRunAllowsInputDeclaredOnlyOnPin(t *testing.T) {
 	}
 	if got != nil {
 		t.Fatalf("dry-run install = %#v, want nil", got)
+	}
+}
+
+func TestSyncExistingInstallRejectsRegionChange(t *testing.T) {
+	api := &dryRunInputsAPI{
+		configs: map[string]*models.AppAppConfig{
+			"pin-config": appConfigWithInputs("pin-config"),
+		},
+		upstream: "name = \"acme\"\n\n[aws_account]\nregion = \"us-west-2\"\naccount_id = \"123456789012\"\n",
+	}
+	install := &models.AppInstall{ID: "inst-1", Name: "acme", AppID: "app-1", AppConfigID: "pin-config"}
+	syncer := &appInstallSyncer{
+		api:               api,
+		appID:             "app-1",
+		asJSON:            true,
+		branchesByInstall: map[string]*models.AppAppBranch{},
+	}
+	cfg := &config.Install{
+		Name:       "acme",
+		AWSAccount: &config.AWSAccount{Region: "us-east-1", AccountID: "123456789012"},
+	}
+
+	_, err := syncer.syncExistingInstall(context.Background(), cfg, install, true, false, true)
+	if err == nil || !strings.Contains(err.Error(), "aws_account.region") {
+		t.Fatalf("err = %v, want a refusal to change aws_account.region", err)
 	}
 }
 

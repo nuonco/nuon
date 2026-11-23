@@ -5,11 +5,18 @@ import (
 	"fmt"
 )
 
-// CheckImmutableTargetAccount refuses a sync that would change the cloud account an
-// existing install targets.
+// CheckImmutableTargetAccount refuses a sync that would change the cloud account, or
+// the AWS region or Azure location, an existing install targets.
 //
 // The account is fixed at creation: UpdateInstallRequest carries no field for it, and
 // the phone-home secret's cross-account grant names a role in that specific account.
+// UpdateInstallRequest has no region or location either, so a change shows in the diff
+// and the sync then reports success. The AWS quick link embeds the region, so the
+// ignored change leaves the link pointing at one region while the stack runs in
+// another. Azure's quick link ignores location — the portal prompts for it — and the
+// createUiDefinition pins it afterwards, because deploying elsewhere strands resources
+// in a region the platform does not track. GCP region is left out because stack outputs
+// overwrite it after every stack run.
 // Without this guard the edit would either show as permanent drift or silently do
 // nothing, depending on which interface made it.
 //
@@ -31,14 +38,16 @@ func (i *Install) CheckImmutableTargetAccount(upstream *Install) error {
 	var fields []immutableField
 
 	if i.AWSAccount != nil && upstream.AWSAccount != nil {
-		fields = append(fields, immutableField{
-			"aws_account.account_id", i.AWSAccount.AccountID, upstream.AWSAccount.AccountID,
-		})
+		fields = append(fields,
+			immutableField{"aws_account.account_id", i.AWSAccount.AccountID, upstream.AWSAccount.AccountID},
+			immutableField{"aws_account.region", i.AWSAccount.Region, upstream.AWSAccount.Region},
+		)
 	}
 	if i.AzureAccount != nil && upstream.AzureAccount != nil {
-		fields = append(fields, immutableField{
-			"azure_account.subscription_id", i.AzureAccount.SubscriptionID, upstream.AzureAccount.SubscriptionID,
-		})
+		fields = append(fields,
+			immutableField{"azure_account.subscription_id", i.AzureAccount.SubscriptionID, upstream.AzureAccount.SubscriptionID},
+			immutableField{"azure_account.location", i.AzureAccount.Location, upstream.AzureAccount.Location},
+		)
 	}
 	if i.GCPAccount != nil && upstream.GCPAccount != nil {
 		fields = append(fields, immutableField{
@@ -53,7 +62,7 @@ func (i *Install) CheckImmutableTargetAccount(upstream *Install) error {
 			continue
 		}
 		errs = append(errs, fmt.Errorf(
-			"refusing to change %s on existing install from %q to %q: the target cloud account is immutable after creation",
+			"refusing to change %s on existing install from %q to %q: the target cloud account and region are immutable after creation",
 			f.key, f.upstream, f.desired))
 	}
 	if len(errs) > 0 {
