@@ -204,11 +204,7 @@ func (m *model) insertAtCursor(idx int, content string) {
 
 func (m *model) validateForm() error {
 	for i, mapping := range m.inputMappings {
-		if !mapping.required || strings.TrimSpace(m.inputs[i].Value()) != "" {
-			continue
-		}
-		// A stored sensitive value is not in the form. Leaving the field blank keeps it.
-		if mapping.sensitive && storedSensitive(m.currentInputs, mapping.name) {
+		if !mapping.required || mapping.sensitive || strings.TrimSpace(m.inputs[i].Value()) != "" {
 			continue
 		}
 		return fmt.Errorf("%s is required", mapping.label())
@@ -216,9 +212,6 @@ func (m *model) validateForm() error {
 	return nil
 }
 
-// changedInputs is the partial update to send. The inputs API merges this over
-// the stored values, so anything omitted stays. A blank sensitive field is
-// omitted: the read API does not return that value, so blank means unchanged.
 func changedInputs(mappings []inputMapping, values []string) map[string]string {
 	changed := map[string]string{}
 	for i, mapping := range mappings {
@@ -235,16 +228,6 @@ func changedInputs(mappings []inputMapping, values []string) map[string]string {
 		changed[mapping.name] = value
 	}
 	return changed
-}
-
-func storedSensitive(current *models.AppInstallInputs, name string) bool {
-	if current == nil {
-		return false
-	}
-	if current.Values != nil && current.Values[name] != "" {
-		return true
-	}
-	return current.RedactedValues != nil && current.RedactedValues[name] == "********"
 }
 
 func (m *model) submitForm() tea.Cmd {
