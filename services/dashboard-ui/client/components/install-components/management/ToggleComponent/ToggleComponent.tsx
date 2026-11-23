@@ -11,7 +11,7 @@ interface IToggleComponentModal extends Omit<IModal, 'onSubmit'> {
   enabling: boolean
   isPending: boolean
   error?: { error?: string } | null
-  onSubmit: (params: { planOnly: boolean; tearDownDependents: boolean }) => void
+  onSubmit: (params: { planOnly: boolean }) => void
   onClose: () => void
 }
 
@@ -25,7 +25,6 @@ export const ToggleComponentModal = ({
   ...props
 }: IToggleComponentModal) => {
   const [planOnly, setPlanOnly] = useState(false)
-  const [tearDownDependents, setTearDownDependents] = useState(false)
 
   const action = enabling ? 'Enable' : 'Disable'
   const actionLower = enabling ? 'enable' : 'disable'
@@ -48,11 +47,7 @@ export const ToggleComponentModal = ({
           </span>
         ),
         disabled: isPending,
-        onClick: () =>
-          onSubmit({
-            planOnly,
-            tearDownDependents: !enabling && tearDownDependents,
-          }),
+        onClick: () => onSubmit({ planOnly }),
         variant: enabling ? ('primary' as const) : ('danger' as const),
       }}
       onClose={onClose}
@@ -77,16 +72,6 @@ export const ToggleComponentModal = ({
               this component. A teardown workflow will be created.
             </Text>
           )}
-
-          {!enabling ? (
-            <CheckboxInput
-              checked={tearDownDependents}
-              onChange={(e) => setTearDownDependents(e.target.checked)}
-              labelProps={{
-                labelText: `Also tear down components that depend on ${component.name}`,
-              }}
-            />
-          ) : null}
 
           <CheckboxInput
             checked={planOnly}

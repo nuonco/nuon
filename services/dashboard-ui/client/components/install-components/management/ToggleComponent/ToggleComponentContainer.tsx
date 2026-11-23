@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { TeardownComponentModalContainer } from '@/components/install-components/management/TeardownComponent/TeardownComponentContainer'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -34,12 +35,11 @@ export const ToggleComponentModalContainer = ({
   const pastAction = enabling ? 'enabled' : 'disabled'
 
   const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { planOnly: boolean; tearDownDependents: boolean }) =>
+    mutationFn: (params: { planOnly: boolean }) =>
       toggleComponent({
         body: {
           enabled: enabling,
           plan_only: params.planOnly,
-          tear_down_dependents: params.tearDownDependents,
         },
         componentId: component.id,
         installId: install.id,
@@ -79,8 +79,8 @@ export const ToggleComponentModalContainer = ({
       enabling={enabling}
       isPending={isPending}
       error={error as any}
-      onSubmit={({ planOnly, tearDownDependents }) => {
-        execute({ planOnly, tearDownDependents })
+      onSubmit={({ planOnly }) => {
+        execute({ planOnly })
       }}
       onClose={() => {
         removeModal(props.modalId)
@@ -99,8 +99,10 @@ export const ToggleComponentButton = ({
   enabling: boolean
 }) => {
   const { addModal } = useSurfaces()
-  const modal = (
-    <ToggleComponentModalContainer component={component} enabling={enabling} />
+  const modal = enabling ? (
+    <ToggleComponentModalContainer component={component} enabling />
+  ) : (
+    <TeardownComponentModalContainer component={component} />
   )
   return (
     <Button

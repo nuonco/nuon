@@ -4,7 +4,6 @@ import type { TWorkflowResponse } from '@/types'
 export type TToggleComponentBody = {
   enabled: boolean
   plan_only?: boolean
-  tear_down_dependents?: boolean
 }
 
 export const toggleComponent = ({
