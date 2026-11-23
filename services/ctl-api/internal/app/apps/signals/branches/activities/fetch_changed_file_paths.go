@@ -61,6 +61,10 @@ func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChan
 		return nil, err
 	}
 
+	if input.PRNumber == nil && input.BaseSHA != "" {
+		return changedFilesBetweenSHAs(ctx, client, owner, repo, input.BaseSHA, input.CommitSHA)
+	}
+
 	out := &ChangedFilePaths{}
 	opts := &github.ListOptions{PerPage: 100}
 
@@ -82,12 +86,8 @@ func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChan
 			if resp != nil {
 				nextPage = resp.NextPage
 			}
-		} else if input.BaseSHA != "" || input.BaseBranch != "" {
-			baseRef := input.BaseSHA
-			if baseRef == "" {
-				baseRef = input.BaseBranch
-			}
-			comparison, resp, cmpErr := client.Repositories.CompareCommits(ctx, owner, repo, baseRef, input.CommitSHA, opts)
+		} else if input.BaseBranch != "" {
+			comparison, resp, cmpErr := client.Repositories.CompareCommits(ctx, owner, repo, input.BaseBranch, input.CommitSHA, opts)
 			if cmpErr != nil {
 				if nrErr := nonRetryableGitHubError(cmpErr); nrErr != nil {
 					return nil, nrErr
@@ -133,4 +133,86 @@ func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChan
 	}
 
 	return out, nil
+}
+
+// changedFilesBetweenSHAs lists files that differ between base and head.
+// CompareCommits is a three-dot compare, which is empty when head is an
+// ancestor of base. A reset or diverged force-push needs the reverse compare
+// too. Either response at the 300-file cap is incomplete.
+func changedFilesBetweenSHAs(ctx context.Context, client *github.Client, owner, repo, base, head string) (*ChangedFilePaths, error) {
+	forward, _, err := client.Repositories.CompareCommits(ctx, owner, repo, base, head, &github.ListOptions{PerPage: 100})
+	if err != nil {
+		if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+			return nil, nrErr
+		}
+		return nil, fmt.Errorf("unable to compare commits: %w", err)
+	}
+	if forward == nil {
+		return nil, fmt.Errorf("unable to compare commits: empty response")
+	}
+
+	forwardNames := commitFileNames(forward.Files)
+	wantReverse, truncated := commitRangeNeedsReverse(forward.GetStatus(), len(forward.Files))
+	if truncated {
+		return &ChangedFilePaths{Paths: forwardNames, Truncated: true}, nil
+	}
+	if !wantReverse {
+		return &ChangedFilePaths{Paths: forwardNames}, nil
+	}
+
+	reverse, _, err := client.Repositories.CompareCommits(ctx, owner, repo, head, base, &github.ListOptions{PerPage: 100})
+	if err != nil {
+		if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+			return nil, nrErr
+		}
+		return nil, fmt.Errorf("unable to compare commits: %w", err)
+	}
+	if reverse == nil {
+		return nil, fmt.Errorf("unable to compare commits: empty response")
+	}
+
+	names, truncated := mergeCommitRangeFiles(forwardNames, commitFileNames(reverse.Files), len(reverse.Files))
+	return &ChangedFilePaths{Paths: names, Truncated: truncated}, nil
+}
+
+// commitRangeNeedsReverse reports whether the three-dot file list is the
+// direct diff. ahead and identical are. behind and diverged are not.
+func commitRangeNeedsReverse(status string, fileCount int) (wantReverse, truncated bool) {
+	if fileCount >= maxComparedFilePaths {
+		return false, true
+	}
+	switch status {
+	case "ahead", "identical":
+		return false, false
+	case "behind", "diverged":
+		return true, false
+	default:
+		return false, true
+	}
+}
+
+func mergeCommitRangeFiles(forward, reverse []string, reverseCount int) ([]string, bool) {
+	if reverseCount >= maxComparedFilePaths {
+		return nil, true
+	}
+	seen := make(map[string]struct{}, len(forward)+len(reverse))
+	out := make([]string, 0, len(forward)+len(reverse))
+	for _, name := range append(append([]string{}, forward...), reverse...) {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, name)
+	}
+	return out, false
+}
+
+func commitFileNames(files []*github.CommitFile) []string {
+	names := make([]string, 0, len(files))
+	for _, file := range files {
+		if path := file.GetFilename(); path != "" {
+			names = append(names, path)
+		}
+	}
+	return names
 }

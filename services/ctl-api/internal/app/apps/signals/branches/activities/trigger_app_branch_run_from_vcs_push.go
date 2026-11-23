@@ -290,7 +290,7 @@ func (a *Activities) pushMatchesRunPaths(ctx context.Context, config *app.AppBra
 	return decision.Run
 }
 
-// pushChangedFiles compares before...after on GitHub because the webhook's
+// pushChangedFiles diffs the previous tip against the new tip. The webhook's
 // per-commit file lists are incomplete for forced and large pushes.
 func (a *Activities) pushChangedFiles(ctx context.Context, config *app.AppBranchConfig, req *TriggerAppBranchRunFromVCSPushRequest) ([]string, bool) {
 	if !ghrepo.IsCommitSHA(req.HeadSHA) || !ghrepo.IsCommitSHA(req.BaseSHA) || ghrepo.IsZeroCommitSHA(req.BaseSHA) {

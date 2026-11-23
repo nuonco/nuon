@@ -82,3 +82,41 @@ func TestPushMatchesRunPathsFailsOpenWithoutComparableSHAs(t *testing.T) {
 		require.True(t, a.pushMatchesRunPaths(context.Background(), &app.AppBranchConfig{}, app.AppBranchRunConfig{Mode: app.AppBranchRunModePush}, &TriggerAppBranchRunFromVCSPushRequest{}))
 	})
 }
+
+func TestCommitRangeNeedsReverse(t *testing.T) {
+	tests := []struct {
+		name        string
+		status      string
+		fileCount   int
+		wantReverse bool
+		truncated   bool
+	}{
+		{name: "ahead", status: "ahead", fileCount: 2},
+		{name: "identical", status: "identical"},
+		{name: "behind", status: "behind", wantReverse: true},
+		{name: "diverged", status: "diverged", fileCount: 8, wantReverse: true},
+		{name: "ahead truncated", status: "ahead", fileCount: maxComparedFilePaths, truncated: true},
+		{name: "diverged truncated", status: "diverged", fileCount: maxComparedFilePaths, truncated: true},
+		{name: "unknown status", truncated: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotReverse, gotTruncated := commitRangeNeedsReverse(tt.status, tt.fileCount)
+			require.Equal(t, tt.wantReverse, gotReverse)
+			require.Equal(t, tt.truncated, gotTruncated)
+		})
+	}
+}
+
+func TestMergeCommitRangeFiles(t *testing.T) {
+	files, truncated := mergeCommitRangeFiles(
+		[]string{"apps/acme/a.txt", "shared/helm/values.yaml"},
+		[]string{"shared/helm/values.yaml", "docs/guide.md"},
+		2,
+	)
+	require.False(t, truncated)
+	require.Equal(t, []string{"apps/acme/a.txt", "shared/helm/values.yaml", "docs/guide.md"}, files)
+
+	_, truncated = mergeCommitRangeFiles([]string{"a"}, []string{"b"}, maxComparedFilePaths)
+	require.True(t, truncated)
+}
