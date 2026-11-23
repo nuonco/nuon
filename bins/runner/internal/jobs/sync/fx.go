@@ -5,6 +5,7 @@ import (
 
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/sync/noop"
 	oci "github.com/nuonco/nuon/bins/runner/internal/jobs/sync/oci"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/sync/ociprune"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"github.com/nuonco/nuon/pkg/runner/jobs/sync/imagemetadata"
@@ -16,5 +17,6 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobs.AsJobHandler("sync", oci.New)),
 		fx.Provide(jobs.AsJobHandler("sync", noop.New)),
 		fx.Provide(jobs.AsJobHandler("sync", imagemetadata.New)),
+		fx.Provide(jobs.AsJobHandler("sync", ociprune.New)),
 	}
 }

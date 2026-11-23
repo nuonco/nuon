@@ -19,6 +19,7 @@ type CompositePlan struct {
 	SyncSecretsPlan        *SyncSecretsPlan        `json:"sync_secrets_plan,omitempty"`
 	SyncOCIPlan            *SyncOCIPlan            `json:"sync_oci_plan,omitempty"`
 	FetchImageMetadataPlan *FetchImageMetadataPlan `json:"fetch_image_metadata_plan,omitempty"`
+	PruneOCIPlan           *PruneOCIPlan           `json:"prune_oci_plan,omitempty"`
 	SandboxRunPlan         *SandboxRunPlan         `json:"sandbox_run_plan,omitempty"`
 }
 
@@ -68,6 +69,9 @@ func (cp *CompositePlan) pruneEmptyClusterInfo() {
 	if cp.SyncSecretsPlan != nil {
 		cp.SyncSecretsPlan.ClusterInfo = pruneClusterInfo(cp.SyncSecretsPlan.ClusterInfo)
 	}
+	if cp.PruneOCIPlan != nil {
+		cp.PruneOCIPlan.ClusterInfo = pruneClusterInfo(cp.PruneOCIPlan.ClusterInfo)
+	}
 }
 
 func pruneClusterInfo(ci *kube.ClusterInfo) *kube.ClusterInfo {
@@ -112,6 +116,8 @@ func (cp *CompositePlan) Inner() any {
 		return cp.SyncOCIPlan
 	case cp.FetchImageMetadataPlan != nil:
 		return cp.FetchImageMetadataPlan
+	case cp.PruneOCIPlan != nil:
+		return cp.PruneOCIPlan
 	case cp.SandboxRunPlan != nil:
 		return cp.SandboxRunPlan
 	default:
@@ -133,6 +139,7 @@ func (cp CompositePlan) IsEmpty() bool {
 		cp.SyncSecretsPlan == nil &&
 		cp.SyncOCIPlan == nil &&
 		cp.FetchImageMetadataPlan == nil &&
+		cp.PruneOCIPlan == nil &&
 		cp.SandboxRunPlan == nil
 }
 

@@ -115,6 +115,10 @@ func (r *RunnerJobPlan) DeriveCompositePlan(runnerJob *RunnerJob) (*plantypes.Co
 			if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.FetchImageMetadataPlan); err != nil {
 				return nil, fmt.Errorf("unable to unmarshal fetch image metadata plan: %w", err)
 			}
+		case RunnerJobTypeOCIPrune:
+			if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.PruneOCIPlan); err != nil {
+				return nil, fmt.Errorf("unable to unmarshal prune oci plan: %w", err)
+			}
 		default:
 			return nil, fmt.Errorf("unknown sync job type: %s", runnerJob.Type)
 		}
