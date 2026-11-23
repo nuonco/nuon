@@ -410,7 +410,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
-          "updates/045-run-more-installs-with-less-overhead",
+          "updates/045-fleet-view-deploys-private-registries",
           "updates/044-scoped-credentials-drift-resolution",
           "updates/043-release-rollouts-runner-control",
           "updates/042-deprovisions-and-new-dashboard",

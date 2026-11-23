@@ -1,17 +1,17 @@
 ---
-title: 045 - Run More Installs With Less Overhead
-description: Private images pull through cloud connections, with no pull secret to manage. One page shows which installs are current and which need attention.
+title: 045 - Fleet View, Changed-Only Deploys, and Private Registries
+description: See every install of an app on one page, deploy only the components a change affects, and pull private images through cloud connections.
 boost: 0.3
 ---
 
-_November 20, 2026_
+_November 23, 2026_
 
 ## Fleet view
 
-- See every install of an app on one page, grouped by [app branch](/concepts/app-branches) and [install group](/concepts/app-branches#install-groups)
-- Installs that are [unhealthy or degraded](/guides/health-checks#how-component-health-is-determined), or waiting on [approval](/concepts/workflows#workflow-approvals), are called out at the top
-- Each install group shows how many installs are on the branch's latest run, or on any earlier run
-- Switch to a table for each install's config version, [runner](/concepts/runners) status, and pending approvals
+See every install of an app on one page.
+
+- Find installs that are [unhealthy](/guides/health-checks#how-component-health-is-determined) or waiting on [approval](/concepts/workflows#workflow-approvals)
+- See which version is running where, grouped by [app branch](/concepts/app-branches) and [install group](/concepts/app-branches#install-groups)
 
 <div style={{
   backgroundImage: 'url(/images/changelog/038-bg.png)',
@@ -39,11 +39,12 @@ _November 20, 2026_
 
 ---
 
-## More efficient customer updates
+## Deploy only what changed
 
-- [Components](/concepts/components) now rebuild only when their config or source changes
-- Components and the [sandbox](/concepts/sandboxes) deploy only when they, or a build they [depend on](/guides/component-dependencies), differ from the last successful apply
-- Each deployment lists the changed files and the commit behind it
+Ship a config change to just the [components](/concepts/components) it affects. Nuon compares each component with its last successful deploy and deploys only the ones that changed.
+
+- Rebuild a component only when its config or source changes
+- See the changed files and the commit behind each deployment
 
 <Tip>Edit one component's [Helm chart](/guides/helm-chart-components) template, and the next branch run deploys that component. The sandbox and every other component stay as they are.</Tip>
 
@@ -51,9 +52,10 @@ _November 20, 2026_
 
 ## Private image registries
 
-- Pull private images from Amazon ECR, Google Artifact Registry, and Azure Container Registry with no credentials in app config
-- Assign each image repository to a verified [cloud connection](/guides/cloud-connections) under **Settings > Image repositories**
-- Each connection generates the setup to apply in the cloud account, as Terraform or CLI commands, plus CloudFormation on AWS
+Pull private images through a [cloud connection](/guides/cloud-connections).
+
+- Use Amazon ECR, Google Artifact Registry, or Azure Container Registry
+- Assign each image repository to a cloud connection under **Settings > Image repositories**
 
 Image credentials already in app config keep working.
 
@@ -61,25 +63,12 @@ Image credentials already in app config keep working.
 
 ---
 
-## Other updates in this release
+## Tables and plan diff viewer
 
-### EKS access for break-glass roles
+Try two new dashboard views. Open the account menu in the top right and choose **Preferences** to turn them on.
 
-Add an [`eks_access`](/config-ref/break-glass) block to an AWS [break-glass](/concepts/break-glass) or [custom role](/concepts/operation-roles#scope-custom-operation-roles-to-a-task). The install stack grants that cluster access when the customer turns the role on and removes it when they turn it off. [CloudFormation install stacks](/guides/provision-stacks-with-cloudformation) only.
-
-### Cloud SQL delete warnings on GCP
-
-When a GCP [break-glass role](/concepts/break-glass#define-a-break-glass-role) holds Cloud SQL delete permissions, config validation warns if any other role can still delete, including through a predefined role such as `roles/editor` or `roles/cloudsql.admin`.
-
-### Delete action run logs
-
-If an [action](/concepts/actions) prints a secret, an org admin can delete that run's logs from the action run page once the run ends. Only the logs are deleted. A secret the action also wrote to an output remains in the run's outputs.
-
-### UI preferences in beta
-
-Open the account menu in the top right and choose **Preferences** to turn on two beta views.
-
-**Tables** lets you choose each table's columns or switch it to a card grid.
+- Switch any table between a table view and a card view
+- Search plan diffs and compare them in a split view
 
 <div style={{
   backgroundImage: 'url(/images/changelog/038-bg.png)',
@@ -120,8 +109,6 @@ Open the account menu in the top right and choose **Preferences** to turn on two
   />
 </div>
 
-**Plan diff viewer** adds search, collapsible chunks, and a split view. Plan graphs and the attribute tree are only in the current viewer.
-
 <div style={{
   backgroundImage: 'url(/images/changelog/038-bg.png)',
   backgroundSize: 'cover',
@@ -143,3 +130,38 @@ Open the account menu in the top right and choose **Preferences** to turn on two
     }}
   />
 </div>
+
+---
+
+## EKS access for break-glass roles
+
+Automatically configure EKS access entries on [break-glass roles](/concepts/break-glass).
+
+- Add an [`eks_access`](/config-ref/break-glass) block to the role
+- Cluster access is granted when the customer turns the role on and removed when they turn it off
+
+```toml break_glass.toml
+[[role]]
+name         = "{{.nuon.install.id}}-cluster-debug"
+display_name = "Cluster debugging"
+description  = "Lets the vendor debug workloads on the EKS cluster."
+
+[[role.policies]]
+name     = "eks-describe"
+contents = """
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": ["eks:DescribeCluster"], "Resource": "*" }
+  ]
+}
+"""
+
+[role.eks_access]
+cluster_name = "{{.nuon.sandbox.outputs.cluster.name}}"
+
+[[role.eks_access.policies]]
+policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+```
+
+Available on AWS with [CloudFormation install stacks](/guides/provision-stacks-with-cloudformation).
