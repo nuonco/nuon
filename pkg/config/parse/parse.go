@@ -35,6 +35,10 @@ type ParseConfig struct {
 	// a separate installs repo, is still parsed. Callers that apply install
 	// files leave this unset.
 	SkipInstalls bool
+
+	// CheckRemoteFetch, when set, is called before each remote file a config
+	// field references is fetched. See validate.RemoteFetchCheck.
+	CheckRemoteFetch func(field, rawURL string) error
 }
 
 func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
