@@ -22,6 +22,9 @@ const (
 	statusCancelled  = "cancelled"
 )
 
+// Workflows that started before desired-config rollout must keep deploying.
+const installGroupDesiredOnlyVersion = "install-group-desired-only-v1"
+
 const statusPending = "pending"
 
 type enqueuedInstall struct {
@@ -66,7 +69,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	isPreviewApply := s.PreviewInstallID != "" || s.PreviewLabelSelector != nil
 
 	desiredOnly := false
-	if !isPreviewApply {
+	if !isPreviewApply && workflow.GetVersion(ctx, installGroupDesiredOnlyVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 		enabled, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
 			OrgID:   run.OrgID,
 			Feature: string(app.OrgFeatureDesiredConfigRollout),
