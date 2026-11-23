@@ -106,7 +106,7 @@ paths_ignore = ["docs/**", "**/*.md"]
 - Patterns are globs relative to the repository root. `*` matches within one directory and `**` matches across
   directories, including none.
 - `paths` and `paths_ignore` are mutually exclusive, and neither list accepts a pattern starting with `!`.
-- Patterns cannot be absolute or contain `..`. A branch can have at most 100 patterns.
+- Patterns cannot be absolute or contain `..`.
 - In `push` mode, a push that matches nothing does not create a run. A pull request that matches nothing creates a preview run marked
   not attempted, hidden from the runs list, and posts a success status when `send_statuses_on_ignore` is set.
 - `on_github_label` runs obey path filters, compared against the merge push. Tag runs, manual triggers and forced

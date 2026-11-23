@@ -1,8 +1,6 @@
 import { z } from 'zod'
 import type { TAppBranchRunConfig } from '@/types'
 
-export const MAX_PATH_PATTERNS = 100
-
 export const parsePathPatterns = (text: string): string[] =>
   text
     .split('\n')
@@ -16,15 +14,6 @@ export const branchCISettingsSchema = z
     allowedPaths: z.string(),
     deniedPaths: z.string(),
   })
-  .refine(
-    (values) =>
-      parsePathPatterns(values.allowedPaths).length <= MAX_PATH_PATTERNS &&
-      parsePathPatterns(values.deniedPaths).length <= MAX_PATH_PATTERNS,
-    {
-      message: `Use at most ${MAX_PATH_PATTERNS} patterns per list`,
-      path: ['deniedPaths'],
-    }
-  )
   .refine(
     (values) =>
       !(

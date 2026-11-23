@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
   branchCISettingsSchema,
-  MAX_PATH_PATTERNS,
   parsePathPatterns,
   pathFilterFromRunConfig,
   runConfigWithPathFilter,
@@ -84,18 +83,5 @@ describe('branchCISettingsSchema', () => {
     expect(
       branchCISettingsSchema.safeParse(settings('apps/acme/**', '')).success
     ).toBe(true)
-  })
-
-  test('rejects too many patterns in one list', () => {
-    const result = branchCISettingsSchema.safeParse(
-      settings(
-        '',
-        Array.from(
-          { length: MAX_PATH_PATTERNS + 1 },
-          (_, i) => `d${i}/**`
-        ).join('\n')
-      )
-    )
-    expect(result.success).toBe(false)
   })
 })

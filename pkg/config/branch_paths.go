@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	maxRunPathPatterns = 100
-	maxRunPathLength   = 512
+	maxRunPathLength = 512
 
 	maxDoubleStarSegments = 3
 )
@@ -52,9 +51,6 @@ func NewRunPathFilter(paths, pathsIgnore []string) (*RunPathFilter, error) {
 	}
 	if len(paths) == 0 && len(pathsIgnore) == 0 {
 		return nil, nil
-	}
-	if len(paths) > maxRunPathPatterns || len(pathsIgnore) > maxRunPathPatterns {
-		return nil, fmt.Errorf("at most %d path patterns are allowed", maxRunPathPatterns)
 	}
 
 	f := &RunPathFilter{}

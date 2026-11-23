@@ -33,7 +33,6 @@ func TestValidateRunPaths(t *testing.T) {
 		{name: "invalid glob", paths: []string{"apps/[acme"}, wantErr: "invalid pattern"},
 		{name: "too long", paths: []string{strings.Repeat("a", maxRunPathLength+1)}, wantErr: "exceeds"},
 		{name: "too many double stars", paths: []string{"**/a/**/b/**/c/**/d"}, wantErr: "'**/' segments"},
-		{name: "too many patterns", paths: make([]string, maxRunPathPatterns+1), wantErr: "at most"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

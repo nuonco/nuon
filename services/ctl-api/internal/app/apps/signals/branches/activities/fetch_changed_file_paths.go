@@ -135,48 +135,58 @@ func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChan
 	return out, nil
 }
 
-// changedFilesBetweenSHAs lists files that differ between base and head.
-// CompareCommits is a three-dot compare, which is empty when head is an
-// ancestor of base. A reset or diverged force-push needs the reverse compare
-// too. Either response at the 300-file cap is incomplete.
 func changedFilesBetweenSHAs(ctx context.Context, client *github.Client, owner, repo, base, head string) (*ChangedFilePaths, error) {
-	forward, _, err := client.Repositories.CompareCommits(ctx, owner, repo, base, head, &github.ListOptions{PerPage: 100})
+	status, forward, count, err := compareCommitRange(ctx, client, owner, repo, base, head)
 	if err != nil {
-		if nrErr := nonRetryableGitHubError(err); nrErr != nil {
-			return nil, nrErr
-		}
-		return nil, fmt.Errorf("unable to compare commits: %w", err)
+		return nil, err
 	}
-	if forward == nil {
-		return nil, fmt.Errorf("unable to compare commits: empty response")
-	}
-
-	forwardNames := commitFileNames(forward.Files)
-	wantReverse, truncated := commitRangeNeedsReverse(forward.GetStatus(), len(forward.Files))
+	wantReverse, truncated := commitRangeNeedsReverse(status, count)
 	if truncated {
-		return &ChangedFilePaths{Paths: forwardNames, Truncated: true}, nil
+		return &ChangedFilePaths{Paths: forward, Truncated: true}, nil
 	}
 	if !wantReverse {
-		return &ChangedFilePaths{Paths: forwardNames}, nil
+		return &ChangedFilePaths{Paths: forward}, nil
 	}
 
-	reverse, _, err := client.Repositories.CompareCommits(ctx, owner, repo, head, base, &github.ListOptions{PerPage: 100})
+	_, reverse, reverseCount, err := compareCommitRange(ctx, client, owner, repo, head, base)
 	if err != nil {
-		if nrErr := nonRetryableGitHubError(err); nrErr != nil {
-			return nil, nrErr
-		}
-		return nil, fmt.Errorf("unable to compare commits: %w", err)
+		return nil, err
 	}
-	if reverse == nil {
-		return nil, fmt.Errorf("unable to compare commits: empty response")
-	}
-
-	names, truncated := mergeCommitRangeFiles(forwardNames, commitFileNames(reverse.Files), len(reverse.Files))
+	names, truncated := mergeCommitRangeFiles(forward, reverse, reverseCount)
 	return &ChangedFilePaths{Paths: names, Truncated: truncated}, nil
 }
 
-// commitRangeNeedsReverse reports whether the three-dot file list is the
-// direct diff. ahead and identical are. behind and diverged are not.
+func compareCommitRange(ctx context.Context, client *github.Client, owner, repo, base, head string) (string, []string, int, error) {
+	opts := &github.ListOptions{PerPage: 100}
+	var (
+		status string
+		names  []string
+	)
+	for {
+		comparison, resp, err := client.Repositories.CompareCommits(ctx, owner, repo, base, head, opts)
+		if err != nil {
+			if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+				return "", nil, 0, nrErr
+			}
+			return "", nil, 0, fmt.Errorf("unable to compare commits: %w", err)
+		}
+		if comparison == nil {
+			return "", nil, 0, fmt.Errorf("unable to compare commits: empty response")
+		}
+		if status == "" {
+			status = comparison.GetStatus()
+		}
+		names = append(names, commitFileNames(comparison.Files)...)
+		if len(names) >= maxComparedFilePaths {
+			return status, names[:maxComparedFilePaths], maxComparedFilePaths, nil
+		}
+		if resp == nil || resp.NextPage == 0 {
+			return status, names, len(names), nil
+		}
+		opts.Page = resp.NextPage
+	}
+}
+
 func commitRangeNeedsReverse(status string, fileCount int) (wantReverse, truncated bool) {
 	if fileCount >= maxComparedFilePaths {
 		return false, true
@@ -197,7 +207,14 @@ func mergeCommitRangeFiles(forward, reverse []string, reverseCount int) ([]strin
 	}
 	seen := make(map[string]struct{}, len(forward)+len(reverse))
 	out := make([]string, 0, len(forward)+len(reverse))
-	for _, name := range append(append([]string{}, forward...), reverse...) {
+	for _, name := range forward {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, name)
+	}
+	for _, name := range reverse {
 		if _, ok := seen[name]; ok {
 			continue
 		}
