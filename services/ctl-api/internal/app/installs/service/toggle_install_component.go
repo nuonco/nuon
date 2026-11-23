@@ -20,9 +20,10 @@ import (
 )
 
 type ToggleInstallComponentRequest struct {
-	Enabled            *bool `json:"enabled" validate:"required"`
-	PlanOnly           bool  `json:"plan_only"`
-	TearDownDependents bool  `json:"tear_down_dependents"`
+	Enabled            *bool  `json:"enabled" validate:"required"`
+	PlanOnly           bool   `json:"plan_only"`
+	TearDownDependents bool   `json:"tear_down_dependents"`
+	Role               string `json:"role,omitempty"`
 }
 
 func (c *ToggleInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -125,7 +126,7 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 		deployDependents = false
 	}
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, "", deployDependents, tearDownDependents, false, req.PlanOnly, workflowType, nil)
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, req.Role, deployDependents, tearDownDependents, false, req.PlanOnly, workflowType, nil)
 	if err != nil {
 		ctx.Error(err)
 		return

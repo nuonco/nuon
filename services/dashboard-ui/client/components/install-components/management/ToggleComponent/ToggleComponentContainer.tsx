@@ -102,7 +102,7 @@ export const ToggleComponentButton = ({
   const modal = enabling ? (
     <ToggleComponentModalContainer component={component} enabling />
   ) : (
-    <TeardownComponentModalContainer component={component} />
+    <TeardownComponentModalContainer component={component} disabling />
   )
   return (
     <Button

@@ -12,16 +12,18 @@ import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { teardownComponent } from '@/lib'
+import { teardownComponent, toggleComponent } from '@/lib'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { TComponent } from '@/types'
 import { TeardownComponentModal } from './TeardownComponent'
 
 export const TeardownComponentModalContainer = ({
   component,
+  disabling = false,
   ...props
 }: Omit<IModal, 'onSubmit'> & {
   component: TComponent
+  disabling?: boolean
 }) => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -33,13 +35,29 @@ export const TeardownComponentModalContainer = ({
   const queryClient = useQueryClient()
 
   const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof teardownComponent>[0]['body'] }) =>
-      teardownComponent({
+    mutationFn: (params: {
+      body: Parameters<typeof teardownComponent>[0]['body']
+      tearDownDependents: boolean
+    }) => {
+      if (disabling) {
+        return toggleComponent({
+          body: {
+            enabled: false,
+            tear_down_dependents: params.tearDownDependents,
+            ...(params.body.role ? { role: params.body.role } : {}),
+          },
+          componentId: component.id,
+          installId: install.id,
+          orgId: org.id,
+        })
+      }
+      return teardownComponent({
         body: params.body,
         componentId: component.id,
         installId: install.id,
         orgId: org.id,
-      }),
+      })
+    },
     onSuccess: (result) => {
       trackEvent({
         event: 'component_teardown',
@@ -91,8 +109,9 @@ export const TeardownComponentModalContainer = ({
       component={component}
       isPending={isPending}
       error={error as any}
-      onSubmit={({ role }) => {
+      onSubmit={({ role, tearDownDependents }) => {
         execute({
+          tearDownDependents,
           body: {
             plan_only: false,
             error_behavior: 'continue',
@@ -100,6 +119,7 @@ export const TeardownComponentModalContainer = ({
           },
         })
       }}
+      showTearDownDependents={disabling}
       onClose={() => {
         removeModal(props.modalId)
       }}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -11,7 +12,8 @@ interface ITeardownComponentModal extends Omit<IModal, 'onSubmit'> {
   component: TComponent
   isPending: boolean
   error?: { error?: string } | null
-  onSubmit: (params: { role: string }) => void
+  onSubmit: (params: { role: string; tearDownDependents: boolean }) => void
+  showTearDownDependents?: boolean
   onClose: () => void
   roleSelector: (props: {
     value: string
@@ -26,10 +28,12 @@ export const TeardownComponentModal = ({
   onSubmit,
   onClose,
   roleSelector,
+  showTearDownDependents = false,
   ...props
 }: ITeardownComponentModal) => {
   const [confirmName, setConfirmName] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [tearDownDependents, setTearDownDependents] = useState(false)
 
   const isConfirmValid = confirmName === component.name
   const canTeardown = isConfirmValid && !isPending
@@ -74,7 +78,11 @@ export const TeardownComponentModal = ({
           </span>
         ),
         disabled: !canTeardown,
-        onClick: () => onSubmit({ role: selectedRole }),
+        onClick: () =>
+          onSubmit({
+            role: selectedRole,
+            tearDownDependents: showTearDownDependents && tearDownDependents,
+          }),
         variant: 'danger' as const,
       }}
       onClose={handleClose}
@@ -129,6 +137,16 @@ export const TeardownComponentModal = ({
               <strong>Important:</strong> This action cannot be undone. All infrastructure provisioned by this component will be permanently destroyed.
             </Text>
           </Banner>
+
+          {showTearDownDependents ? (
+            <CheckboxInput
+              checked={tearDownDependents}
+              onChange={(e) => setTearDownDependents(e.target.checked)}
+              labelProps={{
+                labelText: `Also tear down components that depend on ${component.name}`,
+              }}
+            />
+          ) : null}
 
           {roleSelector({
             value: selectedRole,
