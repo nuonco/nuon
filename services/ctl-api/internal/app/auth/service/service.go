@@ -174,7 +174,7 @@ func New(params Params) (*service, error) {
 
 	params.LC.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			if err := s.ensureCLIClient(ctx); err != nil {
+			if err := s.startCLIClient(ctx); err != nil {
 				return fmt.Errorf("ensure cli oauth client: %w", err)
 			}
 			go s.runOAuthCleanup()
