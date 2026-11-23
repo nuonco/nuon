@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import type { TAppBranchConfig } from '@/types'
+import type { TAppBranchConfig, TAppBranchRunConfig } from '@/types'
 
 export type TCreateBranchConfigRequest = {
   connected_github_vcs_config?: {
@@ -30,6 +30,7 @@ export type TCreateBranchConfigRequest = {
   post_deploy_runbook_ids?: string[]
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
+  run_config?: TAppBranchRunConfig
   clear_preview_config?: boolean
   preview_config?: {
     mode?: 'none' | 'plan-only' | 'apply' | 'build-only'

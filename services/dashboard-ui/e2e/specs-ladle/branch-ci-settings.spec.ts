@@ -8,7 +8,7 @@ test('edits branch CI trigger settings', async ({ page }) => {
 
   const dialog = page.getByRole('dialog')
   const save = dialog.getByRole('button', { name: 'Save changes' })
-  const regex = dialog.getByLabel('Ignored changes regex (optional)')
+  const regex = dialog.getByLabel('Ignored changes regex (deprecated)')
 
   await expect(regex).toHaveValue('^docs/')
   await expect(regex).toHaveAttribute('placeholder', '^(docs/|README\\.md)')

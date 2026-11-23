@@ -25,6 +25,12 @@ type AppAppBranchRunConfig struct {
 	// mode
 	Mode AppAppBranchRunMode `json:"mode,omitempty"`
 
+	// paths
+	Paths []string `json:"paths"`
+
+	// paths ignore
+	PathsIgnore []string `json:"paths_ignore"`
+
 	// tag prefix
 	TagPrefix string `json:"tag_prefix,omitempty"`
 }

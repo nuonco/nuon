@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type mcpListAppBranchRunsInput struct {
@@ -74,6 +75,7 @@ func (s *service) mcpListAppBranchRuns(ctx context.Context, _ *mcp.CallToolReque
 		Preload("VCSConnectionCommit").
 		Preload("Preview").
 		Where(app.AppBranchRun{AppBranchID: branch.ID}).
+		Scopes(scopes.ExcludeIgnoredPreviewRuns).
 		Order("created_at DESC").
 		Limit(limit + 1).
 		Offset(offset).
