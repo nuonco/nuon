@@ -2,11 +2,11 @@
   "announcements": [
     {
       "id": "fleet-view-deploys-045",
-      "title": "Fleet View, Changed-Only Deploys, and Private Registries",
+      "title": "Fleet View, Install Reconciliation, and Private Registries",
       "date": "November 23, 2026",
       "description": "See every install of an app on one page, deploy only the components a change affects, and pull private images through cloud connections.",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/045-fleet-view-deploys-private-registries",
+      "ctaUrl": "https://docs.nuon.co/updates/045-fleet-view-reconciliation-private-registries",
       "image": "/images/announcements/nuon-changelog-045.png",
       "imageDark": "/images/announcements/nuon-changelog-045.png",
       "dismissible": false
