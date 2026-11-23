@@ -17,6 +17,7 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
+	"github.com/nuonco/nuon/pkg/publicnet"
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	runnerctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
@@ -138,6 +139,8 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 }
 
 func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execution *models.AppRunnerJobExecution) error {
+	// Jobs here run on the control plane against hosts named in app config.
+	ctx = publicnet.WithPublicOnly(ctx)
 	l := e.l
 	logProvider, traceProvider := e.telemetryProviders(job)
 	if logProvider != nil {

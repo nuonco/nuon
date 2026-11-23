@@ -30,7 +30,34 @@ var nonPublicPrefixes = []netip.Prefix{
 	netip.MustParsePrefix("2002::/16"),       // 6to4, embeds an IPv4 address
 }
 
+// metadataPrefixes are cloud metadata and platform endpoints that sit outside
+// the link-local range. Some are in otherwise public space, so they need
+// naming. This is the one list of them: callers that allow private
+// destinations, such as runner health probes, block these through
+// IsMetadataAddr rather than keeping their own copy.
+var metadataPrefixes = []netip.Prefix{
+	netip.MustParsePrefix("100.100.100.200/32"), // Alibaba metadata
+	netip.MustParsePrefix("168.63.129.16/32"),   // Azure WireServer
+	netip.MustParsePrefix("192.0.0.192/32"),     // Oracle metadata
+	netip.MustParsePrefix("fd00:ec2::23/128"),   // AWS time sync
+	netip.MustParsePrefix("fd00:ec2::254/128"),  // AWS metadata
+	netip.MustParsePrefix("fd20:ce::254/128"),   // GCP metadata
+}
+
 var ErrNonPublic = errors.New("non-public address")
+
+// IsMetadataAddr reports whether addr is a cloud metadata or platform endpoint
+// outside the link-local range. Link-local metadata addresses such as
+// 169.254.169.254 are not listed; callers block that range as a whole.
+func IsMetadataAddr(addr netip.Addr) bool {
+	addr = addr.Unmap()
+	for _, prefix := range metadataPrefixes {
+		if prefix.Contains(addr) {
+			return true
+		}
+	}
+	return false
+}
 
 func IsPublicIP(ip net.IP) bool {
 	if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() ||
@@ -43,6 +70,9 @@ func IsPublicIP(ip net.IP) bool {
 	}
 	addr = addr.Unmap()
 	if addr.Is6() && !globalUnicastV6.Contains(addr) {
+		return false
+	}
+	if IsMetadataAddr(addr) {
 		return false
 	}
 	for _, prefix := range nonPublicPrefixes {
