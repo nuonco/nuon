@@ -14,6 +14,7 @@ import (
 	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/middlewares/auth"
 )
 
 var githubAppSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
@@ -65,10 +66,15 @@ func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
 	client, err := nuon.New(nuon.WithURL(h.cfg.ServerAPIURL()), nuon.WithAuthToken(token), nuon.WithOrgID(orgID))
 	if err != nil {
 		h.l.Error("failed to create nuon client", zap.Error(err))
-		h.redirectToLogin(c)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	if err := client.ValidateToken(c.Request.Context()); err != nil {
+		if !auth.IsUnauthorized(err) {
+			h.l.Error("github connect could not verify the session", zap.Error(err))
+			c.AbortWithStatus(http.StatusServiceUnavailable)
+			return
+		}
 		h.l.Warn("github connect token rejected", zap.Error(err))
 		h.redirectToLogin(c)
 		return
