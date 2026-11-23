@@ -180,6 +180,7 @@ func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, include
 		Preload("AppBranchRuns.Preview").
 		Where("owner_type = ?", "app_branches").
 		Where("owner_id = ?", appBranchID).
+		Scopes(scopes.ExcludeIgnoredPreviewWorkflows(appBranchID)).
 		Order("created_at DESC")
 
 	if !includePlanOnly {
