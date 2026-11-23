@@ -19,6 +19,7 @@ import (
 
 	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/middlewares/auth"
 )
 
 type authCacheEntry struct {
@@ -455,6 +456,11 @@ func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
 			return
 		}
 		if _, verifyErr := h.verifyAndCache(c, token); verifyErr != nil {
+			if !auth.IsUnauthorized(verifyErr) {
+				h.l.Error("admin proxy auth check could not verify the session", zap.Error(verifyErr))
+				c.AbortWithStatus(http.StatusServiceUnavailable)
+				return
+			}
 			h.l.Warn("admin proxy auth check failed", zap.Error(verifyErr))
 			redirectToLogin()
 			return
