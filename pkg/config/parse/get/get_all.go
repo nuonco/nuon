@@ -393,8 +393,7 @@ func (g *get) checkRemoteHops(field, src, pwd string) error {
 	for range maxChecksumHops {
 		detected, err := getter.Detect(src, pwd, getter.Detectors)
 		if err != nil {
-			// go-getter fails the same way before it requests anything.
-			return nil
+			return errors.Wrapf(err, "unable to resolve the source %q before checking it", src)
 		}
 		force, raw := "", detected
 		if parts := forcedSourcePattern.FindStringSubmatch(detected); parts != nil {
@@ -408,7 +407,7 @@ func (g *get) checkRemoteHops(field, src, pwd string) error {
 
 		u, err := url.Parse(raw)
 		if err != nil {
-			return nil
+			return errors.Wrapf(err, "unable to parse the source %q before checking it", src)
 		}
 		kind, next, found := strings.Cut(u.Query().Get("checksum"), ":")
 		if !found || kind != "file" {

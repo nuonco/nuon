@@ -847,6 +847,16 @@ func TestGetAll_CheckRemoteCoversChecksumHops(t *testing.T) {
 		require.Zero(t, deniedHits.Load())
 	})
 
+	t.Run("a checksum file that cannot be resolved fails before any request", func(t *testing.T) {
+		allowedHits.Store(0)
+		src := allowed.URL + "/values.yaml?checksum=file:github.com/acme"
+		_, checked, err := parse(t, t.TempDir(), src)
+		require.ErrorContains(t, err, "unable to resolve the source")
+		require.Equal(t, []string{src}, checked)
+		require.Zero(t, allowedHits.Load())
+		require.Zero(t, deniedHits.Load())
+	})
+
 	t.Run("a local file with a remote checksum file is checked", func(t *testing.T) {
 		dir := t.TempDir()
 		require.NoError(t, os.WriteFile(filepath.Join(dir, "values.yaml"), []byte(contents), 0o600))
