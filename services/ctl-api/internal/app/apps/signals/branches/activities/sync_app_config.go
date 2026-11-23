@@ -75,6 +75,7 @@ func (a *Activities) syncRunDeps() syncer.RunDeps {
 		TFClient:         a.tfClient,
 		Metrics:          a.syncMetrics,
 		Logger:           a.l,
+		URLPolicy:        a.cfg.URLPolicy,
 	}
 }
 

@@ -2,7 +2,10 @@ package build
 
 import (
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/validate"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
 type RunnerInput struct {
@@ -21,10 +24,13 @@ type RunnerInput struct {
 	PublicAPIURL    string
 
 	PhoneHomeScriptURL string
+
+	URLPolicy *urlpolicy.Policy
 }
 
-func RunnerInputFromConfig(runner config.AppRunnerConfig, appID, appConfigID string) RunnerInput {
+func RunnerInputFromConfig(runner config.AppRunnerConfig, appID, appConfigID string, policy *urlpolicy.Policy) RunnerInput {
 	return RunnerInput{
+		URLPolicy:     policy,
 		AppID:         appID,
 		AppConfigID:   appConfigID,
 		Type:          runner.RunnerType,
@@ -42,7 +48,17 @@ func RunnerInputFromConfig(runner config.AppRunnerConfig, appID, appConfigID str
 	}
 }
 
-func RunnerConfig(in RunnerInput) *app.AppRunnerConfig {
+func RunnerConfig(in RunnerInput) (*app.AppRunnerConfig, error) {
+	if err := validation.CheckURLPolicy(in.URLPolicy, validate.RunnerURLPolicyViolations(in.URLPolicy, validate.RunnerURLs{
+		RunnerAPIURL:       in.RunnerAPIURL,
+		PublicAPIURL:       in.PublicAPIURL,
+		InitScriptURL:      in.InitScriptURL,
+		PhoneHomeScriptURL: in.PhoneHomeScriptURL,
+		EnvVars:            in.EnvVars,
+	})); err != nil {
+		return nil, err
+	}
+
 	return &app.AppRunnerConfig{
 		AppID:         in.AppID,
 		AppConfigID:   in.AppConfigID,
@@ -58,5 +74,5 @@ func RunnerConfig(in RunnerInput) *app.AppRunnerConfig {
 		ImageID:         in.ImageID,
 
 		PhoneHomeScriptURL: in.PhoneHomeScriptURL,
-	}
+	}, nil
 }

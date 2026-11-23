@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	pkgsync "github.com/nuonco/nuon/pkg/config/sync"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -34,6 +35,7 @@ type syncDeps struct {
 	fx.In
 
 	DB               *gorm.DB `name:"psql"`
+	Cfg              *internal.Config
 	Seed             *testseed.Seeder
 	AppsHelpers      *appshelpers.Helpers
 	ComponentHelpers *componenthelpers.Helpers

@@ -10,7 +10,12 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) error {
+func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig, opts ...Option) error {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
+
 	fns := []func() error{
 		func() error {
 			return ValidateVersion(a)
@@ -107,6 +112,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		},
 		func() error {
 			return ValidateGCPCloudSQLDeleteOutsideBreakGlass(a)
+		},
+		func() error {
+			return ValidateURLPolicy(o.urlPolicy, a)
 		},
 	}
 

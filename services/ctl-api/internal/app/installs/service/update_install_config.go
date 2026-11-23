@@ -91,6 +91,9 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 	if err != nil {
 		return nil, err
 	}
+	if err := s.helpers.CheckStackOverridesURLPolicy(ctx, installID, req.VPCNestedTemplateURL, req.RunnerNestedTemplateURL, req.CustomNestedStacks); err != nil {
+		return nil, err
+	}
 	filter := app.InstallConfig{ID: configID, InstallID: installID, OrgID: orgID}
 
 	// Build an explicit update map so GORM doesn't try to reflect into
