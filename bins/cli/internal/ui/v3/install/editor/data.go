@@ -75,8 +75,8 @@ func (m *model) createFormInputs() {
 
 		curVal := current[input.Name]
 		if input.Sensitive {
-			// Mask sensitive values; pre-fill with the stored value so leaving
-			// the field untouched preserves it on submit.
+			// The read API omits sensitive values, so this field starts empty.
+			// A blank field is left out of the update and the stored value stays.
 			ti.EchoMode = textinput.EchoPassword
 			ti.EchoCharacter = '•'
 			ti.Placeholder = "leave unchanged"
@@ -206,11 +206,47 @@ func (m *model) insertAtCursor(idx int, content string) {
 
 func (m *model) validateForm() error {
 	for i, mapping := range m.inputMappings {
-		if mapping.required && strings.TrimSpace(m.inputs[i].Value()) == "" {
-			return fmt.Errorf("%s is required", mapping.label())
+		if !mapping.required || strings.TrimSpace(m.inputs[i].Value()) != "" {
+			continue
 		}
+		// A stored sensitive value is not in the form. Leaving the field blank keeps it.
+		if mapping.sensitive && storedSensitive(m.currentInputs, mapping.name) {
+			continue
+		}
+		return fmt.Errorf("%s is required", mapping.label())
 	}
 	return nil
+}
+
+// changedInputs is the partial update to send. The inputs API merges this over
+// the stored values, so anything omitted stays. A blank sensitive field is
+// omitted: the read API does not return that value, so blank means unchanged.
+func changedInputs(mappings []inputMapping, values []string) map[string]string {
+	changed := map[string]string{}
+	for i, mapping := range mappings {
+		value := ""
+		if i < len(values) {
+			value = values[i]
+		}
+		if mapping.sensitive && strings.TrimSpace(value) == "" {
+			continue
+		}
+		if value == mapping.currentValue {
+			continue
+		}
+		changed[mapping.name] = value
+	}
+	return changed
+}
+
+func storedSensitive(current *models.AppInstallInputs, name string) bool {
+	if current == nil {
+		return false
+	}
+	if current.Values != nil && current.Values[name] != "" {
+		return true
+	}
+	return current.RedactedValues != nil && current.RedactedValues[name] == "********"
 }
 
 func (m *model) submitForm() tea.Cmd {
@@ -219,21 +255,18 @@ func (m *model) submitForm() tea.Cmd {
 			return inputsUpdatedMsg{err: err}
 		}
 
-		// The update endpoint expects the full set of inputs, so start from the
-		// existing values and merge in the form fields.
-		merged := make(map[string]string)
-		if m.currentInputs != nil && m.currentInputs.Values != nil {
-			for k, v := range m.currentInputs.Values {
-				merged[k] = v
-			}
+		values := make([]string, len(m.inputs))
+		for i := range m.inputs {
+			values[i] = m.inputs[i].Value()
 		}
-		for i, mapping := range m.inputMappings {
-			merged[mapping.name] = m.inputs[i].Value()
+		changed := changedInputs(m.inputMappings, values)
+		if len(changed) == 0 {
+			return inputsUpdatedMsg{unchanged: true}
 		}
 
 		deployDependents := m.deployDependents
 		resp, err := m.api.UpdateInstallInputs(m.ctx, m.installID, &models.ServiceUpdateInstallInputsRequest{
-			Inputs:           merged,
+			Inputs:           changed,
 			DeployDependents: &deployDependents,
 		})
 		if err != nil {
