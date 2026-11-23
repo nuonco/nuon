@@ -220,6 +220,8 @@ func sectionDisplayNameAndGrouped(key string) (string, bool) {
 		return "Break glass", false
 	case "operation_roles":
 		return "Operation roles", false
+	case "registry_retention":
+		return "Registry retention", false
 	default:
 		return "", false
 	}

@@ -20,6 +20,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/oci/signature"
 )
 
@@ -29,7 +30,7 @@ type nestedFieldContract struct {
 }
 
 var nestedFieldContracts = []nestedFieldContract{
-	{reflect.TypeFor[Component](), "Source:ingress Type:constrained-type Name:identity SourceFile:provenance VarName:var_name Labels:labels Dependencies:dependencies OperationRoles:nested Toggleable:toggleable DefaultEnabled:default_enabled KubernetesContext:kubernetes_context HelmChart:nested TerraformModule:nested Job:nested ExternalImage:nested KubernetesManifest:nested Pulumi:nested References:derived Checksum:derived"},
+	{reflect.TypeFor[Component](), "Source:ingress Type:constrained-type Name:identity SourceFile:provenance VarName:var_name Labels:labels Dependencies:dependencies OperationRoles:nested Toggleable:toggleable DefaultEnabled:default_enabled RegistryRetention:nested KubernetesContext:kubernetes_context HelmChart:nested TerraformModule:nested Job:nested ExternalImage:nested KubernetesManifest:nested Pulumi:nested References:derived Checksum:derived"},
 	{reflect.TypeFor[HelmChartComponentConfig](), "ChartName:chart_name ValuesMap:values ValuesFiles:nested PublicRepo:nested ConnectedRepo:nested HelmRepo:nested Namespace:namespace StorageDriver:storage_driver TakeOwnership:take_ownership SkipCRDs:skip_crds DriftSchedule:drift_schedule Health:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing Values:legacy-rejected"},
 	{reflect.TypeFor[TerraformModuleComponentConfig](), "TerraformVersion:terraform_version EnvVarMap:env_vars VarsMap:vars VariablesFiles:nested PublicRepo:nested ConnectedRepo:nested DriftSchedule:drift_schedule BuildTimeout:build_timeout DeployTimeout:deploy_timeout MaxAutoRetries:max_auto_retries SkipNoops:skip_noops AutoApproveOnPoliciesPassing:auto_approve_on_policies_passing Teardown:nested Variables:legacy-rejected EnvVars:legacy-rejected"},
 	{reflect.TypeFor[ExternalImageComponentConfig](), "AWSECRImageConfig:nested GCPGARImageConfig:nested AzureACRImageConfig:nested PublicImageConfig:nested Verification:nested BuildTimeout:build_timeout DeployTimeout:deploy_timeout"},
@@ -67,6 +68,8 @@ var nestedFieldContracts = []nestedFieldContract{
 	{reflect.TypeFor[PoliciesConfig](), "Policies:nested SourceFile:provenance"},
 	{reflect.TypeFor[AppPolicy](), "Type:type Engine:constrained-engine Name:identity Contents:contents Components:components ApplyOnTeardown:apply_on_teardown SourceFile:provenance SourceLine:provenance"},
 	{reflect.TypeFor[BreakGlass](), "Roles:nested"},
+	{reflect.TypeFor[RegistryRetention](), "Mode:mode RetainCount:retain_count"},
+	{reflect.TypeFor[ComponentRegistryRetention](), "RetainCount:retain_count"},
 	{reflect.TypeFor[OperationRolesConfig](), "Type:singleton RuleMatrix:nested"},
 	{reflect.TypeFor[OperationRoleRule](), "Principal:identity Operation:identity RoleName:role_name"},
 	{reflect.TypeFor[EntityOperationRole](), "Operation:operation RoleName:role"},
@@ -118,6 +121,8 @@ func nestedDiffFixtures() []nestedDiffFixture {
 		{"Permissions", "permissions"}, {"Permissions.NamedPolicies.0", "permissions/named_policy.shared"},
 		{"Policies", "policies"}, {"Policies.Policies.0", "policies/policy.guard"},
 		{"BreakGlass", "break_glass"}, {"OperationRoles", "operation_roles"},
+		{"RegistryRetention", "registry_retention"},
+		{"Components.0.RegistryRetention", "components/component.helm/registry_retention"},
 		{"OperationRoles.RuleMatrix.0", "operation_roles/rule.nuon::component:*.deploy"},
 		{"Actions.0", "actions/action.inspect"}, {"Actions.0.Steps.0", "actions/action.inspect/step.inspect"},
 		{"Actions.0.Triggers.0", "actions/action.inspect/trigger.0"},
@@ -176,24 +181,25 @@ func nestedBaseline() *AppConfig {
 	}
 	return &AppConfig{
 		Components: ComponentList{
-			{Name: "helm", Type: HelmChartComponentType, OperationRoles: []EntityOperationRole{{Operation: OperationDeploy, RoleName: "maintenance"}}, HelmChart: &HelmChartComponentConfig{ChartName: "example", Namespace: "default", PublicRepo: repo(), ValuesFiles: []HelmValuesFile{{Path: "values.yaml", Contents: "replicas: 1"}}, Health: health()}},
+			{Name: "helm", Type: HelmChartComponentType, RegistryRetention: &ComponentRegistryRetention{}, OperationRoles: []EntityOperationRole{{Operation: OperationDeploy, RoleName: "maintenance"}}, HelmChart: &HelmChartComponentConfig{ChartName: "example", Namespace: "default", PublicRepo: repo(), ValuesFiles: []HelmValuesFile{{Path: "values.yaml", Contents: "replicas: 1"}}, Health: health()}},
 			{Name: "terraform", Type: TerraformModuleComponentType, TerraformModule: &TerraformModuleComponentConfig{TerraformVersion: "1.6.0", PublicRepo: repo(), VariablesFiles: []TerraformVariablesFile{{Contents: "region = \"us-east-1\""}}, Teardown: &ComponentTeardownConfig{Retain: []string{"aws_s3_bucket.data"}}}},
 			{Name: "image", Type: ExternalImageComponentType, ExternalImage: &ExternalImageComponentConfig{PublicImageConfig: &PublicImageConfig{ImageURL: "docker.io/acme/app", Tag: "1.0.0"}, Verification: &signature.Verification{RequireSignature: true, Authorities: []signature.Authority{{Type: signature.AuthorityTypeKeyless, Issuer: "https://token.actions.githubusercontent.com", Subject: "https://github.com/acme/app"}}}}},
 			{Name: "manifest", Type: KubernetesManifestComponentType, KubernetesManifest: &KubernetesManifestComponentConfig{Namespace: "default", Kustomize: &KustomizeConfig{Path: "overlays/prod"}, PublicRepo: repo(), Health: health()}},
 			{Name: "job", Type: JobComponentType, Job: &JobComponentConfig{ImageURL: "docker.io/acme/job", Tag: "1.0.0", Cmd: []string{"echo"}, Args: []string{"ready"}}},
 			{Name: "pulumi", Type: PulumiComponentType, Pulumi: &PulumiComponentConfig{Runtime: "go", PulumiVersion: "3.100.0", PublicRepo: repo()}},
 		},
-		Sandbox:        &AppSandboxConfig{Type: "terraform", TerraformVersion: "1.6.0", Runtime: "go", PublicRepo: repo(), VariablesFiles: []TerraformVariablesFile{{Contents: "region = \"us-east-1\""}}, OperationRoles: []EntityOperationRole{{Operation: OperationProvision, RoleName: "provision"}}},
-		Runner:         &AppRunnerConfig{RunnerType: "aws", HelmDriver: "secret"},
-		Inputs:         &AppInputConfig{Groups: []AppInputGroup{{Name: "compute", Description: "Compute"}, {Name: "network", Description: "Network"}}, Inputs: []AppInput{{Name: "region", Type: "string", DisplayName: "Region", Description: "Cloud region", Group: "compute"}}},
-		Secrets:        &SecretsConfig{Secrets: []*AppSecret{{Name: "api_key", Description: "API key", KubernetesSyncTargets: []*KubernetesSyncTarget{{Namespaces: []string{"default"}, Name: "api-key", Key: "value"}}}}},
-		Permissions:    &PermissionsConfig{ProvisionRole: role("provision", "provision"), DeprovisionRole: role("deprovision", "deprovision"), MaintenanceRole: role("maintenance", "maintenance"), CustomRoles: []*AppAWSIAMRole{role("custom", "custom")}, NamedPolicies: []NamedIAMPolicy{{Name: "shared", Contents: `{"Version":"2012-10-17","Statement":[]}`}, {Name: "alternate", Contents: `{"Version":"2012-10-17","Statement":[]}`}}},
-		BreakGlass:     &BreakGlass{Roles: []*AppAWSIAMRole{role("emergency", "custom")}},
-		Policies:       &PoliciesConfig{Policies: []AppPolicy{{Name: "guard", Type: AppPolicyTypeTerraformModule, Engine: AppPolicyEngineOPA, Contents: "package nuon\ndeny := []"}}},
-		OperationRoles: &OperationRolesConfig{Type: OperationRuleConfigTypeMatrix, RuleMatrix: []*OperationRoleRule{{Principal: "nuon::component:*", Operation: OperationDeploy, RoleName: "maintenance"}}},
-		Actions:        []*ActionConfig{{Name: "inspect", Timeout: "5m", Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready"}}, Triggers: []*ActionTriggerConfig{{Type: "manual"}}}},
-		Stack:          &StackConfig{Type: "azure-bicep", Name: "acme", Description: "Install stack", CustomNestedStacks: []CustomNestedStack{{Name: "storage", Index: 0, TemplateURL: "https://example.com/storage.json", Contents: `{"resources":[]}`}}},
-		Branch:         branch(), Branches: []*AppBranchConfig{branch()},
+		Sandbox:           &AppSandboxConfig{Type: "terraform", TerraformVersion: "1.6.0", Runtime: "go", PublicRepo: repo(), VariablesFiles: []TerraformVariablesFile{{Contents: "region = \"us-east-1\""}}, OperationRoles: []EntityOperationRole{{Operation: OperationProvision, RoleName: "provision"}}},
+		Runner:            &AppRunnerConfig{RunnerType: "aws", HelmDriver: "secret"},
+		Inputs:            &AppInputConfig{Groups: []AppInputGroup{{Name: "compute", Description: "Compute"}, {Name: "network", Description: "Network"}}, Inputs: []AppInput{{Name: "region", Type: "string", DisplayName: "Region", Description: "Cloud region", Group: "compute"}}},
+		Secrets:           &SecretsConfig{Secrets: []*AppSecret{{Name: "api_key", Description: "API key", KubernetesSyncTargets: []*KubernetesSyncTarget{{Namespaces: []string{"default"}, Name: "api-key", Key: "value"}}}}},
+		Permissions:       &PermissionsConfig{ProvisionRole: role("provision", "provision"), DeprovisionRole: role("deprovision", "deprovision"), MaintenanceRole: role("maintenance", "maintenance"), CustomRoles: []*AppAWSIAMRole{role("custom", "custom")}, NamedPolicies: []NamedIAMPolicy{{Name: "shared", Contents: `{"Version":"2012-10-17","Statement":[]}`}, {Name: "alternate", Contents: `{"Version":"2012-10-17","Statement":[]}`}}},
+		BreakGlass:        &BreakGlass{Roles: []*AppAWSIAMRole{role("emergency", "custom")}},
+		RegistryRetention: &RegistryRetention{Mode: generics.ToPtr(RegistryRetentionModeDryRun), RetainCount: generics.ToPtr(DefaultRegistryRetentionRetainCount)},
+		Policies:          &PoliciesConfig{Policies: []AppPolicy{{Name: "guard", Type: AppPolicyTypeTerraformModule, Engine: AppPolicyEngineOPA, Contents: "package nuon\ndeny := []"}}},
+		OperationRoles:    &OperationRolesConfig{Type: OperationRuleConfigTypeMatrix, RuleMatrix: []*OperationRoleRule{{Principal: "nuon::component:*", Operation: OperationDeploy, RoleName: "maintenance"}}},
+		Actions:           []*ActionConfig{{Name: "inspect", Timeout: "5m", Steps: []*ActionStepConfig{{Name: "inspect", Command: "echo ready"}}, Triggers: []*ActionTriggerConfig{{Type: "manual"}}}},
+		Stack:             &StackConfig{Type: "azure-bicep", Name: "acme", Description: "Install stack", CustomNestedStacks: []CustomNestedStack{{Name: "storage", Index: 0, TemplateURL: "https://example.com/storage.json", Contents: `{"resources":[]}`}}},
+		Branch:            branch(), Branches: []*AppBranchConfig{branch()},
 		KubernetesContexts: &KubernetesContextsConfig{Contexts: []*KubernetesContext{{Name: "compute", Component: "terraform"}, {Name: "alternate", Component: "pulumi"}}},
 	}
 }
@@ -457,6 +463,8 @@ func nestedEditValue(v reflect.Value, typ reflect.Type, field, word string, numb
 		case "Mode":
 			if typ == reflect.TypeFor[AppBranchRunConfig]() {
 				value = "manual_only"
+			} else if typ == reflect.TypeFor[RegistryRetention]() {
+				value = RegistryRetentionModeEnforce
 			} else {
 				value = "none"
 			}
@@ -678,6 +686,7 @@ func nestedValidate(t require.TestingT, c *AppConfig) {
 	}
 	require.NoError(t, c.Permissions.Validate())
 	require.NoError(t, c.BreakGlass.Validate())
+	require.NoError(t, c.RegistryRetention.Validate())
 	require.NoError(t, c.OperationRoles.ValidateWithConfig(c.Components, c.Actions, c.Permissions, c.BreakGlass))
 	require.NoError(t, c.Branch.Validate())
 	for _, branch := range c.Branches {

@@ -20,6 +20,7 @@ title: 'Helm'
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
 | **`toggleable`**<br/>boolean | - | **Optional** | - |
 | **`default_enabled`**<br/>boolean | - | **Optional** | - |
+| **`registry_retention`**<br/>[ComponentRegistryRetention](#registry_retention) | registry retention override Overrides the app level registry retention settings for this component | **Optional** | - |
 | **`kubernetes_context`**<br/>string | kubernetes context binding Optional. Name of a kubernetes_context defined at the app level. If set, the component targets the cluster produced by that context's source component. If omitted, the co... | **Optional** | `"data-cluster"` |
 | **`values`**<br/>object | inline Helm values Map of Helm values as key-value pairs. These are passed to helm install/upgrade as --set arguments. Supports Nuon templating | **Optional** | - |
 | **`values_file`**<br/>[array](#values_file) | Helm values files Array of external Helm values files to load. Each entry can specify a path to a local file or inline contents. Supports Nuon templating and external file sources | **Optional** | - |
@@ -45,6 +46,12 @@ title: 'Helm'
 |----------|----------|----------|----------|
 | **`operation`**<br/>string | operation type Type of operation: provision, deprovision, update, reprovision, or trigger | **✅ Required** | `"provision"`, `"deploy"`, `"deprovision"` |
 | **`role`**<br/>string | IAM role name Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs | **✅ Required** | `"{{.nuon.install.id}}-maintenance"`, `"{{.nuon.install.id}}-provision"` |
+
+### `registry_retention`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`retain_count`**<br/>integer | images to retain Number of most recent images to keep for this component in each install's registry. Must be at least 1. Overrides the app level retain_count. Leave unset to inherit it. | **Optional** | `10` |
 
 ### `values_file`
 

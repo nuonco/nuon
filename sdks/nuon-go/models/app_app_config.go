@@ -86,6 +86,9 @@ type AppAppConfig struct {
 	// readme
 	Readme string `json:"readme,omitempty"`
 
+	// registry retention
+	RegistryRetention *AppAppRegistryRetentionConfig `json:"registry_retention,omitempty"`
+
 	// runbook ids
 	RunbookIds []string `json:"runbook_ids"`
 
@@ -170,6 +173,10 @@ func (m *AppAppConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePolicies(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRegistryRetention(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -455,6 +462,29 @@ func (m *AppAppConfig) validatePolicies(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppConfig) validateRegistryRetention(formats strfmt.Registry) error {
+	if swag.IsZero(m.RegistryRetention) { // not required
+		return nil
+	}
+
+	if m.RegistryRetention != nil {
+		if err := m.RegistryRetention.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("registry_retention")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("registry_retention")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppConfig) validateRunner(formats strfmt.Registry) error {
 	if swag.IsZero(m.Runner) { // not required
 		return nil
@@ -685,6 +715,10 @@ func (m *AppAppConfig) ContextValidate(ctx context.Context, formats strfmt.Regis
 	}
 
 	if err := m.contextValidatePolicies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRegistryRetention(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -972,6 +1006,31 @@ func (m *AppAppConfig) contextValidatePolicies(ctx context.Context, formats strf
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("policies")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) contextValidateRegistryRetention(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.RegistryRetention != nil {
+
+		if swag.IsZero(m.RegistryRetention) { // not required
+			return nil
+		}
+
+		if err := m.RegistryRetention.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("registry_retention")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("registry_retention")
 			}
 
 			return err

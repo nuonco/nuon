@@ -32,6 +32,9 @@ type HelpersCreateInstallConfigParams struct {
 	// labels
 	Labels map[string]string `json:"labels,omitempty"`
 
+	// registry retention mode
+	RegistryRetentionMode *string `json:"registry_retention_mode,omitempty"`
+
 	// runner image auto update
 	RunnerImageAutoUpdate *bool `json:"runner_image_auto_update,omitempty"`
 

@@ -96,6 +96,7 @@ func AllModels() []any {
 		&app.AppAWSIAMPolicyConfig{},
 		&app.AppNamedIAMPolicyConfig{},
 		&app.AppBreakGlassConfig{},
+		&app.AppRegistryRetentionConfig{},
 		&app.AppStackConfig{},
 		&app.AppOperationRoleConfig{},
 		&app.AppOperationRoleRule{},

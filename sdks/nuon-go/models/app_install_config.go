@@ -50,6 +50,9 @@ type AppInstallConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// registry retention mode
+	RegistryRetentionMode *string `json:"registry_retention_mode,omitempty"`
+
 	// runner image auto update
 	RunnerImageAutoUpdate *bool `json:"runner_image_auto_update,omitempty"`
 

@@ -35,6 +35,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"policy":              PolicyConfigSchema,
 	"policies":            PoliciesConfigSchema,
 	"pulumi":              PulumiConfigSchema,
+	"registry-retention":  RegistryRetentionConfigSchema,
 	"runbook":             RunbookConfigSchema,
 	"runner":              RunnerConfigSchema,
 	"sandbox":             SandboxConfigSchema,
@@ -131,6 +132,19 @@ func BreakGlassConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.BreakGlass{}), nil
+}
+
+func RegistryRetentionConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.RegistryRetention{}); err != nil {
+		return nil, errors.Wrap(err, "RegistryRetention validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.RegistryRetention{}), nil
 }
 
 func InputGroupSchema() (*jsonschema.Schema, error) {

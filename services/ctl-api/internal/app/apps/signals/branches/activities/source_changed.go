@@ -65,15 +65,16 @@ func componentSourceChanged(src componentSource, branchRepo string, changedPaths
 // sectionMemberKind maps a config diff section name to the source archive
 // member kind that holds each entity's defining file.
 var sectionMemberKind = map[string]string{
-	"Components":      "component",
-	"Actions":         "action",
-	"Runbooks":        "runbook",
-	"Policies":        "policy",
-	"Permissions":     "permission",
-	"Sandbox":         "sandbox",
-	"Runner":          "runner",
-	"Break glass":     "break_glass",
-	"Operation roles": "operation_roles",
+	"Components":         "component",
+	"Actions":            "action",
+	"Runbooks":           "runbook",
+	"Policies":           "policy",
+	"Permissions":        "permission",
+	"Sandbox":            "sandbox",
+	"Runner":             "runner",
+	"Break glass":        "break_glass",
+	"Operation roles":    "operation_roles",
+	"Registry retention": "registry_retention",
 }
 
 // enrichConfigDiffWithSourceChanged copies FullDiff into a ConfigDiff blob shape

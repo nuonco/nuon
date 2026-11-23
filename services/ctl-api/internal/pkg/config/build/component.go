@@ -40,6 +40,8 @@ type ComponentConnectionInput struct {
 
 	Teardown *config.ComponentTeardownConfig
 
+	RegistryRetainCount *int
+
 	OperationRoles        []config.EntityOperationRole
 	KubernetesContextName string
 }
@@ -81,6 +83,9 @@ func ComponentConnection(in ComponentConnectionInput) (*app.ComponentConfigConne
 	if err := validation.ValidateTeardown(in.Teardown); err != nil {
 		return nil, err
 	}
+	if err := validation.ValidateRegistryRetentionRetainCount(in.RegistryRetainCount); err != nil {
+		return nil, err
+	}
 	if err := ValidateOperationRoles(in.OperationRoles); err != nil {
 		return nil, err
 	}
@@ -104,6 +109,7 @@ func ComponentConnection(in ComponentConnectionInput) (*app.ComponentConfigConne
 		HealthProbes:                 validation.ToAppHealthProbesFromList(in.HealthProbes),
 		HealthRequiredChecks:         validation.ToAppRequiredChecks(in.HealthRequiredChecks),
 		Teardown:                     validation.ToAppTeardown(in.Teardown),
+		RegistryRetainCount:          in.RegistryRetainCount,
 		OperationRoles:               OperationRoles(in.OperationRoles),
 		KubernetesContextName:        in.KubernetesContextName,
 	}
@@ -142,6 +148,9 @@ func ComponentConnectionInputFromConfig(comp *config.Component, componentID, app
 		DefaultEnabled:        comp.DefaultEnabled,
 		OperationRoles:        comp.OperationRoles,
 		KubernetesContextName: comp.KubernetesContext,
+	}
+	if comp.RegistryRetention != nil {
+		in.RegistryRetainCount = comp.RegistryRetention.RetainCount
 	}
 
 	switch {

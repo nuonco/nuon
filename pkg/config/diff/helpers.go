@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -112,6 +113,18 @@ func WithOptionalBoolDiff(old, new *bool) DiffOption {
 		newVal = *new
 	}
 	return WithBoolDiff(oldVal, newVal)
+}
+
+// WithOptionalIntDiff creates a DiffOption that compares two *int values,
+// treating nil as unset and distinct from any explicit value.
+func WithOptionalIntDiff(old, new *int) DiffOption {
+	format := func(v *int) string {
+		if v == nil {
+			return ""
+		}
+		return strconv.Itoa(*v)
+	}
+	return WithStringDiff(format(old), format(new))
 }
 
 // WithStringSliceDiff compares unordered string slices, preserving multiplicity.

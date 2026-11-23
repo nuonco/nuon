@@ -71,6 +71,9 @@ func (a *AppConfig) Diff(old *AppConfig, changedInputs ...diff.NodeID) *diff.Dif
 	if d := diffBreakGlass(old.BreakGlass, a.BreakGlass); d != nil {
 		children = append(children, d)
 	}
+	if d := diffRegistryRetention(old.RegistryRetention, a.RegistryRetention); d != nil {
+		children = append(children, d)
+	}
 	if d := diffOperationRoles(old.OperationRoles, a.OperationRoles); d != nil {
 		children = append(children, d)
 	}
@@ -874,6 +877,26 @@ func diffBreakGlass(old, new *BreakGlass) *diff.Diff {
 	return diff.NewDiff(diff.WithKey("break_glass"), diff.WithChildren(children...))
 }
 
+// --- RegistryRetention ---
+
+func diffRegistryRetention(old, new *RegistryRetention) *diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &RegistryRetention{}
+	}
+	if new == nil {
+		new = &RegistryRetention{}
+	}
+
+	children := []*diff.Diff{
+		diff.NewDiff(diff.WithKey("mode"), diff.WithOptionalStringDiff(old.Mode, new.Mode)),
+		diff.NewDiff(diff.WithKey("retain_count"), diff.WithOptionalIntDiff(old.RetainCount, new.RetainCount)),
+	}
+	return sectionDiff("registry_retention", old, new, children)
+}
+
 // --- OperationRoles ---
 
 func diffOperationRoles(old, new *OperationRolesConfig) *diff.Diff {
@@ -981,6 +1004,13 @@ func diffComponents(old, new ComponentList) *diff.Diff {
 	return diff.NewDiff(diff.WithKey("components"), diff.WithChildren(children...))
 }
 
+func componentRetainCount(c *Component) *int {
+	if c == nil || c.RegistryRetention == nil {
+		return nil
+	}
+	return c.RegistryRetention.RetainCount
+}
+
 func diffComponent(old, new *Component) *diff.Diff {
 	var children []*diff.Diff
 
@@ -991,6 +1021,10 @@ func diffComponent(old, new *Component) *diff.Diff {
 		diff.NewDiff(diff.WithKey("toggleable"), diff.WithOptionalBoolDiff(old.Toggleable, new.Toggleable)),
 		diff.NewDiff(diff.WithKey("default_enabled"), diff.WithOptionalBoolDiff(old.DefaultEnabled, new.DefaultEnabled)),
 		diff.NewDiff(diff.WithKey("kubernetes_context"), diff.WithStringDiff(old.KubernetesContext, new.KubernetesContext)),
+		diff.NewDiff(
+			diff.WithKey("registry_retention"),
+			diff.WithChildren(diff.NewDiff(diff.WithKey("retain_count"), diff.WithOptionalIntDiff(componentRetainCount(old), componentRetainCount(new)))),
+		),
 		diffEntityOperationRoles(old.OperationRoles, new.OperationRoles),
 	)
 

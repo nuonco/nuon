@@ -16,6 +16,7 @@ title: 'Install'
 | **`app_branch_group`**<br/>string | app branch deployment group Deployment group this install belongs to within its app branch. This explicit selection takes precedence over label matching. | **Optional** | `"canary"` |
 | **`approval_option`**<br/>string | approval option for the install Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation) | **Optional** | `"approve-all"`, `"prompt"` |
 | **`telemetry`**<br/>[InstallTelemetry](#telemetry) | Install telemetry settings | **Optional** | - |
+| **`registry_retention`**<br/>[InstallRegistryRetention](#registry_retention) | Install registry retention settings Overrides the app level registry retention mode for this install | **Optional** | - |
 | **`labels`**<br/>object | key/value labels for the install Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon templating syntax to render from install state, and re-render as... | **Optional** | `{"env":"production","region":"{{ .nuon.cloud_account.aws.region }}"}` |
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
 | **`gcp_account`**<br/>[GCPAccount](#gcp_account) | GCP account configuration GCP-specific settings for this install, including project ID and region | **Optional** | - |
@@ -32,6 +33,12 @@ title: 'Install'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`enabled`**<br/>boolean | Enable telemetry Enable or disable telemetry for this install. Omit to preserve the current setting; new installs inherit the organization default. | **Optional** | - |
+
+### `registry_retention`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`mode`**<br/>string | registry retention mode override Overrides the app level registry retention mode for this install. off never prunes, dry_run reports what would be pruned without deleting, enforce deletes. Omit to ... | **Optional** | `"off"`, `"dry_run"`, `"enforce"` |
 
 ### `aws_account`
 

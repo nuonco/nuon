@@ -67,6 +67,8 @@ type Component struct {
 	Toggleable     *bool                 `mapstructure:"toggleable,omitempty" toml:"toggleable,omitempty"`
 	DefaultEnabled *bool                 `mapstructure:"default_enabled,omitempty" toml:"default_enabled,omitempty"`
 
+	RegistryRetention *ComponentRegistryRetention `mapstructure:"registry_retention,omitempty" toml:"registry_retention,omitempty" json:",omitempty" nuonhash:"omitempty"`
+
 	// KubernetesContext is the name of a kubernetes_context this component
 	// targets. Empty means fall back to the implicit sandbox default (when
 	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
@@ -142,6 +144,10 @@ func (c *Component) parse(cfg ParseOptions) error {
 }
 
 func (a *Component) Validate() error {
+	if err := a.RegistryRetention.Validate(); err != nil {
+		return err
+	}
+
 	if a.HelmChart != nil {
 		return a.HelmChart.Validate()
 	}
@@ -192,6 +198,8 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("labels").Short("Key/value labels used to organize and filter components. Metadata only; does not affect deployment").
 		Field("operation_roles").Short("operation-specific IAM role assignments").
 		Long("Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, default roles are used based on operation type").
+		Field("registry_retention").Short("registry retention override").
+		Long("Overrides the app level registry retention settings for this component").
 		Field("kubernetes_context").Short("kubernetes context binding").
 		Long("Optional. Name of a kubernetes_context defined at the app level. If set, the component targets the cluster produced by that context's source component. If omitted, the component falls back to the sandbox cluster (when the sandbox emits cluster outputs)").
 		Example("data-cluster").

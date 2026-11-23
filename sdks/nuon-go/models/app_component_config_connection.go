@@ -113,6 +113,9 @@ type AppComponentConfigConnection struct {
 	// refs
 	Refs []*RefsRef `json:"refs"`
 
+	// registry retain count
+	RegistryRetainCount *int64 `json:"registry_retain_count,omitempty"`
+
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
 

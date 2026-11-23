@@ -211,17 +211,18 @@ func (o CloudFormationStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
-	Name            string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
-	AppBranch       string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
-	AppBranchGroup  string                `mapstructure:"app_branch_group,omitempty" toml:"app_branch_group,omitempty"`
-	ApprovalOption  InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
-	Telemetry       *InstallTelemetry     `mapstructure:"telemetry,omitempty" toml:"telemetry,omitempty" json:",omitempty"`
-	Labels          map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
-	AWSAccount      *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
-	GCPAccount      *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
-	AzureAccount    *AzureAccount         `mapstructure:"azure_account,omitempty" toml:"azure_account,omitempty"`
-	CloudConnection string                `mapstructure:"cloud_connection,omitempty" toml:"cloud_connection,omitempty"`
-	InputGroups     []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
+	Name              string                    `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
+	AppBranch         string                    `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
+	AppBranchGroup    string                    `mapstructure:"app_branch_group,omitempty" toml:"app_branch_group,omitempty"`
+	ApprovalOption    InstallApprovalOption     `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+	Telemetry         *InstallTelemetry         `mapstructure:"telemetry,omitempty" toml:"telemetry,omitempty" json:",omitempty"`
+	RegistryRetention *InstallRegistryRetention `mapstructure:"registry_retention,omitempty" toml:"registry_retention,omitempty" json:",omitempty"`
+	Labels            map[string]string         `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	AWSAccount        *AWSAccount               `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
+	GCPAccount        *GCPAccount               `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
+	AzureAccount      *AzureAccount             `mapstructure:"azure_account,omitempty" toml:"azure_account,omitempty"`
+	CloudConnection   string                    `mapstructure:"cloud_connection,omitempty" toml:"cloud_connection,omitempty"`
+	InputGroups       []InputGroup              `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 	CloudFormation *CloudFormation        `mapstructure:"cloudformation,omitempty" toml:"cloudformation,omitempty"`
@@ -287,6 +288,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("approve-all").
 		Example("prompt").
 		Field("telemetry").Short("Install telemetry settings").
+		Field("registry_retention").Short("Install registry retention settings").
+		Long("Overrides the app level registry retention mode for this install").
 		Field("labels").Short("key/value labels for the install").
 		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon templating syntax to render from install state, and re-render as state changes.").
 		Example(map[string]string{"env": "production", "region": "{{ .nuon.cloud_account.aws.region }}"}).
@@ -335,6 +338,13 @@ func (i *Install) Validate() error {
 				Description: fmt.Sprintf("install %q: %s", i.Name, err),
 				Err:         err,
 			}
+		}
+	}
+
+	if err := i.RegistryRetention.Validate(); err != nil {
+		return ErrConfig{
+			Description: fmt.Sprintf("install %q: %s", i.Name, err),
+			Err:         err,
 		}
 	}
 
@@ -501,6 +511,17 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("telemetry.enabled"),
 			diff.WithStringDiff(previous, strconv.FormatBool(*i.Telemetry.Enabled)),
+		))
+	}
+
+	if i.RegistryRetention != nil && i.RegistryRetention.Mode != nil {
+		previous := "inherit"
+		if upstreamInstall.RegistryRetention != nil && upstreamInstall.RegistryRetention.Mode != nil {
+			previous = *upstreamInstall.RegistryRetention.Mode
+		}
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("registry_retention.mode"),
+			diff.WithStringDiff(previous, *i.RegistryRetention.Mode),
 		))
 	}
 

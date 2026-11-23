@@ -86,6 +86,7 @@ type ComponentConfigConnection struct {
 	HealthProbes                      ComponentHealthProbes              `json:"health_probes,omitempty" gorm:"type:jsonb" temporaljson:"health_probes,omitzero,omitempty"`
 	HealthRequiredChecks              ComponentHealthRequiredChecks      `json:"health_required_checks,omitempty" gorm:"type:jsonb" temporaljson:"health_required_checks,omitzero,omitempty"`
 	Teardown                          *ComponentTeardown                 `json:"teardown,omitempty" gorm:"type:jsonb" temporaljson:"teardown,omitzero,omitempty"`
+	RegistryRetainCount               *int                               `json:"registry_retain_count,omitempty" gorm:"default:null" temporaljson:"registry_retain_count,omitzero,omitempty" extensions:"x-nullable"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
