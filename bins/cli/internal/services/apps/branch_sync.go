@@ -112,6 +112,9 @@ func (s *Service) SyncBranches(ctx context.Context, opts SyncBranchesOptions) er
 			return ui.PrintError(err)
 		}
 		local = append(local, canonical)
+		if canonical.IgnoreChangesRegex != "" {
+			ui.PrintWarning(fmt.Sprintf("branch %q: ignore_changes_regex is deprecated; use [run].paths or [run].paths_ignore", canonical.Name))
+		}
 	}
 
 	plan, err := buildBranchSyncPlan(local, remotes, remoteCfg, directory)

@@ -4,7 +4,53 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/config"
 )
+
+func TestEvaluateRun(t *testing.T) {
+	tests := map[string]struct {
+		paths       []string
+		pathsIgnore []string
+		regex       string
+		files       []string
+		ignored     bool
+		status      string
+	}{
+		"skipped by paths": {
+			paths: []string{"apps/acme/**"}, files: []string{"apps/other/main.go"},
+			ignored: true, status: pathsStatusDescription,
+		},
+		"skipped by paths_ignore": {
+			pathsIgnore: []string{"docs/**", "**/*.md"}, files: []string{"docs/a.txt", "README.md"},
+			ignored: true, status: pathsStatusDescription,
+		},
+		"paths pass then regex ignores": {
+			paths: []string{"apps/acme/**"}, regex: `\.md$`, files: []string{"apps/acme/README.md"},
+			ignored: true, status: regexStatusDescription,
+		},
+		"paths pass and regex misses": {
+			paths: []string{"apps/acme/**"}, regex: `\.md$`, files: []string{"apps/acme/main.go"},
+		},
+		"no filters": {
+			files: []string{"apps/acme/main.go"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			filter, err := config.NewRunPathFilter(tt.paths, tt.pathsIgnore)
+			require.NoError(t, err)
+			decision, status, err := EvaluateRun(filter, tt.regex, tt.files)
+			require.NoError(t, err)
+			require.Equal(t, tt.ignored, decision.Ignored)
+			if tt.ignored {
+				require.Equal(t, tt.status, status)
+				require.NotEmpty(t, decision.Reason)
+			}
+		})
+	}
+}
 
 func TestEvaluate(t *testing.T) {
 	tests := map[string]struct {

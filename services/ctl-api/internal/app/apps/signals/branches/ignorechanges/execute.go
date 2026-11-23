@@ -5,6 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
@@ -19,15 +20,27 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
-	if run.Force || run.AppBranchConfig.IgnoreChangesRegex == "" {
+	if run.Force {
 		return nil
 	}
 	if run.RunType != app.AppBranchRunTypeGit && run.RunType != app.AppBranchRunTypeGitPreview {
 		return nil
 	}
 
+	regex := run.AppBranchConfig.IgnoreChangesRegex
+	var pathsFilter *config.RunPathFilter
+	if run.RunType == app.AppBranchRunTypeGitPreview {
+		pathsFilter, err = previewPathsFilter(&run.AppBranchConfig)
+		if err != nil {
+			logger.Warn("invalid app branch run paths; continuing run", "error", err)
+		}
+	}
+	if regex == "" && pathsFilter == nil {
+		return nil
+	}
+
 	paths := s.ChangedFiles
-	if run.AppBranchConfig.IgnoreChangesRegex != ".*" && (run.PRNumber != nil || s.BaseSHA != "" || len(paths) == 0) {
+	if (pathsFilter != nil || regex != ".*") && (run.PRNumber != nil || s.BaseSHA != "" || len(paths) == 0) {
 		vcsConfigID := ""
 		switch {
 		case run.AppBranchConfig.ConnectedGithubVCSConfig != nil:
@@ -58,7 +71,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		paths = changed.Paths
 	}
 
-	decision, err := Evaluate(run.AppBranchConfig.IgnoreChangesRegex, paths)
+	decision, statusDescription, err := EvaluateRun(pathsFilter, regex, paths)
 	if err != nil {
 		logger.Warn("unable to evaluate ignored changes; continuing run", "error", err)
 		return nil
@@ -89,7 +102,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				VcsConfigID: vcsConfigID,
 				CommitSHA:   run.HeadSHA,
 				State:       "success",
-				Description: "Ignored by app branch changes regex",
+				Description: statusDescription,
 				AppBranchID: s.AppBranchID,
 				RunID:       s.RunID,
 				Preview:     run.IsPreview(),
@@ -120,4 +133,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	return nil
+}
+
+func previewPathsFilter(cfg *app.AppBranchConfig) (*config.RunPathFilter, error) {
+	var paths, pathsIgnore []string
+	if cfg.RunConfig != nil {
+		paths = cfg.RunConfig.Paths
+		pathsIgnore = cfg.RunConfig.PathsIgnore
+	}
+	return config.NewRunPathFilter(paths, pathsIgnore)
 }

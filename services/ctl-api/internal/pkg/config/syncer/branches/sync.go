@@ -225,6 +225,8 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		runConfig.Mode = app.AppBranchRunMode(branchCfg.Run.Mode)
 		runConfig.TagPrefix = branchCfg.Run.TagPrefix
 		runConfig.GithubLabel = branchCfg.Run.GithubLabel
+		runConfig.Paths = branchCfg.Run.Paths
+		runConfig.PathsIgnore = branchCfg.Run.PathsIgnore
 	}
 
 	branchConfig, err := appsHelper.WithDB(db).CreateAppBranchConfigRecord(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig, previewConfig == nil, runConfig)
