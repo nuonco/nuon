@@ -80,20 +80,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
-	_, err = s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.Error(stderr.ErrNotFound{
-				Err:         err,
-				Description: "workflow step not found",
-			})
-			return
-		}
-		ctx.Error(errors.Wrap(err, "unable to get workflow step"))
-		return
-	}
-
-	approval, err := s.getWorkflowStepApproval(ctx, org.ID, stepID, approvalID)
+	target, err := s.resolveWorkflowApproval(ctx, org.ID, approvalID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.Error(stderr.ErrNotFound{
@@ -105,6 +92,11 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		ctx.Error(errors.Wrap(err, "unable to get workflow step approval"))
 		return
 	}
+	if target.workflow.ID != workflowID || target.step.ID != stepID {
+		ctx.Error(stderr.ErrNotFound{Err: gorm.ErrRecordNotFound, Description: "workflow step approval not found"})
+		return
+	}
+	approval := target.approval
 
 	if approval.Response != nil {
 		ctx.Error(stderr.ErrUser{
@@ -115,7 +107,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	}
 
 	// create the response
-	wfsaResponse, err := s.createWorkflowStepApprovalResponse(ctx, approval.ID, &req)
+	wfsaResponse, err := s.createWorkflowStepApprovalResponse(ctx, approval, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create workflow step approval response: %w", err))
 		return
@@ -126,13 +118,13 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		// Retry is handled by the step-group (which clones and re-dispatches),
 		// not by the approval flow inside the step signal.
 		if _, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
-			InstallWorkflowID: workflowID,
-			StepID:            stepID,
+			InstallWorkflowID: target.workflow.ID,
+			StepID:            target.step.ID,
 		}); err != nil {
 			s.l.Warn("failed to send retry-step update for approval retry", zap.Error(err))
 		}
 	} else {
-		if err := s.dispatchApprovalResponseSignal(ctx, workflowID, stepID, approval.ID, wfsaResponse.ID, req.ResponseType); err != nil {
+		if err := s.dispatchApprovalResponseSignal(ctx, target, wfsaResponse); err != nil {
 			s.l.Warn("failed to dispatch workflow-step-approval-response signal", zap.Error(err))
 		}
 	}
@@ -159,29 +151,26 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 // directly since the ApprovePlan activity is only registered on the installs worker.
 func (s *service) dispatchApprovalResponseSignal(
 	ctx context.Context,
-	workflowID, stepID, approvalID, approvalResponseID string,
-	responseType app.WorkflowStepResponseType,
+	target *workflowApprovalTarget,
+	response *app.WorkflowStepApprovalResponse,
 ) error {
-	var wf app.Workflow
-	if res := s.db.WithContext(ctx).Where(app.Workflow{ID: workflowID}).First(&wf); res.Error != nil {
-		return fmt.Errorf("unable to load workflow %s: %w", workflowID, res.Error)
-	}
+	wf := target.workflow
 	if wf.OwnerID == "" {
-		return fmt.Errorf("workflow %s has no owner", workflowID)
+		return fmt.Errorf("workflow %s has no owner", wf.ID)
 	}
 
 	switch wf.OwnerType {
 	case "installs":
-		return s.dispatchInstallApprovalSignal(ctx, wf.OwnerID, workflowID, stepID, approvalID, approvalResponseID, responseType)
+		return s.dispatchInstallApprovalSignal(ctx, wf.OwnerID, wf.ID, target.step.ID, target.approval.ID, response.ID, response.Type)
 	case "app_branches", "apps":
 		return s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
-			InstallWorkflowID:  workflowID,
-			StepID:             stepID,
-			ApprovalResponseID: approvalResponseID,
-			ResponseType:       responseType,
+			InstallWorkflowID:  wf.ID,
+			StepID:             target.step.ID,
+			ApprovalResponseID: response.ID,
+			ResponseType:       response.Type,
 		})
 	default:
-		return fmt.Errorf("workflow %s has unsupported owner type %q", workflowID, wf.OwnerType)
+		return fmt.Errorf("workflow %s has unsupported owner type %q", wf.ID, wf.OwnerType)
 	}
 }
 
@@ -206,9 +195,9 @@ func (s *service) dispatchInstallApprovalSignal(
 	return s.enqueueInstallSignal(ctx, queueID, sig, approvalResponseID, "workflow_step_approval_responses")
 }
 
-func (s *service) createWorkflowStepApprovalResponse(ctx context.Context, approvalID string, req *CreateWorkflowStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
+func (s *service) createWorkflowStepApprovalResponse(ctx context.Context, approval *app.WorkflowStepApproval, req *CreateWorkflowStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
 	response := app.WorkflowStepApprovalResponse{
-		InstallWorkflowStepApprovalID: approvalID,
+		InstallWorkflowStepApprovalID: approval.ID,
 		Type:                          req.ResponseType,
 		Note:                          req.Note,
 	}

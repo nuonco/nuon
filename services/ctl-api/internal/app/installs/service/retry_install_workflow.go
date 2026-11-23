@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -67,8 +68,6 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	_ = ctx.Param("install_id")
-
 	var req RetryWorkflowRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -82,18 +81,21 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.getWorkflow(ctx, org.ID, req.WorkflowID)
+	install, err := installlookup.ByRef(ctx, s.db, org.ID, ctx.Param("install_id"))
 	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("install workflow not found: %s", req.WorkflowID),
-		})
+		ctx.Error(err)
 		return
 	}
 
-	step, err := s.getWorkflowStep(ctx, org.ID, workflow.ID, req.StepID)
+	workflow, step, err := s.resolveWorkflowStep(ctx, org.ID, req.WorkflowID, req.StepID)
 	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("install workflow step not found: %s", req.StepID),
+		ctx.Error(stderr.ErrUser{Err: err})
+		return
+	}
+	if workflow.OwnerType != "installs" || workflow.OwnerID != install.ID {
+		ctx.Error(stderr.ErrNotFound{
+			Err:         fmt.Errorf("workflow %s does not belong to install %s", workflow.ID, install.ID),
+			Description: "install workflow not found",
 		})
 		return
 	}
@@ -125,7 +127,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 
 	if req.Operation == RetryOperationRetryStep {
 		if err = s.helpers.UpdateInstallWorkflowStepRetry(ctx, helpers.UpdateInstallWorkflowStepRetry{
-			StepID: req.StepID,
+			StepID: step.ID,
 		}); err != nil {
 			ctx.Error(stderr.ErrSystem{
 				Err: fmt.Errorf("failed to update install workflow step retry: %w", err),
@@ -136,7 +138,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 
 	s.logFlowAPIAction(ctx, "workflow.retry_requested",
 		zap.String("workflow_id", workflow.ID),
-		zap.String("step_id", req.StepID),
+		zap.String("step_id", step.ID),
 		zap.String("install_id", workflow.OwnerID),
 		zap.String("operation", string(req.Operation)),
 	)
