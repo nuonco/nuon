@@ -312,10 +312,9 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string, 
 			}
 		}
 	}
-	// With a source, every hop was checked above. Without one, local files are
-	// detected as file:// URLs and are not remote fetches.
-	if g.opts.Source == nil && g.opts.CheckRemote != nil && !strings.HasPrefix(detected, "file:") {
-		if err := g.opts.CheckRemote(field, detected); err != nil {
+	// With a source, every hop was checked above.
+	if g.opts.Source == nil && g.opts.CheckRemote != nil {
+		if err := g.checkRemoteHops(field, inputVal, pwd); err != nil {
 			return "", err
 		}
 	}
@@ -377,6 +376,48 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string, 
 }
 
 var forcedSourcePattern = regexp.MustCompile(`^([A-Za-z0-9]+)::(.+)$`)
+
+// maxChecksumHops bounds the chain of checksum files that name further
+// checksum files.
+const maxChecksumHops = 5
+
+// checkRemoteHops calls CheckRemote for src and for every URL go-getter would
+// request on its behalf before the fetch starts: a `checksum=file:<url>`
+// parameter names a second download, and that URL can carry one of its own.
+// Local files are not remote fetches and are skipped, but their checksum
+// parameter is still followed.
+//
+// Each hop is detected with go-getter's default detectors, because those are
+// what the client below uses when it resolves the same string.
+func (g *get) checkRemoteHops(field, src, pwd string) error {
+	for range maxChecksumHops {
+		detected, err := getter.Detect(src, pwd, getter.Detectors)
+		if err != nil {
+			// go-getter fails the same way before it requests anything.
+			return nil
+		}
+		force, raw := "", detected
+		if parts := forcedSourcePattern.FindStringSubmatch(detected); parts != nil {
+			force, raw = parts[1], parts[2]
+		}
+		if force != "file" && !strings.HasPrefix(raw, "file:") {
+			if err := g.opts.CheckRemote(field, detected); err != nil {
+				return err
+			}
+		}
+
+		u, err := url.Parse(raw)
+		if err != nil {
+			return nil
+		}
+		kind, next, found := strings.Cut(u.Query().Get("checksum"), ":")
+		if !found || kind != "file" {
+			return nil
+		}
+		src = next
+	}
+	return errors.New("too many chained checksum files")
+}
 
 func confinedLocalPath(input string) (string, bool, error) {
 	force, raw := "", input
