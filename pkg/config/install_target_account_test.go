@@ -26,7 +26,7 @@ func TestCheckImmutableTargetAccount(t *testing.T) {
 		{
 			name:     "config omitting the account id means don't care, not clear it",
 			local:    &Install{AWSAccount: &AWSAccount{Region: "us-west-2"}},
-			upstream: &Install{AWSAccount: &AWSAccount{AccountID: "123456789012"}},
+			upstream: &Install{AWSAccount: &AWSAccount{AccountID: "123456789012", Region: "us-west-2"}},
 		},
 		{
 			name:      "changed aws account id is refused",
@@ -48,6 +48,25 @@ func TestCheckImmutableTargetAccount(t *testing.T) {
 			upstream:  &Install{AzureAccount: &AzureAccount{SubscriptionID: "sub-a"}},
 			wantErr:   true,
 			wantMatch: "azure_account.subscription_id",
+		},
+		{
+			name:      "changed aws region is refused",
+			local:     &Install{AWSAccount: &AWSAccount{Region: "us-east-1"}},
+			upstream:  &Install{AWSAccount: &AWSAccount{AccountID: "123456789012", Region: "us-west-2"}},
+			wantErr:   true,
+			wantMatch: "aws_account.region",
+		},
+		{
+			name:      "changed azure location is refused",
+			local:     &Install{AzureAccount: &AzureAccount{Location: "westus2"}},
+			upstream:  &Install{AzureAccount: &AzureAccount{SubscriptionID: "sub-a", Location: "eastus"}},
+			wantErr:   true,
+			wantMatch: "azure_account.location",
+		},
+		{
+			name:     "changed gcp region is allowed because stack outputs own it",
+			local:    &Install{GCPAccount: &GCPAccount{ProjectID: "proj-a", Region: "us-east1"}},
+			upstream: &Install{GCPAccount: &GCPAccount{ProjectID: "proj-a", Region: "us-west1"}},
 		},
 		{
 			name:      "changed gcp project id is refused",
