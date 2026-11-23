@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
+	"github.com/nuonco/nuon/pkg/oci/registryclient"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
 func TestGetRepoDoesNotShareAuthCache(t *testing.T) {
@@ -60,6 +63,30 @@ func TestGetRepoDoesNotShareAuthCache(t *testing.T) {
 	password = "second"
 	secondRepo := getRepo("second")
 	require.NoError(t, secondRepo.Tags(context.Background(), "", func(tags []string) error { return nil }))
+}
+
+func TestGetRepoRefusesNonPublicRegistryOnControlPlane(t *testing.T) {
+	var requests atomic.Int64
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+	}))
+	defer server.Close()
+
+	ctx := publicnet.WithPublicOnly(context.Background())
+	repo, err := GetRepo(ctx, &configs.OCIRegistryRepository{
+		RegistryType: configs.OCIRegistryTypePublicOCI,
+		Repository:   "repository",
+		LoginServer:  server.URL,
+		OCIAuth:      &configs.OCIRegistryAuth{},
+	})
+	require.NoError(t, err)
+
+	// The token realm is fetched through the same client as the registry.
+	require.Same(t, registryclient.For(ctx), repo.Client.(*auth.Client).Client)
+
+	err = repo.Tags(ctx, "", func([]string) error { return nil })
+	require.ErrorIs(t, err, publicnet.ErrNonPublic)
+	require.Zero(t, requests.Load())
 }
 
 // TestGetRepoAnonymousDoesNotUseSharedGlobalClient guards the fix for
