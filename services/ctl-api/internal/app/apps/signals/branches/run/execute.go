@@ -16,16 +16,8 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-const (
-	previewCommitStatusesVersion      = "app-branch-preview-commit-statuses-v1"
-	previewCommentRunFinalizerVersion = "app-branch-preview-comment-run-finalizer-v1"
-	queueBackfillVersion              = "app-branch-workflow-queue-backfill-v1"
-)
-
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
-	previewStatusesEnabled := workflow.GetVersion(ctx, previewCommitStatusesVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	previewCommentFinalizerEnabled := workflow.GetVersion(ctx, previewCommentRunFinalizerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	// Fetch run from DB
 	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
@@ -69,9 +61,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 	}
 	enqueueResp, err := enqueue()
-	if err != nil &&
-		dbgenerics.IsGormErrRecordNotFound(err) &&
-		workflow.GetVersion(ctx, queueBackfillVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if err != nil && dbgenerics.IsGormErrRecordNotFound(err) {
 		if ensureErr := activities.AwaitEnsureAppBranchQueues(ctx, &activities.EnsureAppBranchQueuesRequest{
 			AppBranchID:     branch.ID,
 			SkipRestartHint: true,
@@ -83,12 +73,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	if err != nil {
 		logger.Error("unable to enqueue execute-workflow signal", "error", err)
-		if previewStatusesEnabled {
-			s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
-		}
-		if previewCommentFinalizerEnabled {
-			s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, fmt.Sprintf("enqueue failed: %v", err))
-		}
+		s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
+		s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, fmt.Sprintf("enqueue failed: %v", err))
 		if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 			RunID:        run.ID,
 			Status:       "failed",
@@ -105,30 +91,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Await the execute-workflow signal completion
 	if _, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout); err != nil {
-		if previewStatusesEnabled {
-			latestRun, getErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, run.ID)
-			if getErr == nil && latestRun.Status == "not-attempted" {
-				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-					ID: *run.WorkflowID,
-					Status: app.CompositeStatus{
-						Status:                 app.StatusNotAttempted,
-						StatusHumanDescription: latestRun.ErrorMessage,
-						Metadata: map[string]any{
-							"ignored_by_regex": true,
-						},
+		latestRun, getErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, run.ID)
+		if getErr == nil && latestRun.Status == "not-attempted" {
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: *run.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusNotAttempted,
+					StatusHumanDescription: latestRun.ErrorMessage,
+					Metadata: map[string]any{
+						"ignored_by_regex": true,
 					},
-				})
-				return nil
-			}
+				},
+			})
+			return nil
 		}
 
 		logger.Error("workflow execution failed", "error", err)
-		if previewStatusesEnabled {
-			s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
-		}
-		if previewCommentFinalizerEnabled {
-			s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, fmt.Sprintf("workflow execution failed: %v", err))
-		}
+		s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
+		s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, fmt.Sprintf("workflow execution failed: %v", err))
 		if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 			RunID:        run.ID,
 			Status:       "failed",
@@ -145,12 +125,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if wfErr == nil && wf.Status.Status != "" {
 		switch wf.Status.Status {
 		case app.StatusCancelled:
-			if previewStatusesEnabled {
-				s.setPreviewCommitStatus(ctx, run, "failure", "Preview cancelled")
-			}
-			if previewCommentFinalizerEnabled {
-				s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, "workflow was cancelled")
-			}
+			s.setPreviewCommitStatus(ctx, run, "failure", "Preview cancelled")
+			s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, "workflow was cancelled")
 			if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 				RunID:        run.ID,
 				Status:       "cancelled",
@@ -160,16 +136,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			}
 			return nil
 		case app.StatusError:
-			if previewStatusesEnabled {
-				s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
-			}
+			s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
 			errMsg := "workflow completed with errors"
 			if wf.Status.StatusHumanDescription != "" {
 				errMsg = wf.Status.StatusHumanDescription
 			}
-			if previewCommentFinalizerEnabled {
-				s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, errMsg)
-			}
+			s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusFailed, errMsg)
 			if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 				RunID:        run.ID,
 				Status:       "failed",
@@ -181,12 +153,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if previewStatusesEnabled {
-		s.setPreviewCommitStatus(ctx, run, "success", "Preview complete")
-	}
-	if previewCommentFinalizerEnabled {
-		s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusSuccess, "")
-	}
+	s.setPreviewCommitStatus(ctx, run, "success", "Preview complete")
+	s.writeFinalizerComment(ctx, run, branch, activities.PRCommentStatusSuccess, "")
 	if _, err = activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 		RunID:  run.ID,
 		Status: "success",

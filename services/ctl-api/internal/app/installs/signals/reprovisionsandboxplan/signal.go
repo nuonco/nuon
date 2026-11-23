@@ -25,10 +25,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// planCompositeErrorVersion gates composite-error recording for plan render
-// failures. New histories write the error; replaying old histories skip it.
-const planCompositeErrorVersion = "reprovision-sandbox-plan-composite-error-v1"
-
 const SignalType signal.SignalType = "reprovision-sandbox-plan"
 
 type Signal struct {
@@ -333,13 +329,10 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	if planErr != nil {
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
 		if stackerrors.IsPlanRenderFailed(planErr) {
-			planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-			if planCompositeErrorsEnabled {
-				_ = activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
-					SandboxRunID: installRun.ID,
-					Detail:       planErr.Error(),
-				})
-			}
+			_ = activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
+				SandboxRunID: installRun.ID,
+				Detail:       planErr.Error(),
+			})
 			return temporal.NewNonRetryableApplicationError("sandbox plan render failed", stackerrors.PlanRenderFailedTemporalType, errors.Wrap(planErr, "unable to create plan"))
 		}
 		return fmt.Errorf("unable to create plan: %w", planErr)

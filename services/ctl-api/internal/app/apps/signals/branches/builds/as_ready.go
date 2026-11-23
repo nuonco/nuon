@@ -92,11 +92,7 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 
 	next, completed := 0, 0
 	selectionErrors := make([]error, len(builds))
-	concurrency := componentSelectionConcurrency
-	if workflow.GetVersion(ctx, "component-selection-concurrency-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		concurrency = 5
-	}
-	workers := min(concurrency, len(builds))
+	workers := min(componentSelectionConcurrency, len(builds))
 	for range workers {
 		workflow.Go(ctx, func(ctx workflow.Context) {
 			defer func() { completed++ }()
@@ -115,9 +111,6 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 		return err
 	}
 	selectionErr := errors.Join(selectionErrors...)
-	if selectionErr != nil && workflow.GetVersion(ctx, "branch-builds-await-after-selection-error-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return selectionErr
-	}
 
 	hasBuilds := false
 	for _, build := range builds {
@@ -129,7 +122,6 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 	if !hasBuilds {
 		return selectionErr
 	}
-	awaitOwnEntries := workflow.GetVersion(ctx, "branch-builds-await-own-entries-v1", workflow.DefaultVersion, 1) == 1
 	deadline := workflow.Now(ctx).Add(buildsAwaitTimeout)
 	l.Info("all builds enqueued, awaiting build completions")
 	for {
@@ -137,92 +129,59 @@ func (s *Signal) componentsAsReady(ctx workflow.Context, l log.Logger, builds []
 		if err != nil {
 			return fmt.Errorf("unable to check build statuses: %w", err)
 		}
-		if awaitOwnEntries {
-			latest := make(map[string]activities.BuildResult, len(result.Builds))
-			for _, br := range result.Builds {
-				latest[br.ComponentID] = br
-			}
-			allDone, buildFailed, updated := true, false, false
-			for i := range builds {
-				if builds[i].Skipped {
-					continue
-				}
-				br, ok := latest[builds[i].ComponentID]
-				if ok && builds[i].BuildID != br.BuildID {
-					builds[i].BuildID = br.BuildID
-					updated = true
-				}
-				if selectionErrors[i] != nil {
-					continue
-				}
-				if !ok {
-					allDone = false
-					continue
-				}
-				status := "in-progress"
-				switch br.Status {
-				case string(app.ComponentBuildStatusActive):
-					status = "success"
-				case string(app.ComponentBuildStatusError), string(app.ComponentBuildStatusPolicyFailed), "cancelled":
-					status = "error"
-					buildFailed = true
-				default:
-					allDone = false
-				}
-				if builds[i].Status != status {
-					builds[i].Status = status
-					updated = true
-				}
-			}
-			if updated {
-				changed()
-			}
-			if allDone {
-				if buildFailed {
-					return errors.Join(selectionErr, fmt.Errorf("one or more component builds failed"))
-				}
-				return selectionErr
-			}
-			if !workflow.Now(ctx).Before(deadline) {
-				for i := range builds {
-					if !builds[i].Skipped && builds[i].Status != "success" {
-						builds[i].Status = "error"
-					}
-				}
-				changed()
-				return errors.Join(selectionErr, fmt.Errorf("timed out after %s waiting for component builds", buildsAwaitTimeout))
-			}
-			if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
-				return fmt.Errorf("sleep interrupted: %w", err)
-			}
-			continue
-		}
+		latest := make(map[string]activities.BuildResult, len(result.Builds))
 		for _, br := range result.Builds {
-			for i := range builds {
-				if builds[i].ComponentID != br.ComponentID || builds[i].Skipped {
-					continue
-				}
-				builds[i].BuildID = br.BuildID
-				switch br.Status {
-				case string(app.ComponentBuildStatusActive):
-					builds[i].Status = "success"
-				case string(app.ComponentBuildStatusError), string(app.ComponentBuildStatusPolicyFailed), "cancelled":
-					builds[i].Status = "error"
-				}
-			}
+			latest[br.ComponentID] = br
 		}
-		changed()
-		allDone := result.AllDone
-		for _, build := range builds {
-			if !build.Skipped && build.Status != "success" && build.Status != "error" {
+		allDone, buildFailed, updated := true, false, false
+		for i := range builds {
+			if builds[i].Skipped {
+				continue
+			}
+			br, ok := latest[builds[i].ComponentID]
+			if ok && builds[i].BuildID != br.BuildID {
+				builds[i].BuildID = br.BuildID
+				updated = true
+			}
+			if selectionErrors[i] != nil {
+				continue
+			}
+			if !ok {
+				allDone = false
+				continue
+			}
+			status := "in-progress"
+			switch br.Status {
+			case string(app.ComponentBuildStatusActive):
+				status = "success"
+			case string(app.ComponentBuildStatusError), string(app.ComponentBuildStatusPolicyFailed), "cancelled":
+				status = "error"
+				buildFailed = true
+			default:
 				allDone = false
 			}
+			if builds[i].Status != status {
+				builds[i].Status = status
+				updated = true
+			}
+		}
+		if updated {
+			changed()
 		}
 		if allDone {
-			if result.HasError {
+			if buildFailed {
 				return errors.Join(selectionErr, fmt.Errorf("one or more component builds failed"))
 			}
 			return selectionErr
+		}
+		if !workflow.Now(ctx).Before(deadline) {
+			for i := range builds {
+				if !builds[i].Skipped && builds[i].Status != "success" {
+					builds[i].Status = "error"
+				}
+			}
+			changed()
+			return errors.Join(selectionErr, fmt.Errorf("timed out after %s waiting for component builds", buildsAwaitTimeout))
 		}
 		if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
 			return fmt.Errorf("sleep interrupted: %w", err)
@@ -329,7 +288,7 @@ func (s *Signal) sandboxAsReady(ctx workflow.Context, l log.Logger, build *build
 	}
 	build.Status = "in-progress"
 	changed()
-	if err := s.buildSandbox(ctx, l, true); err != nil {
+	if err := s.buildSandbox(ctx, l); err != nil {
 		return err
 	}
 	build.Status = "success"

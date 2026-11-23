@@ -274,7 +274,7 @@ func TestUpdateRunnerStatusStopsWhenLegacyUpdateFails(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
+		return sig.updateRunnerStatus(ctx, app.RunnerStatusOffline, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -293,51 +293,7 @@ func TestUpdateRunnerStatusDefersIdempotencyCheckToActivity(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy")
-	})
-
-	require.NoError(t, env.GetWorkflowError())
-	env.AssertExpectations(t)
-}
-
-func TestExistingHistoryKeepsSplitStatusWrite(t *testing.T) {
-	env := newWorkflowTestEnvironment(t)
-	env.OnGetVersion(atomicRunnerStatusVersion, workflow.DefaultVersion, 1).
-		Return(workflow.DefaultVersion).
-		Once()
-
-	runner := testRunner(app.RunnerStatusActive)
-	sig := &Signal{RunnerID: runner.ID}
-	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).
-		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).
-		Once()
-
-	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
-	})
-
-	require.NoError(t, env.GetWorkflowError())
-	env.AssertExpectations(t)
-}
-
-func TestExistingHistoryOnlyRepairsStaleStatusV2(t *testing.T) {
-	env := newWorkflowTestEnvironment(t)
-	env.OnGetVersion(atomicRunnerStatusVersion, workflow.DefaultVersion, 1).
-		Return(workflow.DefaultVersion).
-		Once()
-
-	runner := testRunner(app.RunnerStatusOffline)
-	runner.StatusV2.Status = app.Status(app.RunnerStatusActive)
-	sig := &Signal{RunnerID: runner.ID}
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).
-		Once()
-
-	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
+		return sig.updateRunnerStatus(ctx, app.RunnerStatusActive, "runner healthy")
 	})
 
 	require.NoError(t, env.GetWorkflowError())

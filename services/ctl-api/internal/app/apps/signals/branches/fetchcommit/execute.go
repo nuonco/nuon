@@ -12,8 +12,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const gitRefNotFoundCompositeErrorVersion = "app-branch-fetch-commit-git-ref-not-found-v1"
-
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 
@@ -80,8 +78,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		vcsCommit, err = activities.AwaitFetchLatestCommitByVcsConfigID(ctx, vcsConfigID)
 	}
 	if err != nil {
-		if vcserrors.IsGitRefNotFound(err) &&
-			workflow.GetVersion(ctx, gitRefNotFoundCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if vcserrors.IsGitRefNotFound(err) {
 			if setErr := activities.AwaitSetAppBranchRunGitRefNotFoundError(ctx, activities.SetAppBranchRunGitRefNotFoundErrorRequest{
 				RunID: s.RunID,
 				Repo:  repo,
