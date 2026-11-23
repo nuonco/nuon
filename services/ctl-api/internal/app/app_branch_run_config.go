@@ -19,8 +19,11 @@ type AppBranchRunConfig struct {
 	Mode        AppBranchRunMode `json:"mode,omitempty"`
 	TagPrefix   string           `json:"tag_prefix,omitempty"`
 	GithubLabel string           `json:"github_label,omitempty"`
-	Paths       []string         `json:"paths,omitempty"`
-	PathsIgnore []string         `json:"paths_ignore,omitempty"`
+	// Paths and PathsIgnore are mutually exclusive, and neither accepts a pattern
+	// starting with "!". The check on app_branch_configs.run_config enforces this;
+	// AutoMigrate creates it, it is not a migration.
+	Paths       []string `json:"paths,omitempty"`
+	PathsIgnore []string `json:"paths_ignore,omitempty"`
 }
 
 func (c *AppBranchRunConfig) Normalize() {

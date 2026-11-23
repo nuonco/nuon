@@ -19,8 +19,8 @@ title: 'Runner'
 | **`instance_type`**<br/>string | machine/instance type for the install runner Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (an EC2 instance type for aws, a machine type ... | **Optional** | `"t3a.medium"`, `"e2-medium"`, `"Standard_D2s_v5"` |
 | **`image_auto_update`**<br/>boolean | resolve the latest runner image at every launch When true, the install runner host picks up the latest base image every time an instance launches. When false (the default), the image is resolved on... | **Optional** | `"true"` |
 | **`image_id`**<br/>string | pin the runner host image Pins the install runner host to a specific image, overriding image_auto_update. Use it to hold runners on a known-good image. For aws this is an AMI ID. Only applies to aw... | **Optional** | `"ami-0abcdef1234567890"` |
-| **`runner_api_url`**<br/>string | custom runner API endpoint Set this to proxy all runner API calls (heartbeats, job polling, logs) through your own domain instead of Nuon's. | **Optional** | `"https://runner-api.example.com"` |
-| **`public_api_url`**<br/>string | custom public API endpoint Set this to proxy phone-home calls through your own domain instead of Nuon's. | **Optional** | `"https://runner-api.example.com"` |
+| **`runner_api_url`**<br/>string | custom runner API endpoint Set this to proxy all runner API calls (heartbeats, job polling, logs) through your own domain instead of Nuon's. The control plane operator may restrict this URL to a li... | **Optional** | `"https://runner-api.example.com"` |
+| **`public_api_url`**<br/>string | custom public API endpoint Set this to proxy phone-home calls through your own domain instead of Nuon's. The control plane operator may restrict this URL to a list of allowed locations; a sync that... | **Optional** | `"https://runner-api.example.com"` |
 | **`env_var`**<br/>[array](#env_var) | deprecated: use env_vars map instead Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead | **Optional** | - |
 
 ### `env_var`
