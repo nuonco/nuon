@@ -53,7 +53,7 @@ func (h *Helpers) addSingleSupportUser(ctx context.Context, subject, email, orgI
 		}
 	}
 
-	err = h.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, orgID, acct.ID)
+	err = h.acctClient.AddOrgRole(ctx, orgID, acct.ID, app.RoleTypeOrgAdmin)
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) || (err != nil && err.Error() == "role already assigned") {
 			result.AlreadyExists = true
@@ -82,7 +82,7 @@ func (h *Helpers) RemoveSupportUsersFromOrg(ctx context.Context, org *app.Org) e
 			continue
 		}
 
-		if err := h.authzClient.RemoveAccountOrgRoles(ctx, org.ID, acct.ID); err != nil {
+		if err := h.acctClient.RemoveOrgAccess(ctx, org.ID, acct.ID, false); err != nil {
 			return err
 		}
 	}

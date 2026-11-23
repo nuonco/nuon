@@ -8,13 +8,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 // GetInstall reads an install from the DB scoped to the given org.
 func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
-	install := app.Install{}
-	res := h.db.WithContext(ctx).
+	query := h.db.WithContext(ctx).
 		Preload("AppRunnerConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)
@@ -37,13 +37,11 @@ func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("App.Org").
-		Preload("AppSandboxConfig").
-		Where("org_id = ?", orgID).
-		Where(h.db.Where("name = ?", installID).Or("id = ?", installID)).
-		First(&install)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get install")
+		Preload("AppSandboxConfig")
+	install, err := installlookup.ByRef(ctx, query, orgID, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	return &install, nil
+	return install, nil
 }

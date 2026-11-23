@@ -30,12 +30,8 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 		return errors.Errorf("account %s is not a service account", acct.ID)
 	}
 
-	return c.DeleteServiceAccountByID(ctx, acct.ID)
-}
-
-func (c *Client) DeleteServiceAccountByID(ctx context.Context, accountID string) error {
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return deleteServiceAccounts(tx, []string{accountID})
+		return deleteServiceAccount(tx, acct.ID)
 	})
 }
 
@@ -121,7 +117,12 @@ func (c *Client) DeleteInstallStackServiceAccounts(ctx context.Context, installI
 		Pluck("id", &stackIDs); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to list install stacks")
 	}
-	for _, stackID := range stackIDs {
+	var versionIDs []string
+	if err := c.db.WithContext(ctx).Unscoped().Model(&app.InstallStackVersion{}).
+		Where(app.InstallStackVersion{InstallID: installID}).Order("id").Pluck("id", &versionIDs).Error; err != nil {
+		return errors.Wrap(err, "unable to list install stack versions")
+	}
+	for _, stackID := range append(stackIDs, versionIDs...) {
 		if err := c.DeleteServiceAccount(ctx, stackID); err != nil {
 			return errors.Wrapf(err, "unable to delete stack service account for stack %s", stackID)
 		}

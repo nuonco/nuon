@@ -3,8 +3,12 @@ package fetchtoken
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"time"
+
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -27,11 +31,50 @@ type FetchTokenResult struct {
 	ExpiresAt  time.Time `json:"-"`
 }
 
+const (
+	AuthMethodSTSBound  = "sts-bound"
+	AuthMethodSTSVendor = "sts-vendor"
+
+	// Bound STS tokens are not refreshed in-process, so each one has to outlive the
+	// process that fetched it: the mng process lives until its VM rotates (7 days),
+	// the install process until its next scheduled restart (4 hours, plus 15 minutes
+	// for jobs still draining at the boundary). The lifetime is part of the signed
+	// request, so the control plane issues exactly what the runner signed, up to its
+	// 8 day ceiling. Nothing revokes a token early when its process goes offline.
+	MngTokenTTL     = 7 * 24 * time.Hour
+	InstallTokenTTL = 4*time.Hour + 15*time.Minute
+)
+
+// TokenTTLForProcess returns the bound STS token lifetime a runner process should request.
+func TokenTTLForProcess(process string) time.Duration {
+	if process == "install" {
+		return InstallTokenTTL
+	}
+	return MngTokenTTL
+}
+
+type fetchOptions struct {
+	ttl time.Duration
+}
+
+type FetchOption func(*fetchOptions)
+
+// WithTTL sets the token lifetime signed into requests that carry one (bound STS).
+func WithTTL(ttl time.Duration) FetchOption {
+	return func(o *fetchOptions) { o.ttl = ttl }
+}
+
 // FetchToken authenticates using cloud instance credentials and returns the token without writing to disk.
 // It detects the cloud provider from the CLOUD_PROVIDER env var, falling back to auto-detection.
 // For AWS, authMethod selects the authentication strategy: "" / "iid" (default) for Instance
-// Identity Document (requires runnerID), or "sts" for presigned STS requests.
-func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string, refreshable bool) (*FetchTokenResult, error) {
+// Identity Document (requires runnerID), "sts" for presigned STS and EC2 tags requests, or
+// "sts-bound" for a bound STS request signed by the runner's own role (requires runnerID).
+func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string, refreshable bool, opts ...FetchOption) (*FetchTokenResult, error) {
+	options := fetchOptions{ttl: MngTokenTTL}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	provider := detectCloudProvider(ctx)
 	switch provider {
 	case "gcp":
@@ -40,6 +83,10 @@ func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, ru
 		switch authMethod {
 		case "sts":
 			return fetchTokenAWSSTS(ctx, apiClient)
+		case AuthMethodSTSBound:
+			return fetchTokenAWSSTSBound(ctx, apiClient, runnerID, options.ttl)
+		case AuthMethodSTSVendor:
+			return nil, fmt.Errorf("auth method %q is not supported by this runner version", AuthMethodSTSVendor)
 		default:
 			return fetchTokenAWSIID(ctx, apiClient, runnerID)
 		}
@@ -135,6 +182,57 @@ func fetchTokenAWSSTS(ctx context.Context, apiClient nuonrunner.Client) (*FetchT
 		InstanceID: resp.InstanceID,
 		AccountID:  resp.AccountID,
 		Token:      resp.Token,
+	}, nil
+}
+
+func runnerAPIHost() (string, error) {
+	apiURL := os.Getenv("RUNNER_API_URL")
+	if apiURL == "" {
+		apiURL = "https://runner.nuon.co"
+	}
+
+	u, err := url.Parse(apiURL)
+	if err != nil || u.Host == "" {
+		return "", fmt.Errorf("RUNNER_API_URL %q has no host", apiURL)
+	}
+	return strings.ToLower(u.Host), nil
+}
+
+func fetchTokenAWSSTSBound(ctx context.Context, apiClient nuonrunner.Client, runnerID string, ttl time.Duration) (*FetchTokenResult, error) {
+	if runnerID == "" {
+		return nil, fmt.Errorf("runner ID is required for %s auth", AuthMethodSTSBound)
+	}
+
+	serverID, err := runnerAPIHost()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	stsRequest, err := pkgaws.PresignBoundSTS(ctx, cfg, serverID, runnerID, ttl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bound presigned STS request: %w", err)
+	}
+
+	req := pkgaws.BuildBoundSTSAuthRequest(AuthMethodSTSBound, runnerID, stsRequest)
+
+	resp, err := apiClient.RunnerAuthAWSSTS(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with bound STS: %w", err)
+	}
+	if resp.Token == "" {
+		return nil, fmt.Errorf("authentication failed: runner was not authenticated")
+	}
+
+	// ExpiresAt stays zero on purpose: the token is not refreshable, and a zero
+	// expiry is what keeps auth.Refresher from starting.
+	return &FetchTokenResult{
+		RunnerID: resp.RunnerID,
+		Token:    resp.Token,
 	}, nil
 }
 

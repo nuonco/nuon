@@ -11,11 +11,11 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/syncstatus"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-type InstallOverviewCommit = alignment.InstallOverviewCommit
+type InstallOverviewCommit = syncstatus.InstallOverviewCommit
 
 type InstallBranchTracking struct {
 	BranchID       string                  `json:"branch_id,omitempty"`
@@ -53,16 +53,16 @@ type InstallConfigDrift struct {
 }
 
 type InstallOverviewResponse struct {
-	BranchTracking InstallBranchTracking `json:"branch_tracking"`
-	ConfigDrift    InstallConfigDrift    `json:"config_drift"`
-	Alignment      *InstallAlignment     `json:"alignment,omitempty"`
+	BranchTracking     InstallBranchTracking      `json:"branch_tracking"`
+	ConfigDrift        InstallConfigDrift         `json:"config_drift"`
+	ResourceSyncStatus *InstallResourceSyncStatus `json:"resource_sync_status,omitempty"`
 }
 
 // @ID						GetInstallOverview
 // @Summary				install overview
-// @Description			Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+// @Description			Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
 // @Param					install_id	path	string	true	"install ID"
-// @Param                 include_alignment query bool false "include per-resource alignment; set false for branch tracking and config drift only" Default(true)
+// @Param                 include_resource_sync_status query bool false "include per-resource sync status; set false for branch tracking and config drift only" Default(true)
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -82,7 +82,7 @@ func (s *service) GetInstallOverview(ctx *gin.Context) {
 		return
 	}
 
-	overview, err := s.getInstallOverview(ctx, org.ID, ctx.Param("install_id"), ctx.Query("include_alignment") != "false")
+	overview, err := s.getInstallOverview(ctx, org.ID, ctx.Param("install_id"), ctx.Query("include_resource_sync_status") != "false")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install overview: %w", err))
 		return
@@ -115,22 +115,20 @@ func (s *service) getInstallOverview(ctx context.Context, orgID, installID strin
 	if !includeAlignment {
 		return overview, nil
 	}
-	alignment, err := s.alignment.Read(ctx, &install)
+	syncStatus, err := s.syncStatus.Read(ctx, &install)
 	if err != nil {
-		alignment = &InstallAlignment{
-			Error:     "Resource alignment unavailable",
-			Resources: []InstallAlignmentResource{},
+		if !errors.Is(err, context.Canceled) {
+			s.l.Warn("unable to complete resource sync status",
+				zap.String("install_id", install.ID),
+				zap.String("org_id", install.OrgID),
+				zap.Error(err))
 		}
-	} else {
-		err = s.alignmentBranchRunCounts(ctx, &install, tracking.BranchID, alignment)
+		syncStatus = &InstallResourceSyncStatus{
+			Error:     "Resource sync status unavailable",
+			Resources: []InstallResourceSyncStatusResource{},
+		}
 	}
-	if err != nil && !errors.Is(err, context.Canceled) {
-		s.l.Warn("unable to complete install alignment",
-			zap.String("install_id", install.ID),
-			zap.String("org_id", install.OrgID),
-			zap.Error(err))
-	}
-	overview.Alignment = alignment
+	overview.ResourceSyncStatus = syncStatus
 	return overview, nil
 }
 
@@ -249,9 +247,12 @@ func (s *service) installBranchTracking(ctx context.Context, install *app.Instal
 	}
 	tracking.ExpectedCommit = commitFromRun(expected)
 	tracking.AppliedCommit = commitFromRun(applied)
-	tracking.Status = branchTrackingStatus(expected, applied)
-	if err := s.installSuccessfulBranchRuns(ctx, install, &tracking); err != nil {
+	if err := s.installSuccessfulBranchRuns(ctx, install, &tracking, applied); err != nil {
 		return tracking, err
+	}
+	tracking.Status = "current"
+	if applied := install.AppConfigRef.AppliedConfigID; applied != "" && applied != install.AppConfigID {
+		tracking.Status = "pending"
 	}
 	return tracking, nil
 }
@@ -265,7 +266,7 @@ func installTrackingRuns(db *gorm.DB, orgID, branchID string) *gorm.DB {
 		Where("NOT EXISTS (SELECT 1 FROM app_branch_run_previews p WHERE p.app_branch_run_id = app_branch_runs.id AND p.deleted_at = 0)")
 }
 
-func (s *service) installSuccessfulBranchRuns(ctx context.Context, install *app.Install, tracking *InstallBranchTracking) error {
+func (s *service) installSuccessfulBranchRuns(ctx context.Context, install *app.Install, tracking *InstallBranchTracking, appliedRun *app.AppBranchRun) error {
 	if tracking.BranchID == "" || install.AppConfigID == "" {
 		return nil
 	}
@@ -281,30 +282,22 @@ func (s *service) installSuccessfulBranchRuns(ctx context.Context, install *app.
 	if err != nil {
 		return fmt.Errorf("unable to get selected app branch run: %w", err)
 	}
-
-	var selectedConfig app.AppConfig
-	err = s.db.WithContext(ctx).
-		Select("id, created_at").
-		Where(app.AppConfig{ID: install.AppConfigID, OrgID: install.OrgID, AppID: install.AppID}).
-		First(&selectedConfig).Error
-	if isNotFound(err) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("unable to get selected app config: %w", err)
-	}
 	tracking.SelectedCommit = commitFromRun(&selectedRun)
 
-	newerConfigs := s.db.WithContext(ctx).Model(&app.AppConfig{}).
-		Where(app.AppConfig{OrgID: install.OrgID, AppID: install.AppID}).
-		Where("created_at > ? OR (created_at = ? AND id > ?)", selectedConfig.CreatedAt, selectedConfig.CreatedAt, selectedConfig.ID).
-		Select("id")
-	newerRuns := installTrackingRuns(s.db.WithContext(ctx), install.OrgID, tracking.BranchID).
+	behind := installTrackingRuns(s.db.WithContext(ctx), install.OrgID, tracking.BranchID).
 		Where(app.AppBranchRun{Status: "success"}).
-		Where("app_config_id IN (?)", newerConfigs)
+		Where("app_branch_runs.created_at < ? OR (app_branch_runs.created_at = ? AND app_branch_runs.id <= ?)",
+			selectedRun.CreatedAt, selectedRun.CreatedAt, selectedRun.ID)
+	if appliedRun != nil {
+		behind = behind.Where("app_branch_runs.created_at > ? OR (app_branch_runs.created_at = ? AND app_branch_runs.id > ?)",
+			appliedRun.CreatedAt, appliedRun.CreatedAt, appliedRun.ID)
+	}
+	if appliedConfigID := install.AppConfigRef.AppliedConfigID; appliedConfigID != "" {
+		behind = behind.Where("app_branch_runs.app_config_id <> ?", appliedConfigID)
+	}
 	var count int64
-	if err := newerRuns.Session(&gorm.Session{}).Count(&count).Error; err != nil {
-		return fmt.Errorf("unable to count successful app branch runs: %w", err)
+	if err := behind.Session(&gorm.Session{}).Count(&count).Error; err != nil {
+		return fmt.Errorf("unable to count app branch runs behind: %w", err)
 	}
 	tracking.RunsBehind = &count
 	if count == 0 {
@@ -312,12 +305,12 @@ func (s *service) installSuccessfulBranchRuns(ctx context.Context, install *app.
 	}
 
 	var runs []app.AppBranchRun
-	if err := newerRuns.
+	if err := behind.
 		Preload("VCSConnectionCommit").
 		Order("created_at DESC, id DESC").
 		Limit(50).
 		Find(&runs).Error; err != nil {
-		return fmt.Errorf("unable to get successful app branch runs: %w", err)
+		return fmt.Errorf("unable to list app branch runs behind: %w", err)
 	}
 	for i := range runs {
 		tracking.SuccessfulRuns = append(tracking.SuccessfulRuns, *commitFromRun(&runs[i]))
@@ -380,7 +373,7 @@ func (s *service) appliedBranchRun(ctx context.Context, install *app.Install) (*
 	err := s.db.WithContext(ctx).
 		Preload("AppBranchRun.VCSConnectionCommit").
 		Where(app.InstallAppConfigVersion{InstallID: install.ID, OrgID: install.OrgID, NewAppConfigID: appliedID}).
-		Order("created_at DESC").
+		Order("CASE WHEN workflow_id <> '' THEN 0 ELSE 1 END, created_at DESC").
 		First(&version).Error
 	if isNotFound(err) {
 		return nil, nil
@@ -395,34 +388,7 @@ func (s *service) appliedBranchRun(ctx context.Context, install *app.Install) (*
 }
 
 func commitFromRun(run *app.AppBranchRun) *InstallOverviewCommit {
-	return alignment.CommitFromRun(run)
-}
-
-func branchTrackingStatus(expected, applied *app.AppBranchRun) string {
-	if expected != nil && !branchRunTerminal(expected.Status) {
-		return "updating"
-	}
-	expectedSHA := ""
-	appliedSHA := ""
-	if expected != nil {
-		expectedSHA = commitFromRun(expected).SHA
-	}
-	if applied != nil {
-		appliedSHA = commitFromRun(applied).SHA
-	}
-	if expectedSHA != "" && appliedSHA != "" && expectedSHA != appliedSHA {
-		return "pending"
-	}
-	return "current"
-}
-
-func branchRunTerminal(status string) bool {
-	switch status {
-	case "", "pending", "in-progress", "queued", "planning", "executing", "syncing":
-		return false
-	default:
-		return true
-	}
+	return syncstatus.CommitFromRun(run)
 }
 
 func isNotFound(err error) bool {

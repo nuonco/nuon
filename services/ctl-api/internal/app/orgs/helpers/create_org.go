@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
@@ -83,7 +84,7 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		if err := authzClient.CreateOrgRoles(ctx, org.ID); err != nil {
 			return fmt.Errorf("unable to create org roles: %w", err)
 		}
-		return authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
+		return account.New(account.Params{DB: tx}).AddOrgRole(ctx, org.ID, acct.ID, app.RoleTypeOrgAdmin)
 	}); err != nil {
 		return nil, err
 	}

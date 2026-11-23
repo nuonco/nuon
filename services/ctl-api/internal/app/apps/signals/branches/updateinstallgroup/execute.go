@@ -10,11 +10,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/installgrouperrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installgroups"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -47,6 +44,11 @@ const installUpdateFailedCompositeErrorVersion = "install-update-failed-composit
 const installUpdateFailedBranchRunErrorVersion = "install-update-failed-branch-run-error-v1"
 
 const installGroupDirectiveVersion = "install-group-directive-v1"
+
+// installGroupDesiredOnlyVersion gates the desired-config-rollout behavior:
+// group approvals record the install's desired config and enqueue the
+// update-app-config signal instead of deploying.
+const installGroupDesiredOnlyVersion = "install-group-desired-only-v1"
 
 const statusPending = "pending"
 
@@ -91,11 +93,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	isPreviewApply := s.PreviewInstallID != "" || s.PreviewLabelSelector != nil
 
+	desiredOnly := false
+	if !isPreviewApply && workflow.GetVersion(ctx, installGroupDesiredOnlyVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		enabled, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
+			OrgID:   run.OrgID,
+			Feature: string(app.OrgFeatureDesiredConfigRollout),
+		})
+		if err != nil {
+			return fmt.Errorf("unable to check desired config rollout feature: %w", err)
+		}
+		desiredOnly = enabled && !run.PreviewInstallPlanOnly()
+	}
+	s.desiredOnly = desiredOnly
+
 	if workflow.GetVersion(ctx, installMetadataBeforeEnqueueVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 		s.writePendingInstallMetadata(ctx, groupName, installIDs)
 	}
 
-	releaseInstalls := workflow.GetVersion(ctx, installGroupDirectiveVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	releaseInstalls := workflow.GetVersion(ctx, installGroupDirectiveVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion && !s.desiredOnly
 	if releaseInstalls {
 		if err := s.registerDirectiveHandler(ctx); err != nil {
 			return err
@@ -107,13 +122,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
+	phase := app.InstallGroupRunPhaseDeploy
+	if s.desiredOnly {
+		phase = app.InstallGroupRunPhaseDesired
+	}
 	installEntries := make([]app.InstallGroupRunInstall, 0, len(enqueued))
 	for _, e := range enqueued {
 		installEntries = append(installEntries, app.InstallGroupRunInstall{
 			InstallID:  e.installID,
 			WorkflowID: e.workflowID,
 			Status:     statusInProgress,
-			Phase:      app.InstallGroupRunPhaseDeploy,
+			Phase:      phase,
 		})
 	}
 
@@ -135,7 +154,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Installs:          installEntries,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
-				StatusHumanDescription: fmt.Sprintf("deploying to %d installs", len(enqueued)),
+				StatusHumanDescription: s.inProgressDesc(len(enqueued)),
 			},
 		})
 	}
@@ -155,17 +174,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	now := workflow.Now(ctx)
 	completed, failed, cancelled := countInstallOutcomes(installEntries)
 	finalStatus := app.StatusSuccess
-	desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
+	desc := s.progressDesc(completed, failed, cancelled, len(enqueued))
 	switch {
 	case cancelled > 0:
 		finalStatus = app.StatusCancelled
-		desc += fmt.Sprintf(" (%d cancelled)", cancelled)
 		if failed > 0 {
 			desc += fmt.Sprintf(" (%d failed)", failed)
 		}
 	case failed > 0:
 		finalStatus = app.StatusError
-		desc += fmt.Sprintf(" (%d failed)", failed)
 	}
 
 	if groupRunID != "" {
@@ -227,6 +244,10 @@ func (s *Signal) enqueueInstallUpdates(
 	installIDs []string,
 	run *app.AppBranchRun,
 ) ([]enqueuedInstall, error) {
+	if s.desiredOnly {
+		return s.enqueueDesiredOnlyUpdates(ctx, installIDs, run)
+	}
+
 	logger := workflow.GetLogger(ctx)
 
 	enqueued := make([]enqueuedInstall, 0, len(installIDs))
@@ -259,7 +280,49 @@ func (s *Signal) enqueueInstallUpdates(
 			cb:         cb,
 		})
 
-		s.updateInstallAppConfigVersionStatus(ctx, installID, app.StatusInProgress, "install workflow running")
+		s.updateInstallAppConfigVersionStatus(ctx, installID, app.StatusInProgress, s.statusDesc(false))
+	}
+
+	return enqueued, nil
+}
+
+// enqueueDesiredOnlyUpdates records each install's desired config and enqueues
+// the update-app-config signal. No install workflow is created and nothing is
+// deployed; the user reconciles live state to desired from the drift view.
+func (s *Signal) enqueueDesiredOnlyUpdates(
+	ctx workflow.Context,
+	installIDs []string,
+	run *app.AppBranchRun,
+) ([]enqueuedInstall, error) {
+	logger := workflow.GetLogger(ctx)
+
+	enqueued := make([]enqueuedInstall, 0, len(installIDs))
+	for _, installID := range installIDs {
+		cb := callback.New(ctx, installID)
+
+		result, err := activities.AwaitRecordInstallDesiredConfig(ctx, &activities.RecordInstallDesiredConfigInput{
+			InstallID:      installID,
+			NewAppConfigID: run.AppConfigID,
+			AppBranchRunID: s.RunID,
+			InstallGroupID: s.InstallGroupID,
+			Callback:       cb,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("install %s: unable to record desired config update: %w", installID, err)
+		}
+
+		logger.Info(
+			"recorded install desired config update",
+			"install_id", installID,
+			"install_config_update_id", result.InstallAppConfigVersionID,
+		)
+
+		enqueued = append(enqueued, enqueuedInstall{
+			installID: installID,
+			cb:        cb,
+		})
+
+		s.updateInstallAppConfigVersionStatus(ctx, installID, app.StatusInProgress, s.statusDesc(false))
 	}
 
 	return enqueued, nil
@@ -314,7 +377,7 @@ func (s *Signal) awaitInstallUpdates(
 			markCancelled(i, e.installID, err.Error(), err)
 
 		case err != nil:
-			errs = append(errs, fmt.Errorf("install %s workflow %s: %w", e.installID, e.workflowID, err))
+			errs = append(errs, fmt.Errorf("install %s %s: %w", e.installID, s.updateTarget(e.workflowID), err))
 			noteFailure(e.installID, e.workflowID, err.Error())
 			results[e.installID] = statusError
 			installEntries[i].Status = statusError
@@ -328,7 +391,7 @@ func (s *Signal) awaitInstallUpdates(
 			if res != nil && res.Status != "" {
 				status = res.Status
 			}
-			errMsg := fmt.Sprintf("install %s workflow %s: finished as %s", e.installID, e.workflowID, status)
+			errMsg := fmt.Sprintf("install %s %s: finished as %s", e.installID, s.updateTarget(e.workflowID), status)
 			if treatCancelAsCancel && status == statusCancelled {
 				markCancelled(i, e.installID, errMsg, nil)
 				break
@@ -342,7 +405,7 @@ func (s *Signal) awaitInstallUpdates(
 		default:
 			results[e.installID] = statusSuccess
 			installEntries[i].Status = statusSuccess
-			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusSuccess, "install workflow completed")
+			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusSuccess, s.statusDesc(true))
 
 			logger.Info(
 				"install config update completed",
@@ -352,13 +415,7 @@ func (s *Signal) awaitInstallUpdates(
 		}
 
 		completed, failed, cancelled := countInstallOutcomes(installEntries)
-		desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
-		if cancelled > 0 {
-			desc += fmt.Sprintf(" (%d cancelled)", cancelled)
-		}
-		if failed > 0 {
-			desc += fmt.Sprintf(" (%d failed)", failed)
-		}
+		desc := s.progressDesc(completed, failed, cancelled, len(enqueued))
 
 		if groupRunID != "" {
 			_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
@@ -470,41 +527,6 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) recordAppConfigVersions(
-	ctx workflow.Context,
-	enqueued []enqueuedInstall,
-	installEntries []app.InstallGroupRunInstall,
-	run *app.AppBranchRun,
-) {
-	logger := workflow.GetLogger(ctx)
-
-	for i, e := range enqueued {
-		if installEntries[i].Status != "success" {
-			continue
-		}
-
-		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   e.installID,
-			OwnerType: "installs",
-			QueueName: queuenames.InstallSignalsQueueName,
-			Signal: &updateappconfig.Signal{
-				InstallID:      e.installID,
-				NewAppConfigID: run.AppConfigID,
-				AppBranchRunID: s.RunID,
-				InstallGroupID: s.InstallGroupID,
-				TriggeredBy:    "app-branch",
-				Metadata:       map[string]string{"source": "app-branch"},
-			},
-		}); err != nil {
-			logger.Warn(
-				"unable to enqueue update-app-config signal",
-				"install_id", e.installID,
-				"error", err,
-			)
-		}
-	}
-}
-
 func (s *Signal) updateInstallAppConfigVersionStatus(ctx workflow.Context, installID string, status app.Status, desc string) {
 	if workflow.GetVersion(ctx, installVersionStatusVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		return
@@ -527,6 +549,7 @@ func (s *Signal) writePendingInstallMetadata(ctx workflow.Context, groupName str
 		installs = append(installs, map[string]any{
 			"install_id": id,
 			"status":     statusPending,
+			"phase":      s.installPhase(),
 		})
 	}
 
@@ -534,7 +557,7 @@ func (s *Signal) writePendingInstallMetadata(ctx workflow.Context, groupName str
 		ID: s.StepID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
-			StatusHumanDescription: fmt.Sprintf("starting deploys for %d installs", len(installIDs)),
+			StatusHumanDescription: s.startingDesc(len(installIDs)),
 			Metadata: map[string]any{
 				"install_group_name": groupName,
 				"total_installs":     len(installIDs),
@@ -573,18 +596,13 @@ func (s *Signal) updateInstallMetadata(ctx workflow.Context, groupName string, e
 			"install_id":  e.installID,
 			"workflow_id": e.workflowID,
 			"status":      status,
+			"phase":       s.installPhase(),
 		})
 	}
 
-	desc := fmt.Sprintf("deploying to %d installs", len(enqueued))
+	desc := s.inProgressDesc(len(enqueued))
 	if completed > 0 || failed > 0 || cancelled > 0 {
-		desc = fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
-		if cancelled > 0 {
-			desc += fmt.Sprintf(" (%d cancelled)", cancelled)
-		}
-		if failed > 0 {
-			desc += fmt.Sprintf(" (%d failed)", failed)
-		}
+		desc = s.progressDesc(completed, failed, cancelled, len(enqueued))
 	}
 
 	metadata := map[string]any{
@@ -601,4 +619,60 @@ func (s *Signal) updateInstallMetadata(ctx workflow.Context, groupName string, e
 			Metadata:               metadata,
 		},
 	})
+}
+
+func (s *Signal) installPhase() string {
+	if s.desiredOnly {
+		return app.InstallGroupRunPhaseDesired
+	}
+	return app.InstallGroupRunPhaseDeploy
+}
+
+func (s *Signal) startingDesc(total int) string {
+	if s.desiredOnly {
+		return fmt.Sprintf("starting desired config updates for %d installs", total)
+	}
+	return fmt.Sprintf("starting deploys for %d installs", total)
+}
+
+func (s *Signal) inProgressDesc(total int) string {
+	if s.desiredOnly {
+		return fmt.Sprintf("updating %d installs to the desired app branch run", total)
+	}
+	return fmt.Sprintf("deploying to %d installs", total)
+}
+
+func (s *Signal) progressDesc(completed, failed, cancelled, total int) string {
+	outcome := "deployed"
+	if s.desiredOnly {
+		outcome = "updated to the desired app branch run"
+	}
+	desc := fmt.Sprintf("%d/%d installs %s", completed, total, outcome)
+	if cancelled > 0 {
+		desc += fmt.Sprintf(" (%d cancelled)", cancelled)
+	}
+	if failed > 0 {
+		desc += fmt.Sprintf(" (%d failed)", failed)
+	}
+	return desc
+}
+
+func (s *Signal) statusDesc(completed bool) string {
+	if s.desiredOnly {
+		if completed {
+			return "desired config update completed"
+		}
+		return "desired config update running"
+	}
+	if completed {
+		return "install workflow completed"
+	}
+	return "install workflow running"
+}
+
+func (s *Signal) updateTarget(workflowID string) string {
+	if s.desiredOnly {
+		return "desired config update"
+	}
+	return "workflow " + workflowID
 }

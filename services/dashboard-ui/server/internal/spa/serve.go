@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 
@@ -277,6 +278,10 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		}
 
 		filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
+		if path.Base(filePath) == ".port" {
+			c.Status(http.StatusNotFound)
+			return
+		}
 
 		if byocFavicon != nil && !isLocalEnv && filePath == "favicon.svg" {
 			c.Header("Cache-Control", "public, max-age=3600")

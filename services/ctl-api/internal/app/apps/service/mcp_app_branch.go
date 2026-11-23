@@ -8,18 +8,16 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 )
 
 func (s *service) findAppRef(ctx context.Context, orgID, appRef string) (*app.App, error) {
-	var a app.App
-	res := s.db.WithContext(ctx).
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", appRef).Or("id = ?", appRef)).
-		First(&a)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to find app %q: %w", appRef, res.Error)
+	a, err := applookup.ByRef(ctx, s.db, orgID, appRef)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find app %q: %w", appRef, err)
 	}
-	return &a, nil
+	return a, nil
 }
 
 func (s *service) findAppBranch(ctx context.Context, orgID, appID, branchRef string) (*app.AppBranch, error) {
@@ -35,15 +33,11 @@ func (s *service) findAppBranch(ctx context.Context, orgID, appID, branchRef str
 }
 
 func (s *service) findInstallOnApp(ctx context.Context, orgID, appID, installRef string) (*app.Install, error) {
-	var inst app.Install
-	res := s.db.WithContext(ctx).
-		Where(app.Install{OrgID: orgID, AppID: appID}).
-		Where(s.db.Where("name = ?", installRef).Or("id = ?", installRef)).
-		First(&inst)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to find install %q: %w", installRef, res.Error)
+	inst, err := installlookup.OnApp(ctx, s.db, orgID, appID, installRef)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find install %q: %w", installRef, err)
 	}
-	return &inst, nil
+	return inst, nil
 }
 
 func (s *service) latestAppBranchConfig(ctx context.Context, branchID string) (*app.AppBranchConfig, error) {

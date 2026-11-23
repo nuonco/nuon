@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -34,10 +33,7 @@ func (h *Helpers) CreateSyncJob(ctx context.Context,
 		Metadata:          generics.ToHstore(metadata),
 	}
 
-	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
-		return nil, fmt.Errorf("unable to create job: %w", res.Error)
-	}
-	if err := h.provisionJobCredentials(ctx, job); err != nil {
+	if err := h.createJobWithCredentials(ctx, job); err != nil {
 		return nil, err
 	}
 

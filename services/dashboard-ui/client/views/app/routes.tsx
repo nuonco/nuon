@@ -35,7 +35,7 @@ import { SandboxBuildLayout } from './SandboxBuildLayout'
 import { SandboxBuildSummaryTab } from './sandbox-build-tabs/SandboxBuildSummaryTab'
 import { SandboxBuildLogsTab } from './sandbox-build-tabs/SandboxBuildLogsTab'
 import { SandboxBuildTraceTab } from './sandbox-build-tabs/SandboxBuildTraceTab'
-import { Branches } from './branches/Branches'
+import { BranchesRoute } from './branches/Branches'
 import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
 import { BranchRunsTab } from './branches/tabs/BranchRunsTab'
@@ -153,7 +153,7 @@ export const appRoutes: RouteObject[] = [
         path: ':orgId/apps/:appId/policies/:policyId',
         element: legacy(<PolicyDetail />, (p) => `policies/${p.policyId}`),
       },
-      { path: ':orgId/apps/:appId/branches', element: legacy(<Branches />) },
+      { path: ':orgId/apps/:appId/branches', element: <BranchesRoute /> },
       {
         path: ':orgId/apps/:appId/branches/:branchId/installs/new',
         element: <CreateInstallWizardPage />,

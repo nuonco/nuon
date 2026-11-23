@@ -80,6 +80,16 @@ const (
 	OrgFeatureInstallUIWizards        OrgFeature = "install-ui-wizards"
 	OrgFeaturePRPreviewUI             OrgFeature = "pr-preview-ui"
 	OrgFeatureManualBuildSelection    OrgFeature = "allow-manual-build-selection"
+	// OrgFeatureRunnerVendorSTS lets the org's runner groups be switched to the
+	// sts-vendor auth method, and enabling it runs the vendor role backfill for
+	// every AWS install runner in the org (plans/runner-job-sts-identity.md §4.2.1).
+	OrgFeatureRunnerVendorSTS OrgFeature = "runner-vendor-sts"
+	// OrgFeatureDesiredConfigRollout makes app branch group approvals and installs
+	// joining a branch only move the install's desired app config. Nothing deploys;
+	// users reconcile live state to desired from the drift view. One-way: once
+	// enabled it cannot be disabled.
+	OrgFeatureDesiredConfigRollout OrgFeature = "desired-config-rollout"
+	OrgFeatureFleetView            OrgFeature = "fleet-view"
 )
 
 type OrgTelemetrySettings struct {
@@ -242,6 +252,9 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureInstallUIWizards:        false,
 		OrgFeaturePRPreviewUI:             false,
 		OrgFeatureManualBuildSelection:    false,
+		OrgFeatureRunnerVendorSTS:         false,
+		OrgFeatureDesiredConfigRollout:    false,
+		OrgFeatureFleetView:               false,
 	}
 }
 
@@ -263,6 +276,9 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureInstallUIWizards,
 		OrgFeaturePRPreviewUI,
 		OrgFeatureManualBuildSelection,
+		OrgFeatureRunnerVendorSTS,
+		OrgFeatureDesiredConfigRollout,
+		OrgFeatureFleetView,
 	}
 }
 
@@ -293,6 +309,9 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureInstallUIWizards:        "Enable the install create and teardown wizards in the dashboard.",
 		OrgFeaturePRPreviewUI:             "Enable the pull request preview page in the dashboard.",
 		OrgFeatureManualBuildSelection:    "Temporarily allow manual component build selection for installs with branch-run app configs whose builds are pinned, bypassing the requirement to deploy through an app branch run.",
+		OrgFeatureRunnerVendorSTS:         "Allow this org's runner groups to use the sts-vendor AWS auth method (runner assumes its Nuon-side identity role and authenticates via POST /v1/runner-auth/aws/sts). Enabling it provisions the vendor identity role for every AWS install runner in the org; each runner group is then switched individually.",
+		OrgFeatureDesiredConfigRollout:    "Ship app branch config changes by desired state: approving a branch run only moves each install's desired app config; nothing deploys until you reconcile from the drift view.",
+		OrgFeatureFleetView:               "Enable the app fleet view in the dashboard: installs grouped by app branch and install group, with rollout state, health, and runner status, served by the paginated /v1/apps/:app_id/fleet endpoints.",
 	}
 }
 
@@ -318,8 +337,10 @@ func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 // because they gate the flag system itself or because enabling them depends on
 // infrastructure prerequisites outside the org's control.
 var adminOnlyFeatures = map[OrgFeature]struct{}{
-	OrgFeatureUserManagedFeatures: {},
-	OrgFeaturePhoneHomeAuth:       {},
+	OrgFeatureRunnerVendorSTS:      {},
+	OrgFeatureUserManagedFeatures:  {},
+	OrgFeaturePhoneHomeAuth:        {},
+	OrgFeatureDesiredConfigRollout: {},
 }
 
 // GetUserManageableFeatures returns features that users are allowed to toggle

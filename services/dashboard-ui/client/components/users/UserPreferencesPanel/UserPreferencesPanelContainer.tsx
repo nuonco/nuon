@@ -12,6 +12,8 @@ export const UserPreferencesPanelContainer = (props: IPanel) => {
     setIsInstallsTabEnabled,
     isStatusBarEnabled,
     setIsStatusBarEnabled,
+    tableVersion,
+    setTableVersion,
     diffViewer,
     setDiffViewer,
     diffView,
@@ -33,6 +35,8 @@ export const UserPreferencesPanelContainer = (props: IPanel) => {
       onInstallsTabChange={setIsInstallsTabEnabled}
       isStatusBarEnabled={isStatusBarEnabled}
       onStatusBarChange={setIsStatusBarEnabled}
+      tableVersion={tableVersion}
+      onTableVersionChange={setTableVersion}
       diffViewer={diffViewer}
       onDiffViewerChange={setDiffViewer}
       diffView={diffView}

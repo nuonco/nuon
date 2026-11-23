@@ -135,6 +135,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			NewAppConfigID: s.NewAppConfigID,
 			Diff:           diffResult.Diff,
 			Metadata:       metadata,
+			InstallGroupID: s.InstallGroupID,
 		}); err != nil {
 			return fmt.Errorf("unable to create install app config version: %w", err)
 		}

@@ -14,7 +14,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -46,16 +48,22 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		return
 	}
 
+	currentApp, err := applookup.ByRef(ctx, s.db, org.ID, ctx.Param("app_id"))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	awID := ctx.Param("action_id")
-	aw, err := s.findActionWorkflow(ctx, org.ID, awID)
+	aw, err := s.findAppActionWorkflow(ctx, org.ID, currentApp.ID, awID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflow %s: %w", awID, err))
 		return
 	}
 
-	parentApp, err := s.findApp(ctx, org.ID, aw.AppID)
+	parentApp, err := s.findAppByID(ctx, org.ID, aw.AppID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", parentApp.ID, err))
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", aw.AppID, err))
 		return
 	}
 
@@ -69,7 +77,7 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		return
 	}
 
-	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, awID, &req)
+	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, aw.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -249,9 +257,9 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 		return
 	}
 
-	parentApp, err := s.findApp(ctx, org.ID, aw.AppID)
+	parentApp, err := s.findAppByID(ctx, org.ID, aw.AppID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", parentApp.ID, err))
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", aw.AppID, err))
 		return
 	}
 
@@ -265,7 +273,7 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 		return
 	}
 
-	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, awID, &req)
+	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, aw.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -275,6 +283,10 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 }
 
 func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app.App, orgID string, awID string, req *CreateActionWorkflowConfigRequest) (*app.ActionWorkflowConfig, error) {
+	if err := require.AppConfigInApp(ctx, s.db, parentApp.ID, req.AppConfigID); err != nil {
+		return nil, err
+	}
+
 	timeout := req.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout
