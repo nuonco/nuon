@@ -2,6 +2,7 @@ package validate
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -202,6 +203,27 @@ func ValidateURLPolicy(policy *urlpolicy.Policy, a *config.AppConfig) error {
 		Description: violations.Error(),
 		Err:         violations,
 		Warning:     policy.Mode() == urlpolicy.ModeWarn,
+	}
+}
+
+// stackTemplateRedirectCheck is the check validation runs on each redirect
+// target while it fetches a stack template. In enforce mode an off-list target
+// fails the fetch. In warn mode it is added to warnings, which Validate
+// reports with its other warnings, and the redirect is followed.
+func stackTemplateRedirectCheck(policy *urlpolicy.Policy, warnings *[]string) redirectCheck {
+	if !policy.Restricted(urlpolicy.CategoryStackTemplates) {
+		return nil
+	}
+	return func(target *url.URL) error {
+		violation := policy.Check(urlpolicy.CategoryStackTemplates, "redirect followed for a stack template", target.String())
+		if violation == nil {
+			return nil
+		}
+		if policy.Mode() == urlpolicy.ModeWarn {
+			*warnings = append(*warnings, violation.Error())
+			return nil
+		}
+		return *violation
 	}
 }
 

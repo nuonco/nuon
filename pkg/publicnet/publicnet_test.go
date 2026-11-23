@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -37,6 +38,11 @@ func TestIsPublicIP(t *testing.T) {
 		"2606:4700::1":    true,
 
 		"100.100.100.200":        false, // alibaba metadata
+		"168.63.129.16":          false, // azure wireserver
+		"::ffff:168.63.129.16":   false, // azure wireserver, ipv4-mapped
+		"168.63.129.17":          true,  // only the wireserver address is blocked
+		"192.0.0.192":            false, // oracle metadata
+		"fd00:ec2::23":           false, // aws time sync
 		"fd00:ec2::254":          false, // aws metadata
 		"fd20:ce::254":           false, // gcp metadata
 		"::ffff:169.254.169.254": false, // ipv4-mapped
@@ -52,6 +58,29 @@ func TestIsPublicIP(t *testing.T) {
 
 	for raw, want := range cases {
 		require.Equal(t, want, IsPublicIP(net.ParseIP(raw)), raw)
+	}
+}
+
+func TestIsMetadataAddr(t *testing.T) {
+	cases := map[string]bool{
+		"100.100.100.200":      true,
+		"168.63.129.16":        true,
+		"::ffff:168.63.129.16": true,
+		"192.0.0.192":          true,
+		"fd00:ec2::23":         true,
+		"fd00:ec2::254":        true,
+		"fd20:ce::254":         true,
+
+		// Private and link-local ranges are the caller's decision, not this list's.
+		"10.0.0.1":        false,
+		"100.64.0.10":     false,
+		"169.254.169.254": false,
+		"fd12:3456::1":    false,
+		"8.8.8.8":         false,
+	}
+
+	for raw, want := range cases {
+		require.Equal(t, want, IsMetadataAddr(netip.MustParseAddr(raw)), raw)
 	}
 }
 
