@@ -1,6 +1,8 @@
 package prune
 
 import (
+	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -19,6 +21,7 @@ type Manifest struct {
 type Input struct {
 	Manifests    []Manifest
 	OwnedTags    []string
+	OwnedPattern []string
 	KeepTags     []string
 	InUseTags    []string
 	InUseDigests []string
@@ -59,8 +62,27 @@ func (d *Decision) Deletions() []Deletion {
 	return out
 }
 
-func Decide(in Input) *Decision {
-	owned := toSet(in.OwnedTags)
+func Decide(in Input) (*Decision, error) {
+	ownedSet := toSet(in.OwnedTags)
+	patterns := make([]*regexp.Regexp, 0, len(in.OwnedPattern))
+	for _, p := range in.OwnedPattern {
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return nil, fmt.Errorf("invalid owned tag pattern %q: %w", p, err)
+		}
+		patterns = append(patterns, re)
+	}
+	owned := func(tag string) bool {
+		if ownedSet[tag] {
+			return true
+		}
+		for _, re := range patterns {
+			if re.MatchString(tag) {
+				return true
+			}
+		}
+		return false
+	}
 	keepTags := toSet(in.KeepTags)
 	inUseTags := toSet(in.InUseTags)
 	inUseDigests := toSet(in.InUseDigests)
@@ -89,7 +111,7 @@ func Decide(in Input) *Decision {
 		for _, tag := range m.Tags {
 			base := baseTag(tag)
 			switch {
-			case !owned[tag] && !owned[base]:
+			case !owned(tag) && !owned(base):
 				keep(m.Digest, KeepReasonUnowned)
 			case keepTags[tag] || keepTags[base]:
 				keep(m.Digest, KeepReasonKeepTag)
@@ -174,7 +196,7 @@ func Decide(in Input) *Decision {
 	}
 	decision.Truncated = remaining > 0
 
-	return decision
+	return decision, nil
 }
 
 func baseTag(tag string) string {

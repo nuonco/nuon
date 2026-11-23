@@ -188,7 +188,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to reconcile sandbox drift emitter: %w", err)
 	}
 
-	if err := s.reconcileRegistryPruneEmitter(ctx, l, install, appCfg, driftCronQueue, registryPruneEmitters); err != nil {
+	if err := s.reconcileRegistryPruneEmitter(ctx, l, install, driftCronQueue, registryPruneEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile registry prune emitter: %w", err)
 	}
 

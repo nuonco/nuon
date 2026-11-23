@@ -6,20 +6,23 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/registryprune"
 )
 
 type GetRegistryPruneTagsRequest struct {
-	InstallID   string `validate:"required"`
-	SharedRepo  bool
-	GracePeriod time.Duration
+	InstallID      string `validate:"required"`
+	SharedRepo     bool
+	GracePeriod    time.Duration
+	IncludeWhenOff bool
 }
 
 type GetRegistryPruneTagsResponse struct {
-	Mode      string
-	OwnedTags []string
-	KeepTags  []string
+	Mode             string
+	OwnedTags        []string
+	OwnedTagPatterns []string
+	KeepTags         []string
 }
 
 var inFlightDeployStatuses = map[app.InstallDeployStatus]bool{
@@ -44,33 +47,26 @@ func (a *Activities) GetRegistryPruneTags(ctx context.Context, req *GetRegistryP
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	var retention app.AppRegistryRetentionConfig
-	res := a.db.WithContext(ctx).
-		Where(app.AppRegistryRetentionConfig{AppConfigID: install.AppConfigID}).
-		Limit(1).
-		Find(&retention)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get registry retention config: %w", res.Error)
+	appCfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app config: %w", err)
 	}
-	retentionCfg := &retention
-	if res.RowsAffected == 0 {
-		retentionCfg = nil
+	var retentionCfg *app.AppRegistryRetentionConfig
+	if appCfg.RegistryRetentionConfig.ID != "" {
+		retentionCfg = &appCfg.RegistryRetentionConfig
 	}
 
 	mode, defaultCount := app.ResolveRegistryRetention(install.InstallConfig, retentionCfg, nil)
 	resp := &GetRegistryPruneTagsResponse{Mode: mode}
-
-	var cccs []app.ComponentConfigConnection
-	if err := a.db.WithContext(ctx).
-		Select("id", "component_id", "registry_retain_count").
-		Where(app.ComponentConfigConnection{AppConfigID: install.AppConfigID}).
-		Find(&cccs).Error; err != nil {
-		return nil, fmt.Errorf("unable to get component configs: %w", err)
+	if mode == config.RegistryRetentionModeOff && !req.IncludeWhenOff {
+		return resp, nil
 	}
+
 	retainCounts := map[string]int{}
-	for i := range cccs {
-		_, k := app.ResolveRegistryRetention(install.InstallConfig, retentionCfg, &cccs[i])
-		retainCounts[cccs[i].ComponentID] = k
+	for i := range appCfg.ComponentConfigConnections {
+		ccc := &appCfg.ComponentConfigConnections[i]
+		_, k := app.ResolveRegistryRetention(install.InstallConfig, retentionCfg, ccc)
+		retainCounts[ccc.ComponentID] = k
 	}
 
 	var installComponents []app.InstallComponent
@@ -167,6 +163,7 @@ func (a *Activities) GetRegistryPruneTags(ctx context.Context, req *GetRegistryP
 		Now:          time.Now(),
 	})
 	resp.OwnedTags = sets.Owned
+	resp.OwnedTagPatterns = []string{registryprune.LegacyDeployTagPattern}
 	resp.KeepTags = sets.Keep
 	return resp, nil
 }
@@ -182,24 +179,35 @@ func (a *Activities) getLiveDeployPlans(ctx context.Context, deployIDs map[strin
 
 	var jobs []app.RunnerJob
 	if err := a.db.WithContext(ctx).
-		Select("id").
+		Select("id", "owner_id").
 		Where("owner_type = ? AND owner_id IN ?", "install_deploys", ids).
 		Find(&jobs).Error; err != nil {
 		return nil, fmt.Errorf("unable to get deploy runner jobs: %w", err)
 	}
-	if len(jobs) == 0 {
-		return nil, nil
-	}
 	jobIDs := make([]string, 0, len(jobs))
+	deployByJob := make(map[string]string, len(jobs))
 	for _, j := range jobs {
 		jobIDs = append(jobIDs, j.ID)
+		deployByJob[j.ID] = j.OwnerID
 	}
 
 	var plans []app.RunnerJobPlan
-	if err := a.db.WithContext(ctx).
-		Where("runner_job_id IN ?", jobIDs).
-		Find(&plans).Error; err != nil {
-		return nil, fmt.Errorf("unable to get deploy runner job plans: %w", err)
+	if len(jobIDs) > 0 {
+		if err := a.db.WithContext(ctx).
+			Where("runner_job_id IN ?", jobIDs).
+			Find(&plans).Error; err != nil {
+			return nil, fmt.Errorf("unable to get deploy runner job plans: %w", err)
+		}
+	}
+
+	withPlan := map[string]bool{}
+	for _, p := range plans {
+		withPlan[deployByJob[p.RunnerJobID]] = true
+	}
+	for id := range deployIDs {
+		if !withPlan[id] {
+			return nil, fmt.Errorf("live deploy %s has no saved plan, refusing to compute keep set", id)
+		}
 	}
 
 	out := make([]string, 0, len(plans)*2)

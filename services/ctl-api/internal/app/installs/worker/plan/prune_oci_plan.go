@@ -15,12 +15,13 @@ import (
 )
 
 type CreatePruneOCIPlanRequest struct {
-	InstallID   string
-	DryRun      bool
-	OwnedTags   []string
-	KeepTags    []string
-	GracePeriod time.Duration
-	MaxDeletes  int
+	InstallID        string
+	DryRun           bool
+	OwnedTags        []string
+	OwnedTagPatterns []string
+	KeepTags         []string
+	GracePeriod      time.Duration
+	MaxDeletes       int
 
 	WorkflowID string
 }
@@ -124,6 +125,7 @@ func (p *Planner) createPruneOCIPlan(ctx workflow.Context, req *CreatePruneOCIPl
 			Registry:           registry,
 			DryRun:             req.DryRun,
 			OwnedTags:          req.OwnedTags,
+			OwnedTagPatterns:   req.OwnedTagPatterns,
 			KeepTags:           req.KeepTags,
 			GracePeriodSeconds: int64(req.GracePeriod / time.Second),
 			MaxDeletes:         req.MaxDeletes,

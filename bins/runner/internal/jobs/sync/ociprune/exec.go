@@ -71,9 +71,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	l.Info("scanned cluster", zap.Int("tags_in_use", len(inUse.Tags)), zap.Int("digests_in_use", len(inUse.Digests)))
 
-	decision := prune.Decide(prune.Input{
+	decision, err := prune.Decide(prune.Input{
 		Manifests:    manifests,
 		OwnedTags:    plan.OwnedTags,
+		OwnedPattern: plan.OwnedTagPatterns,
 		KeepTags:     plan.KeepTags,
 		InUseTags:    inUse.Tags,
 		InUseDigests: inUse.Digests,
@@ -81,6 +82,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		Now:          time.Now(),
 		MaxDeletes:   plan.MaxDeletes,
 	})
+	if err != nil {
+		h.writeErrorResult(ctx, "decide", err)
+		return err
+	}
 
 	res := &Result{
 		Outcome:    OutcomeDryRun,

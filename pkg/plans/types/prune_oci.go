@@ -10,6 +10,7 @@ type PruneOCIPlan struct {
 
 	DryRun             bool     `json:"dry_run"`
 	OwnedTags          []string `json:"owned_tags"`
+	OwnedTagPatterns   []string `json:"owned_tag_patterns"`
 	KeepTags           []string `json:"keep_tags"`
 	GracePeriodSeconds int64    `json:"grace_period_seconds" validate:"gte=0"`
 	MaxDeletes         int      `json:"max_deletes" validate:"gt=0"`

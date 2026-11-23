@@ -47,6 +47,13 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 	if req.InstallID != "" && id == "" {
 		id = req.InstallID
 		typ = "installs"
+
+		install, err := a.getInstall(ctx, req.InstallID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get install")
+		}
+		ctx = cctx.SetAccountIDContext(ctx, install.CreatedByID)
+		ctx = cctx.SetOrgIDContext(ctx, install.OrgID)
 	}
 
 	ls := app.LogStream{

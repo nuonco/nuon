@@ -37,6 +37,9 @@ type PlantypesPruneOCIPlan struct {
 	// max deletes
 	MaxDeletes int64 `json:"max_deletes,omitempty"`
 
+	// owned tag patterns
+	OwnedTagPatterns []string `json:"owned_tag_patterns"`
+
 	// owned tags
 	OwnedTags []string `json:"owned_tags"`
 

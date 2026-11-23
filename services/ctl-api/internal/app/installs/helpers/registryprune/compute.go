@@ -25,6 +25,8 @@ type ComputeInput struct {
 	Now          time.Time
 }
 
+const LegacyDeployTagPattern = `^dpl[0-9a-z]{23}$`
+
 type TagSets struct {
 	Owned []string
 	Keep  []string
@@ -36,19 +38,16 @@ func Compute(in ComputeInput) TagSets {
 
 	byComponent := map[string][]Deploy{}
 	for _, d := range in.Deploys {
-		if d.ID != "" {
-			owned[d.ID] = true
+		protected := d.InFlight || d.Live || (in.GracePeriod > 0 && in.Now.Sub(d.CreatedAt) < in.GracePeriod)
+		if protected && d.ID != "" {
+			keep[d.ID] = true
 		}
 		if d.Tag == "" {
 			continue
 		}
 		owned[d.Tag] = true
 		byComponent[d.ComponentID] = append(byComponent[d.ComponentID], d)
-
-		if d.InFlight || d.Live {
-			keep[d.Tag] = true
-		}
-		if in.GracePeriod > 0 && in.Now.Sub(d.CreatedAt) < in.GracePeriod {
+		if protected {
 			keep[d.Tag] = true
 		}
 	}

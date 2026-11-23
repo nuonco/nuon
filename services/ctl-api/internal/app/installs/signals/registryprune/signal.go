@@ -87,9 +87,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	tags, err := activities.AwaitGetRegistryPruneTags(ctx, &activities.GetRegistryPruneTagsRequest{
-		InstallID:   s.InstallID,
-		SharedRepo:  true,
-		GracePeriod: GracePeriod,
+		InstallID:      s.InstallID,
+		SharedRepo:     true,
+		GracePeriod:    GracePeriod,
+		IncludeWhenOff: s.DryRun,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to compute registry prune tags: %w", err)
@@ -107,13 +108,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	wfID := workflow.GetInfo(ctx).WorkflowExecution.ID
 	planResp, err := plan.AwaitCreatePruneOCIPlan(ctx, &plan.CreatePruneOCIPlanRequest{
-		InstallID:   s.InstallID,
-		DryRun:      dryRun,
-		OwnedTags:   tags.OwnedTags,
-		KeepTags:    tags.KeepTags,
-		GracePeriod: GracePeriod,
-		MaxDeletes:  MaxDeletes,
-		WorkflowID:  fmt.Sprintf("%s-create-oci-prune-plan", wfID),
+		InstallID:        s.InstallID,
+		DryRun:           dryRun,
+		OwnedTags:        tags.OwnedTags,
+		OwnedTagPatterns: tags.OwnedTagPatterns,
+		KeepTags:         tags.KeepTags,
+		GracePeriod:      GracePeriod,
+		MaxDeletes:       MaxDeletes,
+		WorkflowID:       fmt.Sprintf("%s-create-oci-prune-plan", wfID),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create prune plan")
