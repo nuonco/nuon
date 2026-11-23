@@ -37,19 +37,10 @@ const violationStep = {
   },
 } as TWorkflowStep
 
-const passedStep = {
-  id: 'step-2',
-  status: {
-    status: 'success',
-    metadata: {
-      passed_policy_ids: ['pol-tags'],
-    },
-  },
-} as TWorkflowStep
-
 const manyWarningsStep = {
   id: 'step-many-warnings',
   name: 'sync and plan payments-api',
+  metadata: { component_name: 'payments-api' },
   status: {
     status: 'success',
     metadata: {
@@ -76,8 +67,6 @@ const manyWarningsStep = {
 } as TWorkflowStep
 
 export const WithViolations = () => <PolicyViolations step={violationStep} />
-
-export const AllPassed = () => <PolicyViolations step={passedStep} />
 
 export const SkippedWithWarnings = () => (
   <PolicyViolations
