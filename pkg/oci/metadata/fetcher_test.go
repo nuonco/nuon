@@ -7,12 +7,30 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
+
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
+
+func TestFetchImageMetadataRefusesNonPublicRegistryOnControlPlane(t *testing.T) {
+	var requests atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+	}))
+	defer server.Close()
+
+	_, err := FetchImageMetadata(publicnet.WithPublicOnly(context.Background()), &FetchOptions{
+		Image: strings.TrimPrefix(server.URL, "http://") + "/repository",
+		Tag:   "latest",
+	})
+	require.ErrorIs(t, err, publicnet.ErrNonPublic)
+	require.Zero(t, requests.Load())
+}
 
 func TestDecodeInTotoStatement(t *testing.T) {
 	statement := `{
@@ -52,8 +70,8 @@ func TestDecodeInTotoStatement(t *testing.T) {
 // Guards the 12h-ECR-token replay: a shared cache pins the first token per host, and a
 // nil client falls back to the same global cache for anonymous pulls.
 func TestNewAuthClientDoesNotShareGlobalCache(t *testing.T) {
-	authed := newAuthClient("registry.example.com", &RegistryAuth{Username: "AWS", Password: "first"})
-	second := newAuthClient("registry.example.com", &RegistryAuth{Username: "AWS", Password: "second"})
+	authed := newAuthClient(context.Background(), "registry.example.com", &RegistryAuth{Username: "AWS", Password: "first"})
+	second := newAuthClient(context.Background(), "registry.example.com", &RegistryAuth{Username: "AWS", Password: "second"})
 
 	require.NotSame(t, auth.DefaultCache, authed.Cache, "must not reuse the process-global default cache")
 	require.NotSame(t, authed.Cache, second.Cache, "each fetch must get its own cache")
@@ -64,7 +82,7 @@ func TestNewAuthClientDoesNotShareGlobalCache(t *testing.T) {
 		"empty username": {Username: ""},
 	} {
 		t.Run(name, func(t *testing.T) {
-			anon := newAuthClient("public.ecr.aws", regAuth)
+			anon := newAuthClient(context.Background(), "public.ecr.aws", regAuth)
 			require.NotNil(t, anon.Cache, "anonymous fetch must still get its own cache")
 			require.NotSame(t, auth.DefaultCache, anon.Cache)
 			require.Nil(t, anon.Credential, "anonymous fetch must not attach credentials")
@@ -100,7 +118,7 @@ func TestNewAuthClientSendsRotatedCredential(t *testing.T) {
 		repo, err := remote.NewRepository(host + "/acme/app")
 		require.NoError(t, err)
 		repo.PlainHTTP = true
-		repo.Client = newAuthClient(host, &RegistryAuth{Username: "AWS", Password: password})
+		repo.Client = newAuthClient(context.Background(), host, &RegistryAuth{Username: "AWS", Password: password})
 		return repo.Tags(context.Background(), "", func([]string) error { return nil })
 	}
 

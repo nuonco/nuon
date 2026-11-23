@@ -4,8 +4,12 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -198,6 +202,58 @@ warn contains {"msg": "review"}`,
 			assert.Equal(t, tt.violations, violations)
 		})
 	}
+}
+
+func TestEvaluateSinglePolicyCannotReachTheNetwork(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+	}))
+	defer server.Close()
+
+	httpSend := fmt.Sprintf(`http.send({"method": "PUT", "url": %q}).status_code == 200`, server.URL)
+	lookup := `net.lookup_ip_addr("example.com") != set()`
+
+	for name, tt := range map[string]struct {
+		contents string
+		query    string
+		severity string
+		builtin  string
+	}{
+		"deny http.send": {
+			contents: "package nuon\ndeny contains \"blocked\" if { " + httpSend + " }",
+			query:    "data.nuon.deny",
+			severity: "deny",
+			builtin:  "http.send",
+		},
+		"warn http.send": {
+			contents: "package nuon\nwarn contains \"blocked\" if { " + httpSend + " }",
+			query:    "data.nuon.warn",
+			severity: "warn",
+			builtin:  "http.send",
+		},
+		"deny net.lookup_ip_addr": {
+			contents: "package nuon\ndeny contains \"blocked\" if { " + lookup + " }",
+			query:    "data.nuon.deny",
+			severity: "deny",
+			builtin:  "net.lookup_ip_addr",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := (&Activities{}).evaluateRule(context.Background(), zap.NewNop(), tt.contents, map[string]interface{}{}, tt.query, tt.severity)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "undefined function "+tt.builtin)
+
+			_, err = executeEvaluateSinglePolicy(t, &EvaluateSinglePolicyRequest{
+				PolicyID:  "policy-id",
+				Contents:  tt.contents,
+				InputJSON: []byte("{}"),
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid OPA policy")
+		})
+	}
+	assert.Zero(t, requests.Load())
 }
 
 func executeEvaluateSinglePolicy(t *testing.T, req *EvaluateSinglePolicyRequest) (*EvaluateSinglePolicyResult, error) {

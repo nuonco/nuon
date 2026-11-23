@@ -2,6 +2,7 @@ package urlpolicy
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -211,6 +212,28 @@ func (p *Policy) Check(category Category, field, rawURL string) *Violation {
 		Field:    field,
 		Value:    rawURL,
 		Reason:   "it does not match any allowed entry",
+	}
+}
+
+// RedirectCheck returns the check a fetch of an allowed URL runs on each
+// redirect target, so an allowed location cannot send the fetch off-list. In
+// enforce mode an off-list target is an error. In warn mode it is reported
+// through ReportWarnings and the redirect is followed. It returns nil when
+// the category is not restricted.
+func (p *Policy) RedirectCheck(category Category, field string) func(target *url.URL) error {
+	if !p.Restricted(category) {
+		return nil
+	}
+	return func(target *url.URL) error {
+		violation := p.Check(category, "redirect followed for "+field, target.String())
+		if violation == nil {
+			return nil
+		}
+		if p.Mode() == ModeWarn {
+			p.ReportWarnings(Violations{*violation})
+			return nil
+		}
+		return *violation
 	}
 }
 
