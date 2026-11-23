@@ -33,13 +33,6 @@ type GetPhoneHomeScriptRequest struct {
 	URL string `json:"url,omitempty"`
 }
 
-// FetchPhoneHomeScriptRaw is the single resolution + fetch path for the phone-home
-// Lambda source. It is package-level so non-Temporal callers (e.g. app bundle
-// compilation) share the exact precedence and pin that install stack versions get.
-//
-// Resolution is app override, then environment override, then the pinned default. The
-// precedence lives here rather than in the callers so the generation paths cannot
-// disagree about which script an install gets.
 func WithPhoneHomeRedirectCheck(ctx context.Context, policy *urlpolicy.Policy, appURL string) context.Context {
 	if appURL == "" {
 		return ctx
@@ -47,6 +40,13 @@ func WithPhoneHomeRedirectCheck(ctx context.Context, policy *urlpolicy.Policy, a
 	return publicnet.WithRedirectCheck(ctx, policy.RedirectCheck(urlpolicy.CategoryRunnerBootstrap, "runner.phone_home_script_url"))
 }
 
+// FetchPhoneHomeScriptRaw is the single resolution + fetch path for the phone-home
+// Lambda source. It is package-level so non-Temporal callers (e.g. app bundle
+// compilation) share the exact precedence and pin that install stack versions get.
+//
+// Resolution is app override, then environment override, then the pinned default. The
+// precedence lives here rather than in the callers so the generation paths cannot
+// disagree about which script an install gets.
 func FetchPhoneHomeScriptRaw(ctx context.Context, appURL, envURL string) ([]byte, error) {
 	url := DefaultAWSPhoneHomeScript
 	switch {
