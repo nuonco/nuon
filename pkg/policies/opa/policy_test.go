@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 
+	"github.com/open-policy-agent/opa/v1/ast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -294,6 +296,37 @@ func TestParseRejectsNetworkBuiltins(t *testing.T) {
 	assert.Zero(t, requests.Load())
 }
 
+// An OPA upgrade that adds or removes a builtin fails here. Review each new
+// builtin: add it to allowed_builtins.txt if it cannot reach the network, read
+// files or expose the process environment, otherwise add it to the denied list
+// below.
+func TestEveryUpstreamBuiltinIsClassified(t *testing.T) {
+	denied := []string{
+		"http.send",          // sends requests from the control plane
+		"net.lookup_ip_addr", // resolves DNS from the control plane
+		"opa.runtime",        // exposes environment variables when a runtime is configured
+	}
+
+	allowed := make(map[string]struct{})
+	for _, builtin := range policyopa.Capabilities().Builtins {
+		allowed[builtin.Name] = struct{}{}
+	}
+
+	var unclassified []string
+	upstream := make(map[string]struct{})
+	for _, builtin := range ast.CapabilitiesForThisVersion().Builtins {
+		upstream[builtin.Name] = struct{}{}
+		if _, ok := allowed[builtin.Name]; !ok {
+			unclassified = append(unclassified, builtin.Name)
+		}
+	}
+	assert.ElementsMatch(t, denied, unclassified, "builtins that are neither allowed nor denied")
+
+	for _, name := range strings.Fields(policyopa.AllowedBuiltinsFile()) {
+		assert.Contains(t, upstream, name, "allowed_builtins.txt lists a builtin this OPA version does not have")
+	}
+}
+
 func TestCapabilitiesKeepsOtherBuiltinsAndBlocksNetwork(t *testing.T) {
 	capabilities := policyopa.Capabilities()
 	names := make(map[string]struct{}, len(capabilities.Builtins))
@@ -302,6 +335,7 @@ func TestCapabilitiesKeepsOtherBuiltinsAndBlocksNetwork(t *testing.T) {
 	}
 	assert.NotContains(t, names, "http.send")
 	assert.NotContains(t, names, "net.lookup_ip_addr")
+	assert.NotContains(t, names, "opa.runtime")
 	assert.Contains(t, names, "net.cidr_contains")
 	assert.Contains(t, names, "json.unmarshal")
 	assert.NotNil(t, capabilities.AllowNet)
