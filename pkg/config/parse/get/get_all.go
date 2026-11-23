@@ -362,13 +362,14 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string, 
 
 	// Configure the client
 	client := &getter.Client{
-		Ctx:     ctx,
-		Src:     inputVal,
-		Dir:     true,
-		Dst:     tmpFP,
-		Pwd:     pwd,
-		Mode:    getter.ClientModeFile,
-		Getters: g.remoteGetters(),
+		Ctx:       ctx,
+		Src:       inputVal,
+		Dir:       true,
+		Dst:       tmpFP,
+		Pwd:       pwd,
+		Mode:      getter.ClientModeFile,
+		Detectors: GetDetectors(),
+		Getters:   g.remoteGetters(),
 	}
 
 	if err := client.Get(); err != nil {
@@ -395,11 +396,11 @@ const maxChecksumHops = 5
 // Local files are not remote fetches and are skipped, but their checksum
 // parameter is still followed.
 //
-// Each hop is detected with go-getter's default detectors, because those are
-// what the client below uses when it resolves the same string.
+// Each hop is detected with GetDetectors, because those are what the client
+// uses when it resolves the same string.
 func (g *get) checkRemoteHops(field, src, pwd string) error {
 	for range maxChecksumHops {
-		detected, err := getter.Detect(src, pwd, getter.Detectors)
+		detected, err := getter.Detect(src, pwd, GetDetectors())
 		if err != nil {
 			return errors.Wrapf(err, "unable to resolve the source %q before checking it", src)
 		}
