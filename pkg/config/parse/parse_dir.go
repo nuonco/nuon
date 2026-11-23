@@ -192,6 +192,7 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		RootDir:      fp,
 		Source:       getSource,
 		OnLocalFile:  localSourceFileRecorder(source),
+		CheckRemote:  parseCfg.CheckRemoteFetch,
 	}); err != nil {
 		return nil, ParseErr{
 			Description: "unable to get fields",

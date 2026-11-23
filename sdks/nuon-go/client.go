@@ -133,6 +133,7 @@ type Client interface {
 	UpdateAppConfigInstalls(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigInstallsRequest) error
 	GetAppConfig(ctx context.Context, appID, appConfigID string, recurse *bool) (*models.AppAppConfig, error)
 	GetAppLatestConfig(ctx context.Context, appID string) (*models.AppAppConfig, error)
+	GetAppAllowedHosts(ctx context.Context, appID string) (*models.ServiceAppAllowedHosts, error)
 	GetAppConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error)
 	UpdateAppConfig(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigRequest) (*models.AppAppConfig, error)
 	BuildAppConfig(ctx context.Context, appID, configID string, requestID ...string) (*models.AppWorkflow, error)

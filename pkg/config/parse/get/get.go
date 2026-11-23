@@ -17,6 +17,9 @@ type Options struct {
 	// Source is borrowed; when set, it is the authority for local file reads.
 	Source      *sourcefs.FS
 	OnLocalFile func(path string, contents []byte) error
+	// CheckRemote, when set, is called before each remote fetch. field names the
+	// config field as <Type>.<Field>. A non-nil error aborts the parse.
+	CheckRemote func(field, rawURL string) error
 }
 
 type get struct {

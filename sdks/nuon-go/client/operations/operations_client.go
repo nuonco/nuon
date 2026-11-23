@@ -416,6 +416,8 @@ type ClientService interface {
 
 	GetAppActions(params *GetAppActionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppActionsOK, error)
 
+	GetAppAllowedHosts(params *GetAppAllowedHostsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppAllowedHostsOK, error)
+
 	GetAppBranch(params *GetAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchOK, error)
 
 	GetAppBranchAppConfigs(params *GetAppBranchAppConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchAppConfigsOK, error)
@@ -8136,6 +8138,54 @@ func (a *Client) GetAppActions(params *GetAppActionsParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppActions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetAppAllowedHosts gets the allowed hosts for an app
+
+	Return the allowed hosts that apply to an app's config.
+
+The control plane operator can restrict where URLs in an app config may point, such as the runner API URL, the runner init script, and stack template URLs. Each category is either unrestricted or carries a list of allowed URL prefixes. A sync that sets a URL outside a restricted category is rejected, or only reported when the mode is `warn`.
+*/
+func (a *Client) GetAppAllowedHosts(params *GetAppAllowedHostsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppAllowedHostsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppAllowedHostsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppAllowedHosts",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/allowed-hosts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppAllowedHostsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppAllowedHostsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppAllowedHosts: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

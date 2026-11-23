@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/validate"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/pkg/workspace"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/branchrunerrors"
 )
@@ -48,6 +49,9 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 		SkipBranches:  true,
 		SkipInstalls:  true,
+		CheckRemoteFetch: validate.RemoteFetchCheck(a.cfg.URLPolicy, func(violation urlpolicy.Violation) {
+			a.cfg.URLPolicy.ReportWarnings(urlpolicy.Violations{violation})
+		}),
 	})
 	if err != nil {
 		return nil, configValidationFailed(err)
@@ -55,7 +59,7 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 	cfg := parseResult.Config
 	cfg.SourceArchive = parseResult.Source
 
-	if err := validate.Validate(ctx, v, cfg); err != nil {
+	if err := validate.Validate(ctx, v, cfg, validate.WithURLPolicy(a.cfg.URLPolicy)); err != nil {
 		if !config.IsWarningErr(err) {
 			return nil, configValidationFailed(err)
 		}
