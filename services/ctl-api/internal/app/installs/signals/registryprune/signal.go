@@ -102,8 +102,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to compute registry prune tags: %w", err)
 	}
 
-	dryRun := s.DryRun || tags.Mode != config.RegistryRetentionModeEnforce
-	if tags.Mode == config.RegistryRetentionModeOff && !s.DryRun {
+	run, dryRun := runMode(tags.Mode, s.DryRun)
+	if !run {
 		l.Info("registry retention is off, skipping registry prune")
 		return nil
 	}
@@ -195,4 +195,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		zap.Any("result", finished.ParsedOutputs["prune"]),
 	)
 	return nil
+}
+
+func runMode(mode string, forceDryRun bool) (bool, bool) {
+	if mode == config.RegistryRetentionModeOff && !forceDryRun {
+		return false, false
+	}
+	return true, forceDryRun || mode != config.RegistryRetentionModeEnforce
 }
