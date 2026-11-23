@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { WorkflowContext } from '@/providers/workflow-provider'
 import type { TWorkflow } from '@/types'
@@ -54,8 +54,15 @@ test.each([false, true])(
 
     render(<Alerts workflow={workflow} />)
 
-    expect(screen.getAllByText('Policy report')).toHaveLength(1)
+    expect(screen.getAllByText('Sandbox policy report')).toHaveLength(1)
     expect(screen.getByText('Apply skipped by policy')).toBeDefined()
+    expect(screen.queryByText('1 warning') !== null).toBe(withWarnings)
+    expect(
+      screen.queryByText('Sandbox apply deferred until the maintenance window.')
+    ).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
+
     expect(
       screen.getByText('Sandbox apply deferred until the maintenance window.')
     ).toBeDefined()
