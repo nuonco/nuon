@@ -140,9 +140,11 @@ func (a *branchConfigAPI) GetAppBranch(context.Context, string, string) (*models
 	return a.polls[a.fetches], nil
 }
 
-func (a *branchConfigAPI) GetAppBranchRuns(context.Context, string, string) ([]*models.AppWorkflow, error) {
+func (a *branchConfigAPI) GetAppBranchRunsWithQuery(
+	context.Context, string, string, *nuon.GetAppBranchRunsQuery,
+) ([]*models.AppWorkflow, bool, error) {
 	a.runLists++
-	return a.runs, nil
+	return a.runs, false, nil
 }
 
 func (a *branchConfigAPI) GetAppConfig(context.Context, string, string, *bool) (*models.AppAppConfig, error) {
@@ -202,6 +204,64 @@ func TestAwaitBranchConfig(t *testing.T) {
 		}
 		if api.fetches != 0 || api.runLists != 1 {
 			t.Fatalf("fetches=%d runLists=%d", api.fetches, api.runLists)
+		}
+	})
+}
+
+func TestAwaitBranchConfigSkipsRunsWithoutConfig(t *testing.T) {
+	origPoll, origTimeout := installcreate.BranchConfigPoll, installcreate.BranchConfigTimeout
+	installcreate.BranchConfigPoll = time.Millisecond
+	installcreate.BranchConfigTimeout = 50 * time.Millisecond
+	t.Cleanup(func() {
+		installcreate.BranchConfigPoll = origPoll
+		installcreate.BranchConfigTimeout = origTimeout
+	})
+
+	earlier := &models.AppAppBranchRun{ID: "run-1", Status: "success", AppConfigID: "cfg-1"}
+	previewWithConfig := &models.AppAppBranchRun{ID: "run-2", Status: "success", AppConfigID: "cfg-preview", PlanOnly: true}
+	runs := []*models.AppWorkflow{
+		{ID: "wf-3", AppBranchRuns: []*models.AppAppBranchRun{{ID: "run-3", Status: "not-attempted"}}},
+		{ID: "wf-2", AppBranchRuns: []*models.AppAppBranchRun{previewWithConfig}},
+		{ID: "wf-1", AppBranchRuns: []*models.AppAppBranchRun{earlier}},
+	}
+	active := &models.AppAppConfig{ID: "cfg-1", Status: models.AppAppConfigStatusActive}
+
+	t.Run("not-attempted latest run falls back to the last configured run", func(t *testing.T) {
+		api := &branchConfigAPI{runs: runs, cfg: active}
+		branch := &models.AppAppBranch{ID: "b1", Name: "main", LatestRun: &models.AppAppBranchRun{ID: "run-3", Status: "not-attempted"}}
+		got, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.LatestRun != earlier || api.fetches != 0 {
+			t.Fatalf("latest run = %+v after %d fetches, want %+v", got.LatestRun, api.fetches, earlier)
+		}
+		if branch.LatestRun.ID != "run-3" {
+			t.Fatal("input branch was mutated")
+		}
+	})
+
+	t.Run("preview latest run falls back even while in flight", func(t *testing.T) {
+		api := &branchConfigAPI{runs: runs, cfg: active}
+		branch := &models.AppAppBranch{ID: "b1", Name: "main", LatestRun: &models.AppAppBranchRun{ID: "run-4", Status: "running", PlanOnly: true}}
+		got, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.LatestRun != earlier {
+			t.Fatalf("latest run = %+v, want %+v", got.LatestRun, earlier)
+		}
+	})
+
+	t.Run("not-attempted latest run with no earlier config does not wait", func(t *testing.T) {
+		api := &branchConfigAPI{runs: runs[:2], cfg: active}
+		branch := &models.AppAppBranch{ID: "b1", Name: "main", LatestRun: &models.AppAppBranchRun{ID: "run-3", Status: "not-attempted"}}
+		_, err := (&appInstallSyncer{api: api, appID: "app"}).awaitBranchConfig(context.Background(), branch, false)
+		if err == nil || !strings.Contains(err.Error(), "no app config to apply") {
+			t.Fatalf("err = %v", err)
+		}
+		if api.fetches != 0 {
+			t.Fatalf("fetches = %d, want 0", api.fetches)
 		}
 	})
 }
