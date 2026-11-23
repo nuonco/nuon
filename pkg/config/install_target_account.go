@@ -10,9 +10,12 @@ import (
 //
 // The account is fixed at creation: UpdateInstallRequest carries no field for it, and
 // the phone-home secret's cross-account grant names a role in that specific account.
-// The AWS region and Azure location are fixed the same way, and the stack's quick-link
-// URL is built from them, so a silently ignored change leaves the config pointing at one
-// region while the stack runs in another. GCP region is left out because stack outputs
+// UpdateInstallRequest has no region or location either, so a change shows in the diff
+// and the sync then reports success. The AWS quick link embeds the region, so the
+// ignored change leaves the link pointing at one region while the stack runs in
+// another. Azure's quick link ignores location — the portal prompts for it — and the
+// createUiDefinition pins it afterwards, because deploying elsewhere strands resources
+// in a region the platform does not track. GCP region is left out because stack outputs
 // overwrite it after every stack run.
 // Without this guard the edit would either show as permanent drift or silently do
 // nothing, depending on which interface made it.
