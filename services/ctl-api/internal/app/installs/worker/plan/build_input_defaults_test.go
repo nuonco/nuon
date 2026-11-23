@@ -29,7 +29,6 @@ func TestApplyBuildInputDefaults(t *testing.T) {
 
 	tests := map[string]struct {
 		buildAppConfigID string
-		preVersion       bool
 		inputs           map[string]string
 		wantLookup       bool
 		want             map[string]string
@@ -57,12 +56,6 @@ func TestApplyBuildInputDefaults(t *testing.T) {
 			inputs:           map[string]string{"root_domain": "example.com"},
 			want:             map[string]string{"root_domain": "example.com"},
 		},
-		"history recorded before the version skips the lookup": {
-			buildAppConfigID: "app-build",
-			preVersion:       true,
-			inputs:           map[string]string{"root_domain": "example.com"},
-			want:             map[string]string{"root_domain": "example.com"},
-		},
 	}
 
 	for name, tc := range tests {
@@ -70,9 +63,6 @@ func TestApplyBuildInputDefaults(t *testing.T) {
 			var suite testsuite.WorkflowTestSuite
 			env := suite.NewTestWorkflowEnvironment()
 			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
-			if tc.preVersion {
-				env.OnGetVersion(buildInputDefaultsVersion, workflow.DefaultVersion, 1).Return(workflow.DefaultVersion)
-			}
 			var lookups []string
 			env.RegisterActivityWithOptions(func(_ context.Context, req activities.GetAppConfigRequest) (*app.AppConfig, error) {
 				lookups = append(lookups, req.ID)

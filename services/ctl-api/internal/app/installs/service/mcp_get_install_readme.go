@@ -34,7 +34,7 @@ func (s *service) mcpGetInstallReadme(ctx context.Context, _ *mcp.CallToolReques
 	if err != nil {
 		return nil, nil, err
 	}
-	readme, err := s.renderInstallReadme(ctx, orgID, install.ID)
+	readme, err := s.renderInstallReadme(ctx, install)
 	if err != nil {
 		return nil, nil, err
 	}

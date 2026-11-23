@@ -8,13 +8,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/syncstatus"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-type ResolveInstallDriftRequest alignment.ResolveRequest
+type ResolveInstallDriftRequest syncstatus.ResolveRequest
 
 func (r *ResolveInstallDriftRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(r); err != nil {
@@ -58,7 +58,7 @@ func (s *service) ResolveInstallDrift(ctx *gin.Context) {
 		return
 	}
 	installID := ctx.Param("install_id")
-	result, err := s.alignment.Resolve(ctx, org.ID, installID, (*alignment.ResolveRequest)(&req))
+	result, err := s.syncStatus.Resolve(ctx, org.ID, installID, (*syncstatus.ResolveRequest)(&req))
 	if err != nil {
 		ctx.Error(err)
 		return

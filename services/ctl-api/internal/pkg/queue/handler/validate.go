@@ -145,9 +145,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 
 	// record validate completion timestamp
-	skipCancelledStamp := h.canceled &&
-		workflow.GetVersion(ctx, handlerCancelledStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if !h.skipValidateStamps() && !skipCancelledStamp {
+	if !h.skipValidateStamps() && !h.canceled {
 		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: h.queueSignalID,
 			Status:        app.StatusInProgress,

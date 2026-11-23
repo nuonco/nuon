@@ -5,10 +5,29 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v50/github"
+	"go.temporal.io/sdk/temporal"
+
+	ghrepo "github.com/nuonco/nuon/pkg/github/repo"
 )
 
 const maxChangedFilePaths = 3000
 const maxComparedFilePaths = 300
+
+func validateChangedFilePathsInput(input *FetchChangedFilePathsInput) error {
+	if !ghrepo.IsCommitSHA(input.CommitSHA) {
+		return fmt.Errorf("commit_sha must be a full commit SHA")
+	}
+	if input.BaseSHA != "" && !ghrepo.IsCommitSHA(input.BaseSHA) {
+		return fmt.Errorf("base_sha must be a full commit SHA")
+	}
+	if input.BaseBranch != "" && !ghrepo.IsSafeGitRef(input.BaseBranch) {
+		return fmt.Errorf("base_branch is not a valid git ref")
+	}
+	if input.PRNumber != nil && *input.PRNumber <= 0 {
+		return fmt.Errorf("pr_number must be positive")
+	}
+	return nil
+}
 
 type FetchChangedFilePathsInput struct {
 	VcsConfigID string `json:"vcs_config_id" validate:"required"`
@@ -33,9 +52,17 @@ type ChangedFilePaths struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 60s
 func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChangedFilePathsInput) (*ChangedFilePaths, error) {
+	if err := validateChangedFilePathsInput(input); err != nil {
+		return nil, temporal.NewNonRetryableApplicationError(err.Error(), "InvalidChangedFilePathsInput", err)
+	}
+
 	owner, repo, client, err := a.resolveGithubClient(ctx, input.VcsConfigID)
 	if err != nil {
 		return nil, err
+	}
+
+	if input.PRNumber == nil && input.BaseSHA != "" {
+		return changedFilesBetweenSHAs(ctx, client, owner, repo, input.BaseSHA, input.CommitSHA)
 	}
 
 	out := &ChangedFilePaths{}
@@ -59,12 +86,8 @@ func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChan
 			if resp != nil {
 				nextPage = resp.NextPage
 			}
-		} else if input.BaseSHA != "" || input.BaseBranch != "" {
-			baseRef := input.BaseSHA
-			if baseRef == "" {
-				baseRef = input.BaseBranch
-			}
-			comparison, resp, cmpErr := client.Repositories.CompareCommits(ctx, owner, repo, baseRef, input.CommitSHA, opts)
+		} else if input.BaseBranch != "" {
+			comparison, resp, cmpErr := client.Repositories.CompareCommits(ctx, owner, repo, input.BaseBranch, input.CommitSHA, opts)
 			if cmpErr != nil {
 				if nrErr := nonRetryableGitHubError(cmpErr); nrErr != nil {
 					return nil, nrErr
@@ -110,4 +133,103 @@ func (a *Activities) FetchChangedFilePaths(ctx context.Context, input *FetchChan
 	}
 
 	return out, nil
+}
+
+func changedFilesBetweenSHAs(ctx context.Context, client *github.Client, owner, repo, base, head string) (*ChangedFilePaths, error) {
+	status, forward, count, err := compareCommitRange(ctx, client, owner, repo, base, head)
+	if err != nil {
+		return nil, err
+	}
+	wantReverse, truncated := commitRangeNeedsReverse(status, count)
+	if truncated {
+		return &ChangedFilePaths{Paths: forward, Truncated: true}, nil
+	}
+	if !wantReverse {
+		return &ChangedFilePaths{Paths: forward}, nil
+	}
+
+	_, reverse, reverseCount, err := compareCommitRange(ctx, client, owner, repo, head, base)
+	if err != nil {
+		return nil, err
+	}
+	names, truncated := mergeCommitRangeFiles(forward, reverse, reverseCount)
+	return &ChangedFilePaths{Paths: names, Truncated: truncated}, nil
+}
+
+func compareCommitRange(ctx context.Context, client *github.Client, owner, repo, base, head string) (string, []string, int, error) {
+	opts := &github.ListOptions{PerPage: 100}
+	var (
+		status string
+		names  []string
+	)
+	for {
+		comparison, resp, err := client.Repositories.CompareCommits(ctx, owner, repo, base, head, opts)
+		if err != nil {
+			if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+				return "", nil, 0, nrErr
+			}
+			return "", nil, 0, fmt.Errorf("unable to compare commits: %w", err)
+		}
+		if comparison == nil {
+			return "", nil, 0, fmt.Errorf("unable to compare commits: empty response")
+		}
+		if status == "" {
+			status = comparison.GetStatus()
+		}
+		names = append(names, commitFileNames(comparison.Files)...)
+		if len(names) >= maxComparedFilePaths {
+			return status, names[:maxComparedFilePaths], maxComparedFilePaths, nil
+		}
+		if resp == nil || resp.NextPage == 0 {
+			return status, names, len(names), nil
+		}
+		opts.Page = resp.NextPage
+	}
+}
+
+func commitRangeNeedsReverse(status string, fileCount int) (wantReverse, truncated bool) {
+	if fileCount >= maxComparedFilePaths {
+		return false, true
+	}
+	switch status {
+	case "ahead", "identical":
+		return false, false
+	case "behind", "diverged":
+		return true, false
+	default:
+		return false, true
+	}
+}
+
+func mergeCommitRangeFiles(forward, reverse []string, reverseCount int) ([]string, bool) {
+	if reverseCount >= maxComparedFilePaths {
+		return nil, true
+	}
+	seen := make(map[string]struct{}, len(forward)+len(reverse))
+	out := make([]string, 0, len(forward)+len(reverse))
+	for _, name := range forward {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, name)
+	}
+	for _, name := range reverse {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, name)
+	}
+	return out, false
+}
+
+func commitFileNames(files []*github.CommitFile) []string {
+	names := make([]string, 0, len(files))
+	for _, file := range files {
+		if path := file.GetFilename(); path != "" {
+			names = append(names, path)
+		}
+	}
+	return names
 }

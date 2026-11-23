@@ -30,7 +30,7 @@ import (
 func (s *service) GetAppSandboxBuilds(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
-	_, err := s.getApp(ctx, appID)
+	currentApp, err := s.appByNameOrID(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app: %w", err))
 		return
@@ -47,7 +47,7 @@ func (s *service) GetAppSandboxBuilds(ctx *gin.Context) {
 		Preload("AppBranchRun.VCSConnectionCommit").
 		Preload("AppBranchRun.AppBranch").
 		Preload("AppBranchRun.Preview").
-		Where("app_id = ?", appID).
+		Where(app.AppSandboxBuild{AppID: currentApp.ID, OrgID: currentApp.OrgID}).
 		Order("created_at DESC").
 		Find(&builds)
 	if res.Error != nil {
