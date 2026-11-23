@@ -75,8 +75,6 @@ func (m *model) createFormInputs() {
 
 		curVal := current[input.Name]
 		if input.Sensitive {
-			// The read API omits sensitive values, so this field starts empty.
-			// A blank field is left out of the update and the stored value stays.
 			ti.EchoMode = textinput.EchoPassword
 			ti.EchoCharacter = '•'
 			ti.Placeholder = "leave unchanged"
