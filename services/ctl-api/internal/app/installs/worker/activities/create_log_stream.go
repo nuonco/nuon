@@ -20,6 +20,7 @@ type CreateLogStreamRequest struct {
 	DeployID            string
 	ActionWorkflowRunID string
 	StepID              string
+	InstallID           string
 	ParentLogStreamID   string
 }
 
@@ -41,6 +42,11 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 	if req.StepID != "" && id == "" {
 		id = req.StepID
 		typ = "install_workflow_steps"
+	}
+
+	if req.InstallID != "" && id == "" {
+		id = req.InstallID
+		typ = "installs"
 	}
 
 	ls := app.LogStream{

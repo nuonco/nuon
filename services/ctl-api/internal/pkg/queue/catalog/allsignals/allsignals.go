@@ -95,6 +95,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionrunner"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/registryprune"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionrunner"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
