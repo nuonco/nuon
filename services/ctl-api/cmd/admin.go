@@ -110,6 +110,32 @@ func (c *cli) registerAdmin() {
 	migrationsCmd.AddCommand(migrationsListCmd)
 	adminCmd.AddCommand(migrationsCmd)
 
+	allowedHostsCmd := &cobra.Command{
+		Use:   "allowed-hosts",
+		Short: "inspect app config URLs against the allowed hosts",
+	}
+
+	var scanOpts adminops.AllowedHostsScanOptions
+	allowedHostsScanCmd := &cobra.Command{
+		Use:   "scan",
+		Short: "list every distinct app config URL by org and category, with its status under the allowed hosts in config",
+		Args:  cobra.NoArgs,
+		Run: func(*cobra.Command, []string) {
+			c.runAdmin("allowed-hosts scan", func(ctx context.Context, deps *adminDeps) (any, error) {
+				res, err := deps.Ops.ScanAllowedHosts(ctx, deps.Cfg.URLPolicy, scanOpts)
+				if err != nil {
+					return nil, err
+				}
+
+				writeAllowedHostsTable(os.Stdout, res.Rows)
+				return res, nil
+			})
+		},
+	}
+	allowedHostsScanCmd.Flags().BoolVar(&scanOpts.AllConfigs, "all-configs", false, "scan every stored config instead of the latest per app and install")
+	allowedHostsCmd.AddCommand(allowedHostsScanCmd)
+	adminCmd.AddCommand(allowedHostsCmd)
+
 	rootCmd.AddCommand(adminCmd)
 }
 
@@ -184,6 +210,28 @@ func writeMigrationsTable(w io.Writer, rows []migrations.MigrationModel) {
 			row.CreatedAt.UTC().Format(time.RFC3339),
 			row.UpdatedAt.UTC().Format(time.RFC3339),
 			firstLine(row.Error),
+		)
+	}
+
+	lipgloss.Fprintln(w, t)
+}
+
+func writeAllowedHostsTable(w io.Writer, rows []adminops.AllowedHostsScanRow) {
+	t := table.New().
+		Border(lipgloss.NormalBorder()).
+		Headers("ORG", "CATEGORY", "VALUE", "STATUS", "APPS", "FIELDS").
+		StyleFunc(func(int, int) lipgloss.Style {
+			return lipgloss.NewStyle().Padding(0, 1)
+		})
+
+	for _, row := range rows {
+		t.Row(
+			row.OrgID,
+			row.Category,
+			row.Value,
+			row.Status,
+			fmt.Sprintf("%d", len(row.AppIDs)),
+			strings.Join(row.Fields, ", "),
 		)
 	}
 

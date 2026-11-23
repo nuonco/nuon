@@ -171,10 +171,10 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Description of the install stack. Supports Go templating").
 		Example("Infrastructure stack for MyApp application").
 		Field("vpc_nested_template_url").Short("VPC nested template URL").
-		Long("URL to the CloudFormation nested template for VPC resources").
+		Long("URL to the CloudFormation nested template for VPC resources. The control plane operator may restrict this URL to a list of allowed locations; a sync that sets a value outside the list is rejected.").
 		Example("https://s3.amazonaws.com/bucket/vpc-template.yaml").
 		Field("runner_nested_template_url").Short("runner nested template URL").
-		Long("URL to the CloudFormation nested template for the Nuon runner infrastructure").
+		Long("URL to the CloudFormation nested template for the Nuon runner infrastructure. The control plane operator may restrict this URL to a list of allowed locations; a sync that sets a value outside the list is rejected.").
 		Example("https://s3.amazonaws.com/bucket/runner-template.yaml").
 		Field("deployment_scope").Short("deployment scope").
 		Long("Scope the generated install stack root template deploys at. Only supported for 'azure-bicep'. Supported values: 'resource_group' (the default) confines every resource to the install's own resource group; 'subscription' deploys at subscription scope, which lets nested stack templates create their own resource groups — needed when an app splits networking, application and security resources across several groups.").

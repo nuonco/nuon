@@ -54,7 +54,7 @@ func TestAcaMediumUIDefinition(t *testing.T) {
 	require.NoError(t, config.ValidateAzureUIDefinition(cfg.Stack.Type, cfg.Stack.UIDefinition))
 	require.NoError(t, config.ValidateCreateUIDefinition(cfg.Stack.UIDefinitionContents))
 
-	stackCfg, err := build.StackConfig(cfg.Stack, "app-aca-medium", "cfg-aca-medium")
+	stackCfg, err := build.StackConfig(cfg.Stack, "app-aca-medium", "cfg-aca-medium", nil)
 	require.NoError(t, err)
 	require.NotNil(t, stackCfg.UIDefinition)
 	require.Equal(t, config.CustomNestedStackStatusPending, stackCfg.UIDefinition.Status)

@@ -37,10 +37,11 @@ func rolesByType(roles []app.AppAWSIAMRoleConfig, typ app.AWSIAMRoleType) []stri
 func TestRunnerConfigKeepsPhoneHomeScriptURL(t *testing.T) {
 	const scriptURL = "https://example.com/phonehome.py"
 
-	obj := RunnerConfig(RunnerInputFromConfig(config.AppRunnerConfig{
+	obj, err := RunnerConfig(RunnerInputFromConfig(config.AppRunnerConfig{
 		RunnerType:         string(app.AppRunnerTypeAWS),
 		PhoneHomeScriptURL: scriptURL,
-	}, "app1", "cfg1"))
+	}, "app1", "cfg1", nil))
+	require.NoError(t, err)
 
 	assert.Equal(t, scriptURL, obj.PhoneHomeScriptURL)
 }
@@ -58,11 +59,12 @@ func TestRunnerConfigKeepsImageSettings(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			obj := RunnerConfig(RunnerInputFromConfig(config.AppRunnerConfig{
+			obj, err := RunnerConfig(RunnerInputFromConfig(config.AppRunnerConfig{
 				RunnerType:      string(app.AppRunnerTypeAWS),
 				ImageAutoUpdate: tc.autoUpdate,
 				ImageID:         tc.imageID,
-			}, "app1", "cfg1"))
+			}, "app1", "cfg1", nil))
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.autoUpdate, obj.ImageAutoUpdate)
 			assert.Equal(t, tc.imageID, obj.ImageID)
@@ -345,7 +347,7 @@ func TestStackConfigUIDefinitionIsOptional(t *testing.T) {
 		Type:        string(app.StackTypeAzure),
 		Name:        "stack",
 		Description: "stack",
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.NoError(t, err)
 	assert.Nil(t, obj.UIDefinition)
 
@@ -354,7 +356,7 @@ func TestStackConfigUIDefinitionIsOptional(t *testing.T) {
 		Name:         "stack",
 		Description:  "stack",
 		UIDefinition: "./arm/ui.json",
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.NoError(t, err)
 	assert.Nil(t, obj.UIDefinition)
 
@@ -364,7 +366,7 @@ func TestStackConfigUIDefinitionIsOptional(t *testing.T) {
 		Description:          "stack",
 		UIDefinition:         "./arm/ui.json",
 		UIDefinitionContents: `{"handler":"Microsoft.Azure.CreateUIDef"}`,
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.ErrorContains(t, err, "createUiDefinition")
 }
 
@@ -376,7 +378,7 @@ func TestStackConfigKeepsCustomNestedStacksPending(t *testing.T) {
 		CustomNestedStacks: []config.CustomNestedStack{
 			{Name: "ns", TemplateURL: "https://example.com/t.yaml", Contents: "Resources: {}"},
 		},
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.NoError(t, err)
 
 	require.Len(t, obj.CustomNestedStacks, 1)
@@ -393,7 +395,7 @@ func TestStackConfigDoesNotMutateInputStatus(t *testing.T) {
 			{Name: "ns", TemplateURL: "https://example.com/t.yaml", Contents: "Resources: {}"},
 		},
 	}
-	_, err := StackConfig(in, "app1", "cfg1")
+	_, err := StackConfig(in, "app1", "cfg1", nil)
 	require.NoError(t, err)
 	assert.Empty(t, in.CustomNestedStacks[0].Status)
 }
@@ -449,7 +451,7 @@ func TestStackConfigDeploymentScope(t *testing.T) {
 				Name:            "stack",
 				Description:     "stack",
 				DeploymentScope: tc.scope,
-			}, "app1", "cfg1")
+			}, "app1", "cfg1", nil)
 
 			if tc.wantErr != "" {
 				require.Error(t, err)
@@ -468,7 +470,7 @@ func TestStackConfigRejectsNestedStackWithoutContents(t *testing.T) {
 		Name:               "stack",
 		Description:        "stack",
 		CustomNestedStacks: []config.CustomNestedStack{{Name: "ns", TemplateURL: "https://example.com/t.yaml"}},
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "contents is required")
 }
@@ -490,7 +492,7 @@ func TestStackConfigRejectsInvalidCustomStackIdentity(t *testing.T) {
 				Name:               "stack",
 				Description:        "stack",
 				CustomNestedStacks: stacks,
-			}, "app1", "cfg1")
+			}, "app1", "cfg1", nil)
 			require.Error(t, err)
 		})
 	}
@@ -518,7 +520,7 @@ func TestStackConfigRejectsAzureBicepCustomStackSource(t *testing.T) {
 				Name:               "stack",
 				Description:        "stack",
 				CustomNestedStacks: tc.stacks,
-			}, "app1", "cfg1")
+			}, "app1", "cfg1", nil)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.wantErr)
 		})
@@ -533,7 +535,7 @@ func TestStackConfigAllowsAzureARMJSONCustomStack(t *testing.T) {
 		CustomNestedStacks: []config.CustomNestedStack{
 			{Name: "storage", Index: 0, TemplateURL: "./arm/storage.json", Contents: `{"$schema":"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#","contentVersion":"1.0.0.0","resources":[]}`},
 		},
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.NoError(t, err)
 	require.Len(t, obj.CustomNestedStacks, 1)
 	assert.Equal(t, config.CustomNestedStackStatusPending, obj.CustomNestedStacks[0].Status)
@@ -547,7 +549,7 @@ func TestStackConfigRejectsInvalidGCPCustomStackModule(t *testing.T) {
 		CustomNestedStacks: []config.CustomNestedStack{
 			{Name: "bucket", Index: 0, TemplateURL: "https://example.com/template.tf", Contents: "{}"},
 		},
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "must reference a gcp modules path")
 }
@@ -560,7 +562,7 @@ func TestStackConfigAllowsGCPModuleWithoutTemplateContents(t *testing.T) {
 		CustomNestedStacks: []config.CustomNestedStack{
 			{Name: "storage", Index: 0, TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket"},
 		},
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.NoError(t, err)
 	require.Len(t, obj.CustomNestedStacks, 1)
 	assert.Equal(t, config.CustomNestedStackStatusReady, obj.CustomNestedStacks[0].Status)
@@ -574,7 +576,7 @@ func TestStackConfigRejectsGCPDNSWithoutName(t *testing.T) {
 		CustomNestedStacks: []config.CustomNestedStack{
 			{Name: "dns", Index: 0, TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/dns"},
 		},
-	}, "app1", "cfg1")
+	}, "app1", "cfg1", nil)
 	require.EqualError(t, err, "custom_nested_stacks[0] (dns): parameters.dns_name is required for the GCP dns module")
 }
 
