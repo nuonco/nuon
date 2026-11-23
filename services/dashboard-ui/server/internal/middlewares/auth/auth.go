@@ -56,13 +56,18 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		)
 		if err != nil {
 			m.l.Error("failed to create nuon client", zap.Error(err))
-			c.Redirect(http.StatusFound, loginURL)
-			c.Abort()
+			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
 		m.l.Debug("auth middleware calling ValidateToken", zap.String("path", c.Request.URL.Path))
 		if err := client.ValidateToken(c.Request.Context()); err != nil {
+			if !IsUnauthorized(err) {
+				m.l.Error("auth check could not verify the session", zap.Error(err))
+				c.String(http.StatusServiceUnavailable, "Your session could not be verified. Try again in a minute.")
+				c.Abort()
+				return
+			}
 			m.l.Warn("auth check failed", zap.Error(err))
 			c.Redirect(http.StatusFound, loginURL)
 			c.Abort()
