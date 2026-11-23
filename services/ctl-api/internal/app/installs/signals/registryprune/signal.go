@@ -28,8 +28,9 @@ const (
 )
 
 type Signal struct {
-	InstallID string `json:"install_id"`
-	DryRun    bool   `json:"dry_run,omitempty"`
+	InstallID          string `json:"install_id"`
+	DryRun             bool   `json:"dry_run,omitempty"`
+	GracePeriodSeconds *int64 `json:"grace_period_seconds,omitempty"`
 
 	runnerJobID string
 }
@@ -86,10 +87,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	grace := GracePeriod
+	if s.GracePeriodSeconds != nil {
+		grace = time.Duration(*s.GracePeriodSeconds) * time.Second
+	}
+
 	tags, err := activities.AwaitGetRegistryPruneTags(ctx, &activities.GetRegistryPruneTagsRequest{
 		InstallID:      s.InstallID,
 		SharedRepo:     true,
-		GracePeriod:    GracePeriod,
+		GracePeriod:    grace,
 		IncludeWhenOff: s.DryRun,
 	})
 	if err != nil {
@@ -113,7 +119,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		OwnedTags:        tags.OwnedTags,
 		OwnedTagPatterns: tags.OwnedTagPatterns,
 		KeepTags:         tags.KeepTags,
-		GracePeriod:      GracePeriod,
+		GracePeriod:      grace,
 		MaxDeletes:       MaxDeletes,
 		WorkflowID:       fmt.Sprintf("%s-create-oci-prune-plan", wfID),
 	})

@@ -14,12 +14,13 @@ import (
 )
 
 type AdminRegistryPruneRequest struct {
-	DryRun bool `json:"dry_run"`
+	DryRun             bool   `json:"dry_run"`
+	GracePeriodSeconds *int64 `json:"grace_period_seconds,omitempty" extensions:"x-nullable"`
 }
 
 // @ID						AdminRegistryPrune
 // @Summary				enqueue install registry prune
-// @Description			Enqueues registry-prune for this install. With dry_run it reports what would be deleted, even when registry retention is off.
+// @Description			Enqueues registry-prune for this install. With dry_run it reports what would be deleted, even when registry retention is off. grace_period_seconds overrides the default 30 day grace period for this run.
 // @Param					install_id	path	string						true	"install ID"
 // @Param					req			body	AdminRegistryPruneRequest	true	"Input"
 // @Tags					installs/admin
@@ -53,8 +54,12 @@ func (s *service) AdminRegistryPrune(ctx *gin.Context) {
 	}
 
 	resp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID:   queueID,
-		Signal:    &registryprune.Signal{InstallID: install.ID, DryRun: req.DryRun},
+		QueueID: queueID,
+		Signal: &registryprune.Signal{
+			InstallID:          install.ID,
+			DryRun:             req.DryRun,
+			GracePeriodSeconds: req.GracePeriodSeconds,
+		},
 		OwnerID:   install.ID,
 		OwnerType: plugins.TableName(s.db, app.Install{}),
 	})
