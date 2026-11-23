@@ -25,7 +25,9 @@ type AppAppBranchRunConfig struct {
 	// mode
 	Mode AppAppBranchRunMode `json:"mode,omitempty"`
 
-	// paths
+	// Paths and PathsIgnore are mutually exclusive, and neither accepts a pattern
+	// starting with "!". The check on app_branch_configs.run_config enforces this;
+	// AutoMigrate creates it, it is not a migration.
 	Paths []string `json:"paths"`
 
 	// paths ignore

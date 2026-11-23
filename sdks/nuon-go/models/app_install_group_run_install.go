@@ -23,7 +23,8 @@ type AppInstallGroupRunInstall struct {
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
-	// Phase is which stage of the group the install is in: "deploy" or "runbook".
+	// Phase is which stage of the group the install is in: "deploy", "desired",
+	// or "runbook".
 	Phase string `json:"phase,omitempty"`
 
 	// ReleaseReason is why the group stopped waiting on this install.
