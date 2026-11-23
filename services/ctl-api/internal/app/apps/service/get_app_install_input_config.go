@@ -36,12 +36,13 @@ func (s *service) GetAppInstallInputConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	appBranchID := ctx.Query("app_branch_id")
 
-	if _, err := s.findApp(ctx, org.ID, appID); err != nil {
+	currentApp, err := s.findApp(ctx, org.ID, appID)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	inputConfig, err := s.installsHelpers.InputConfigForNewInstall(ctx, org.ID, appID, appBranchID)
+	inputConfig, err := s.installsHelpers.InputConfigForNewInstall(ctx, org.ID, currentApp.ID, appBranchID)
 	if err != nil {
 		ctx.Error(err)
 		return

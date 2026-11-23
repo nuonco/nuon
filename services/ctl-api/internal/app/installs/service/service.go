@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/alignment"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/syncstatus"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -68,7 +68,7 @@ type service struct {
 	cfg                  *internal.Config
 	componentHelpers     *componenthelpers.Helpers
 	helpers              *helpers.Helpers
-	alignment            *alignment.Helpers
+	syncStatus           *syncstatus.Helpers
 	accountsHelpers      *accountshelpers.Helpers
 	acctClient           *account.Client
 	appsHelpers          *appshelpers.Helpers
@@ -102,6 +102,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	{
 		apps.GET("/installs", s.GetAppInstalls)
 		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
+
+		apps.GET("/fleet", s.GetAppFleet)
+		apps.GET("/fleet/installs", s.GetAppFleetInstalls)
 	}
 
 	// deprecated sandbox run route
@@ -422,7 +425,7 @@ func New(params Params) (*service, error) {
 		mw:                   params.MW,
 		componentHelpers:     params.ComponentHelpers,
 		helpers:              params.Helpers,
-		alignment:            alignment.New(params.DB, params.Helpers, params.BlobService, params.L),
+		syncStatus:           syncstatus.New(params.DB, params.Helpers, params.BlobService, params.L),
 		accountsHelpers:      params.AccountsHelpers,
 		acctClient:           params.AcctClient,
 		queueClient:          params.QueueClient,

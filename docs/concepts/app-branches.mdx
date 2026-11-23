@@ -85,7 +85,7 @@ build, plan, and apply to a preview install. See [Previews](/guides/app-branches
 
 | Trigger (dashboard / CLI) | What starts it | Branch config |
 | --- | --- | --- |
-| **Commit pushed** | Push to the tracked branch (fleet run) | `[run] mode = "push"` (default) |
+| **Commit pushed** | Push to the tracked branch that passes the `[run]` path filters (fleet run) | `[run] mode = "push"` (default) |
 | **Pull request** | PR opened or updated against the tracked branch (**preview** only; no install groups) | `[preview]` settings (GitHub App for comments and statuses) |
 | **Manual run** | `nuon branches trigger`, API, or dashboard (fleet run) | Always available |
 | **Tag pushed** | Tag matching `tag_prefix` on that branch's history (fleet run) | `[run] mode = "on_tag"` |
@@ -168,8 +168,8 @@ Know these constraints before you design your branch layout:
 - An install can belong to **one app branch** at a time.
 - Two branches of the same app cannot use an **identical label selector**.
 - When `install_groups` is non-empty, **exactly one** install group must set `default = true`.
-- Every qualifying event on the tracked branch can start a run. Scope what a branch watches with `directory` on the
-  repo block and, when several apps share a repo, `ignore_changes_regex`.
+- Every push and pull request starts a run unless you set `[run].paths` or `[run].paths_ignore`. See
+  [Filter runs by changed paths](/guides/app-branches#filter-runs-by-changed-paths).
 
 ## Migrating to app branches
 
@@ -180,9 +180,6 @@ If you’re moving off CLI-driven `nuon apps sync`, see the [App branch migratio
 <CardGroup cols={2}>
   <Card title="Configure app branches" icon="screwdriver-wrench" href="/guides/app-branches">
     Write a branch config, structure install groups, sync with `nuon branches sync`, and optionally set up previews.
-  </Card>
-  <Card title="Walkthrough" icon="rocket" href="/get-started/app-branches-walkthrough">
-    Add an app branch to the `eks-simple` example app template end to end.
   </Card>
   <Card title="Branch config reference" icon="file" href="/config-ref/branch">
     Every field in a branch file.

@@ -364,7 +364,7 @@ sandbox and components unprovisioned:
 	componentsDeployCmd := &cobra.Command{
 		Use:   "deploy",
 		Short: "Deploy an install component",
-		Long:  "Deploy a single component on an install (alias for `nuon installs deploys create --type=deploy`). Uses the component's latest build unless --build-id is given.",
+		Long:  "Deploy a single component on an install (alias for `nuon installs deploys create --type=deploy`). Uses the component's latest active build on the install's app branch unless --build-id is given.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
 			return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, requestID, PrintJSON)
@@ -374,7 +374,7 @@ sandbox and components unprovisioned:
 	componentsDeployCmd.MarkFlagRequired("install-id")
 	componentsDeployCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name to deploy")
 	componentsDeployCmd.MarkFlagRequired("component-id")
-	componentsDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID to deploy (defaults to the component's latest build)")
+	componentsDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID to deploy (defaults to the component's latest active build on the install's app branch)")
 	componentsDeployCmd.Flags().BoolVar(&deployDeps, "dependents", false, "Trigger a deploy for any component that depends on this component")
 	componentsDeployCmd.Flags().BoolVar(&deployDependencies, "dependency-images", false, "Sync any images that this component depends on")
 	addRequestIDFlag(componentsDeployCmd, &requestID)
@@ -519,7 +519,7 @@ sandbox and components unprovisioned:
 		Long: `Create a deploy for a single component on an install.
 
 --type selects the operation:
-  --type=deploy     deploy the component (uses its latest build unless --build-id is given)
+  --type=deploy     deploy the component (uses its latest active build on the install's app branch unless --build-id is given)
   --type=teardown   teardown the component`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
@@ -539,7 +539,7 @@ sandbox and components unprovisioned:
 	deploysCreateCmd.MarkFlagRequired("component-id")
 	deploysCreateCmd.Flags().StringVar(&deployType, "type", "", "The deploy type: deploy or teardown")
 	deploysCreateCmd.MarkFlagRequired("type")
-	deploysCreateCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID to deploy (defaults to the component's latest build; --type=deploy only)")
+	deploysCreateCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID to deploy (defaults to the component's latest active build on the install's app branch; --type=deploy only)")
 	deploysCreateCmd.Flags().BoolVar(&deployDeps, "dependents", false, "Trigger a deploy for any component that depends on this component (--type=deploy only)")
 	deploysCreateCmd.Flags().BoolVar(&deployDependencies, "dependency-images", false, "Sync any images that this component depends on (--type=deploy only)")
 	deploysCreateCmd.Flags().StringVar(&roleName, "role", "", "IAM role name to use (--type=teardown only; omit to use the default)")

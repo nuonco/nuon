@@ -1,7 +1,7 @@
 ---
 title: "Configure app branches"
 description: "Connect a git branch to your app template, organize installs into install groups, and roll changes out across your fleet from a git push."
-keywords: ["configure app branches", "branch.toml", "install_groups", "install groups", "label installs", "nuon branches sync", "nuon branches trigger", "nuon branches preview", "PR preview setup", "staged rollout setup", "ignore_changes_regex"]
+keywords: ["configure app branches", "branch.toml", "install_groups", "install groups", "label installs", "nuon branches sync", "nuon branches trigger", "nuon branches preview", "PR preview setup", "staged rollout setup", "ignore_changes_regex", "paths", "paths_ignore"]
 ---
 
 This guide walks through setting up an [app branch](/concepts/app-branches) on an existing app template: writing the branch
@@ -84,6 +84,38 @@ Use `manual_only` when nothing automatic should start a fleet run. Manual trigge
 dashboard) remain available in every mode.
 
 Full trigger table: [What triggers an app branch run](/concepts/app-branches#what-triggers-an-app-branch-run).
+
+### Filter runs by changed paths
+
+By default, every push and pull request starts a run. The repo block's `directory` does not filter runs. Set `paths`
+to start a run only when a changed file matches:
+
+```toml
+[run]
+mode  = "push"
+paths = ["my-app/**", "shared/helm/**"]
+```
+
+Or skip runs when every changed file matches `paths_ignore`:
+
+```toml
+[run]
+paths_ignore = ["docs/**", "**/*.md"]
+```
+
+- Patterns are globs relative to the repository root. `*` matches within one directory and `**` matches across
+  directories, including none.
+- `paths` and `paths_ignore` are mutually exclusive, and neither list accepts a pattern starting with `!`.
+- Patterns cannot be absolute or contain `..`.
+- In `push` mode, a push that matches nothing does not create a run. A pull request that matches nothing creates a preview run marked
+  not attempted, hidden from the runs list, and posts a success status when `send_statuses_on_ignore` is set.
+- `on_github_label` runs obey path filters, compared against the merge push. Tag runs, manual triggers and forced
+  runs ignore them.
+- When Nuon cannot read the complete list of changed files, for example on the first push of a branch or a diff
+  over 300 files, the run starts.
+
+Path filters decide when runs start. They are not an access control: anyone who can push to the tracked branch can
+change them.
 
 ### One branch file or several
 
@@ -415,18 +447,23 @@ feedback. A `[public_repo]` branch is fine if the owner is connected.
 
 ## Multiple apps in one repository
 
-In a repository with several app configs (for example `example-app-configs`), set `ignore_changes_regex` so this
-branch only runs when something under *its* tree changed. The value is an RE2 pattern matched against **every**
-changed file path; if the entire changed set matches, the run is not attempted.
+In a repository with several app configs (for example `example-app-configs`), set each branch's `directory` to its
+app's directory and set `[run].paths` so changes to other apps do not run the branch:
 
 ```toml
-# Skip runs when every changed path is outside this app's directory (here: my-app/).
-ignore_changes_regex    = "^([^m]|m([^y]|y([^-]|-([^a]|a([^p]|p[^/]))))).*"
 send_statuses_on_ignore = true
+
+[connected_repo]
+repo      = "acmeco/example-app-configs"
+directory = "my-app"
+branch    = "main"
+
+[run]
+paths = ["my-app/**", "shared/**"]
 ```
 
-`send_statuses_on_ignore` posts a successful commit status when a run is skipped so a required check does not block
-the PR.
+`send_statuses_on_ignore` posts a successful commit status when a pull request preview is skipped, so a required check
+does not block the PR. `ignore_changes_regex` is deprecated. Use `[run].paths` or `[run].paths_ignore`.
 
 ## Roll back a change
 
@@ -461,8 +498,8 @@ exactly one install group.
 **The branch synced but has no install groups.** The branch config is missing its `[connected_repo]` /
 `[public_repo]` block, or install groups were omitted. Add them and `nuon branches sync` again.
 
-**A push did not start a run.** Check `[run].mode`, that `branch` matches the ref you pushed, and
-`ignore_changes_regex` (a change outside this app's tree in a shared repo is skipped on purpose).
+**A push did not start a run.** Check `[run].mode`, that `branch` matches the ref you pushed, and `[run].paths` or
+`[run].paths_ignore` (a push that matches nothing is skipped on purpose). `ignore_changes_regex` is deprecated.
 
 **The pull request has no Nuon comment.** Your org has no GitHub App connection for that repository's owner, or
 `[preview].comment` is false. The preview run itself can still succeed.
@@ -478,9 +515,6 @@ exactly one install group.
 <CardGroup cols={2}>
   <Card title="How app branches work" icon="lightbulb" href="/concepts/app-branches">
     Triggers, structure patterns, and install version history.
-  </Card>
-  <Card title="Walkthrough" icon="rocket" href="/get-started/app-branches-walkthrough">
-    Roll a change through the `eks-simple` example app end to end.
   </Card>
   <Card title="Roll back an install" icon="clock-rotate-left" href="/guides/rollback-install-config">
     Re-apply a previous config version to an install or a whole install group.

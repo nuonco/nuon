@@ -17,7 +17,6 @@ import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text, type TTextTheme } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Tooltip } from '@/components/common/Tooltip'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { GroupLabels } from '@/components/branches/InstallGroupCards/GroupLabels'
 import { Panel } from '@/components/surfaces/Panel'
@@ -154,6 +153,53 @@ const ROLLOUT_BAR_CLASS: Record<TRolloutState, string> = {
   applied: 'bg-green-600 dark:bg-green-500',
   behind: 'bg-orange-500 dark:bg-orange-400',
   unknown: 'bg-cool-grey-300 dark:bg-dark-grey-600',
+}
+
+const ROLLOUT_COUNT_THEME: Record<TRolloutState, 'success' | 'warn' | 'neutral'> = {
+  applied: 'success',
+  behind: 'warn',
+  unknown: 'neutral',
+}
+
+const ROLLOUT_COUNT_LABEL: Record<TRolloutState, string> = {
+  applied: 'on',
+  behind: 'not on',
+  unknown: 'not tracked',
+}
+
+const GroupRolloutCounts = ({
+  group,
+  match,
+  context,
+}: {
+  group: TFleetGroup
+  match: TFleetMatch
+  context: TFleetContext
+}) => {
+  const counts: Record<TRolloutState, number> = {
+    applied: 0,
+    behind: 0,
+    unknown: 0,
+  }
+  for (const install of group.installs) counts[rolloutState(install, context)]++
+  if (match.active || (!counts.applied && !counts.behind))
+    return (
+      <Text variant="subtext" theme="neutral">
+        {groupCountText(group, match, context)}
+      </Text>
+    )
+  const shown = (['applied', 'behind', 'unknown'] as const).filter(
+    (state) => counts[state] > 0
+  )
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      {shown.map((state) => (
+        <Badge key={state} size="sm" theme={ROLLOUT_COUNT_THEME[state]}>
+          {counts[state]} {ROLLOUT_COUNT_LABEL[state]}
+        </Badge>
+      ))}
+    </span>
+  )
 }
 
 const RolloutBadge = ({ state }: { state: TRolloutState }) =>
@@ -697,8 +743,11 @@ const GroupRolloutBars = ({
       PROGRESS_ORDER[rolloutState(a, context)] -
       PROGRESS_ORDER[rolloutState(b, context)]
   )
+  const { on, off } = rolloutCounts(installs, context)
   return (
     <div
+      role="img"
+      aria-label={`${on} applied, ${off} not applied, ${installs.length - on - off} not tracked`}
       className={cn(
         'flex h-5 overflow-hidden rounded-sm',
         installs.length === 1 ? 'w-12' : 'w-full'
@@ -707,32 +756,14 @@ const GroupRolloutBars = ({
       {bars.map((install) => {
         const state = rolloutState(install, context)
         return (
-          <Tooltip
+          <div
             key={install.id ?? install.name}
-            position="top"
-            className="flex h-full min-w-0 flex-1"
-            tipContentClassName="!whitespace-normal !w-auto !p-2"
-            tipContent={
-              <div className="flex flex-col gap-0.5 w-44">
-                <Text variant="subtext" weight="strong" family="mono">
-                  {install.name}
-                </Text>
-                <Text variant="label" theme="neutral">
-                  {ROLLOUT_LABEL[state]}
-                </Text>
-              </div>
-            }
-          >
-            <div
-              aria-label={`${install.name}: ${ROLLOUT_LABEL[state]}`}
-              tabIndex={0}
-              className={cn(
-                'h-full w-full focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary-400/80',
-                ROLLOUT_BAR_CLASS[state],
-                match.active && !isMatch(install, match) && 'opacity-25'
-              )}
-            />
-          </Tooltip>
+            className={cn(
+              'h-full min-w-0 flex-1',
+              ROLLOUT_BAR_CLASS[state],
+              match.active && !isMatch(install, match) && 'opacity-25'
+            )}
+          />
         )
       })}
     </div>
@@ -845,33 +876,24 @@ const FleetGroupCard = ({
   branch,
   group,
   statusById,
-  labelColors,
   match,
   context,
 }: {
   branch: TFleetBranch
   group: TFleetGroup
   statusById: Record<string, TInstallStatus>
-  labelColors?: Record<string, string>
   match: TFleetMatch
   context: TFleetContext
 }) => (
-  <Card className="!p-4 !gap-3 w-64 shrink-0">
+  <Card className="!p-4 !gap-3 min-w-0">
     <GroupName group={group} />
-    {group.labels ? (
-      <div className="flex flex-wrap gap-1">
-        <GroupSelectorLabels group={group} labelColors={labelColors} />
-      </div>
-    ) : null}
     <GroupRolloutBars
       installs={group.installs}
       match={match}
       context={context}
     />
-    <div className="flex items-center justify-between gap-2">
-      <Text variant="subtext" theme="neutral">
-        {groupCountText(group, match, context)}
-      </Text>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <GroupRolloutCounts group={group} match={match} context={context} />
       <Panel
         panelKey={`fleet-group-${branch.key}-${group.key}`}
         size="half"
@@ -896,14 +918,12 @@ const FleetGroupCard = ({
 const FleetLanes = ({
   branches,
   statusById,
-  labelColors,
   match,
   context,
   controls,
 }: {
   branches: TFleetBranch[]
   statusById: Record<string, TInstallStatus>
-  labelColors?: Record<string, string>
   match: TFleetMatch
   context: TFleetContext
   controls: TBranchControls
@@ -917,14 +937,13 @@ const FleetLanes = ({
           context={context}
           controls={controls}
         />
-        <div className="flex items-stretch gap-4 overflow-x-auto pb-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {branch.groups.map((group) => (
             <FleetGroupCard
               key={group.key}
               branch={branch}
               group={group}
               statusById={statusById}
-              labelColors={labelColors}
               match={match}
               context={context}
             />
@@ -1297,7 +1316,6 @@ export const InstallFleet = ({
         <FleetLanes
           branches={fleet}
           statusById={statusById}
-          labelColors={labelColors}
           match={match}
           context={context}
           controls={controls}

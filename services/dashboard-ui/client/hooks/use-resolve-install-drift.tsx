@@ -8,10 +8,10 @@ import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { resolveInstallDrift } from '@/lib'
-import type { TAPIError, TInstallAlignmentResource } from '@/types'
+import type { TAPIError, TInstallResourceSyncStatusResource } from '@/types'
 
 export type TResolveInstallDriftInput = {
-  resource: TInstallAlignmentResource
+  resource: TInstallResourceSyncStatusResource
   approvedPlanId?: string
 }
 

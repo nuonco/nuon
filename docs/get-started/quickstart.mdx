@@ -5,32 +5,30 @@ boost: 5
 keywords: ["getting started", "first deployment", "example app", "try Nuon", "deploy example app", "test account", "install guide", "nuon branches sync", "nuon branches trigger", "nuon installs create", "nuon auth login"]
 ---
 
-<Note>
-You'll need two things before you start:
-- A Nuon Cloud account — [sign up for the free trial](https://app.nuon.co/).
-- An AWS account to deploy the app into.
-</Note>
+import { TryWithYourAgent } from "/snippets/try-with-your-agent.jsx";
 
-Copy and paste the flow below, or follow the walkthrough underneath for detail on each step of the Quickstart.
+No account yet? [Sign up for the free trial](https://app.nuon.co/), then run this Quickstart with your agent and the [Nuon MCP](/guides/agents/setup) server, or follow the guide below.
 
-```sh
-# 1. Install the CLI
+<TryWithYourAgent
+  title="Run the Quickstart"
+  prompt={`1. Install the CLI
 brew install nuonco/tap/nuon
 
-# 2. Authenticate with Nuon Cloud
+2. Authenticate with Nuon Cloud
 nuon auth login
 
-# 3. Clone Nuon's example apps repo 
+3. Clone Nuon's example apps repo
 git clone https://github.com/nuonco/example-app-configs
 
-# 4. Create the app and sync its app branch, which starts the first run. (Kubernetes on AWS shown here)
+4. Create the app and sync its app branch, which starts the first run. (Kubernetes on AWS shown here)
+
 cd example-app-configs/eks-simple
 nuon apps create --name eks-simple
 nuon branches sync --file branch.toml
 
-# 5. Install the app in your AWS account
-nuon installs create --name <install-name> --region <region>
-```
+5. Install the app in your AWS account
+nuon installs create --name <install-name> --region <region>`}
+/>
 
 ## Install the CLI
 
@@ -103,10 +101,6 @@ nuon installs create --name <install-name> --region <region>
 The CLI asks which app branch owns the install. Pick `main`. In a script, pass `--app-branch-id` with the branch ID
 that `nuon branches list` prints.
 
-
-## Guided Walkthroughs
-
-For guided walkthroughs including this eks-simple app and EC2 and serverless apps, see [Create Your First App Template](/get-started/create-your-first-app).
 
 ## Deploy Your Own App
 

@@ -1,0 +1,408 @@
+---
+title: "Configure an app template"
+description: "Configure app templates using TOML configuration files"
+keywords: ["TOML config", "app directory structure", "metadata.toml", "sandbox.toml", "inputs.toml", "components directory", "config file reference", "TOML configuration", "app.toml", "config files", "app config", "configuration overview"]
+---
+
+Config files allow you to define an app template using TOML files. You keep
+them in git, and Nuon reads them from there each time your app branch runs.
+
+## Create an app template
+
+**Create a directory for your app config** in a GitHub repository. It can be the repository root or any directory
+inside it, with any name. It will contain your app's configuration files.
+
+```sh nuon
+mkdir your-app
+cd your-app
+```
+
+Create the app template in Nuon:
+
+```sh nuon
+nuon apps create --name=your-app
+```
+
+## Ship your config
+
+Config ships through an [app branch](/guides/app-branches). Add a branch file that points at the repository, the
+config directory, and the git branch to track:
+
+```toml branches/main.toml
+name = "main"
+
+[connected_repo]
+repo      = "your-org/your-repo"
+directory = "your-app"
+branch    = "main"
+```
+
+Sync the branch file once to create the app branch, which also starts its first run:
+
+```sh nuon
+nuon branches sync --file branches/main.toml
+```
+
+From then on, every push to the tracked git branch starts a run that rolls the change out. To check the config
+before you push, run `nuon apps validate`. It looks up the app by the directory's name, so it works when the
+directory and the app share a name.
+
+## Language Server Protocol (LSP)
+
+Nuon has a Language Server with a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp) that provides autocompletion, validation, and inline documentation for Nuon configuration TOML files.
+
+<Note>
+The Language Server is a beta feature and included in [Nuon Labs](https://labs.nuon.co/) so please report any bugs or inconsistencies as a [GitHub issue](https://github.com/nuonco/nuon/issues).
+</Note>
+
+The Language Server requires the [Nuon CLI](/cli) so please download it first. Future versions of the Language Server will include the CLI.
+
+The Language Server reads the component type from a `#` comment at the top of each Nuon configuration TOML file. The CLI ignores this comment — it reads the `type` field — so the comment is only needed for editor autocompletion and inline validation.
+
+```toml components/certificate.toml
+# terraform
+name              = "certificate"
+type              = "terraform_module"
+terraform_version = "1.11.3"
+```
+
+[Here are the valid component types](https://github.com/nuonco/nuon/blob/main/pkg/config/schema/types.go#L15) in the Nuon OSS repository.
+
+## Breaking up Config Files
+
+Since configs can get complex as your application grows, we follow a structured
+approach to organize your configuration files. Create a `components` directory
+in your project root with individual files for each component. e.g.,
+`components/helm_deploy.toml`.
+
+```toml components/helm_deploy.toml
+# helm
+name           = "whoami"
+type           = "helm_chart"
+chart_name     = "whoami"
+namespace      = "whoami"
+storage_driver = "configmap"
+
+[public_repo]
+repo      = "nuonco/demo"
+directory = "eks-simple/src/components/whoami"
+branch    = "main"
+
+[[values_file]]
+contents = "./whoami.yaml"
+```
+
+See our
+[`example-app-configs` repository](https://github.com/nuonco/example-app-configs)
+for common directory structures.
+
+## Reference
+
+### Input
+
+Define [inputs](/concepts/app-inputs) for an app using `inputs.toml` file.
+
+To configure a sensitive `api_key` and `vpc_id` input:
+
+```toml inputs.toml
+# inputs
+[[input]]
+name = "vpc_id"
+description = "vpc_id to install application into"
+default = ""
+sensitive = false
+display_name = "VPC ID"
+type = "string"
+
+[[input]]
+name = "api_key"
+description = "API key"
+default = ""
+sensitive = true
+display_name = "API Key"
+type = "string"
+```
+
+<Note>
+	Inputs are not required, unless you are using a sandbox or components that require inputs.
+	e.g., `root_domain` for the `aws-eks-sandbox`.
+</Note>
+
+### Sandbox 
+
+Define the [sandbox](/concepts/sandboxes) using the `sandbox.toml` file.
+
+To define an `aws-eks-sandbox` Sandbox:
+
+```toml sandbox.toml
+# sandbox
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-sandbox"
+branch    = "main"
+
+[vars]
+cluster_name         = "n-{{.nuon.install.id}}"
+enable_nuon_dns      = "true"
+public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
+```
+
+Nuon maintains [managed sandboxes](/concepts/sandboxes#nuon-managed-sandboxes)
+for the platforms we support.
+
+<Note>
+	Notice how variables can be defined in the `vars` block and with `var_file`.
+</Note>
+
+### Component Config
+
+You can define components by creating `<component>.toml` files in a `components`
+directory. Components must declare a `type` field and any relevant
+component-specific configuration.
+
+### Component Dependencies
+
+Dependencies can be explicitly defined using the dependencies field in each component’s configuration file. You can specify which components a given component depends on by listing their names in the dependencies array.
+
+Learn more about depencencies [here](/guides/component-dependencies).
+
+In this example, an application load balancer component requires certificate and whoami helm components are deployed first.
+
+```toml components/alb.toml
+# helm
+name         = "application_load_balancer"
+type         = "helm_chart"
+chart_name   = "application-load-balancer"
+dependencies = ["certificate", "whoami"]
+```
+
+### Terraform Module Component
+
+To define a [terraform module component](/guides/terraform-components) use the
+`terraform_module` type.
+
+To configure a terraform component using a connected repo:
+
+```toml components/terraform.toml
+# terraform
+name = "terraform"
+type = "terraform_module"
+terraform_version = "1.11.3"
+
+[connected_repo]
+directory = "infra"
+repo = "org/repo"
+branch = "main"
+
+[env_vars]
+AWS_REGION = "{{.nuon.install.sandbox.outputs.account.region}}"
+
+[vars]
+account_id = "{{.nuon.install.sandbox.outputs.account.id}}"
+
+```
+
+### Pulumi Component
+
+To define a [pulumi component](/guides/pulumi-components) use the `pulumi` type.
+
+To configure a pulumi component using a connected repo:
+
+```toml components/pulumi.toml
+# pulumi
+name    = "pulumi_infra"
+type    = "pulumi"
+runtime = "go"
+
+[connected_repo]
+directory = "components/pulumi"
+repo = "org/repo"
+branch = "main"
+
+[config]
+"aws:region" = "{{.nuon.install_stack.outputs.region}}"
+
+[env_vars]
+PULUMI_SKIP_UPDATE_CHECK = "true"
+```
+
+### Helm Chart Component
+
+To define a [helm chart component](/guides/helm-chart-components) use the
+`helm_chart` type.
+
+To configure a helm chart in a connected repo:
+
+```toml components/helm.toml
+# helm
+name = "helm"
+type = "helm_chart"
+chart_name = "chart-name"
+
+[connected_repo]
+directory = "helm"
+repo = "org/repo"
+branch = "main"
+
+[values]
+"api.ingresses.public_domain" = "{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}"
+```
+
+### Kubernetes Manifest Component
+
+To define a
+[kubernetes manifest component](/guides/kubernetes-manifest-components) use the
+`kubernetes_manifest` type.
+
+```toml manifest-db-secret.toml
+# kubernetes-manifest
+name   = "grafana_secrets"
+type   = "kubernetes_manifest"
+dependencies   = ["grafana_postgres"]
+
+namespace = "grafana"
+manifest = """
+# Secret for Grafana's internal database connection
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-postgres-secret
+  namespace: grafana
+type: Opaque
+stringData:
+  GF_DATABASE_URL: "postgres://grafana:grafana@postgresql.grafana.svc.cluster.local:5432/grafana?sslmode=disable&connect_timeout=10"
+"""
+```
+
+### Container Image Component
+
+To define a [container image component](/guides/container-image-components) use
+the `container_image` type.
+
+To configure a public container image:
+
+```toml components/container_image.toml
+# container-image
+name = "container_image"
+type = "container_image"
+
+[public]
+image_url = "kennethreitz/httpbin"
+tag = "latest"
+```
+
+To configure a container image from an ECR repo:
+
+```toml components/container_image_ecr.toml
+# container-image
+name = "container_image_ecr"
+type = "container_image"
+
+[aws_ecr]
+image_url = "ecr-url"
+tag = "latest"
+region = "us-west-2"
+```
+
+### Install Configs
+
+You can create and manage [installs](/concepts/installs) by creating
+`<install>.toml` files in an `installs` directory managed separately from the
+apps. An install must declare a `name` field and any relevant
+install-specific configuration.
+
+Install config files allow you to update multiple installs simultaneously, offering a more streamlined experience than the dashboard. By defining these configurations in code, you can automate your workflow using a CI system like [GitHub Actions](/guides/github-actions).
+
+The inputs are defined as a list of input groups. This is just for logical
+grouping, and inputs from different groups can be defined together. Note that if
+an input is defined multiple times, the last defined value would be used.
+
+Input configs will be grouped together, reflecting the
+input groups you have defined in the app. Sensitive inputs will be excluded, to
+avoid saving them in plain text in version control. When syncing install config
+files, sensitive inputs will be ignored. They can still be managed manually via
+the dashboard.
+
+<Note>
+	Currently only AWS installs are supported using install config files.
+</Note>
+
+**Generate an Install Config File**
+
+To manage existing installs using CI, use the CLI command
+`nuon installs generate-config` to export an existing install to stdout. Create
+a TOML config file for the install in the `installs` folder of your app's config
+and paste the stout.
+
+```bash
+mkdir -p installs
+touch installs/<install-name>.toml
+nuon installs generate-config -i <install-name> > installs/<install-name>.toml
+```
+
+**Update an Install**
+
+The `nuon installs sync` command can be used with a single install config file
+or with a directory containing multiple install config files.
+
+```bash
+nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
+```
+
+In the dashboard, see the newly-created workflow to track the install's upgrade
+process.
+
+**An Example Install Config File**
+
+```toml installs/install.toml
+# install
+name = "<install-name>"
+app_branch = "main"
+
+# configure Auto Approval settings for an install
+approval_option = "prompt" # set this to "approve-all" to enable auto approval
+
+[aws_account]
+  region = "us-east-1"
+
+[[inputs]]
+  input_string = "sample"
+
+[[inputs]]
+  input_number = "100"
+  input_bool   = "true"
+  input_json   = '{"key": "value"}'
+```
+
+<Note>
+	All input values should be defined as strings. They will be parsed into the
+	correct type by Nuon.
+</Note>
+
+### Install Config Syncing
+
+You can connect install config files to a Git repository using an `installs.toml` file or the `[installs_config]` section in your app config. When connected, a push to that repo updates every install to match, and a config file naming an install that does not exist yet proposes creating it for approval.
+
+```toml installs.toml
+[connected_repo]
+repo = "org/repo"
+branch = "main"
+directory = "installs"
+```
+
+Or in your app config:
+
+```toml nuon.toml
+[installs_config.connected_repo]
+repo = "org/repo"
+branch = "main"
+directory = "installs"
+```
+
+For the full property list, see the [Installs Config reference](/config-ref/installs-config). See [Syncing Install Configs from Git](/guides/install-config-syncing) for the full guide.

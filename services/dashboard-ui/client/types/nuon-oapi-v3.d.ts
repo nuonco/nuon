@@ -728,6 +728,20 @@ export interface paths {
     /** @description Update app configuration across multiple installs. */
     post: operations["UpdateAppConfigInstallsV2"];
   };
+  "/v1/apps/{app_id}/fleet": {
+    /**
+     * app fleet summary, branches, and install groups
+     * @description Returns the app's installs grouped by app branch and install group, with counts per lane and the first installs of each group. Filters apply to counts and to the returned installs. Rollout compares each install's applied app config against the target run of its branch.
+     */
+    get: operations["GetAppFleet"];
+  };
+  "/v1/apps/{app_id}/fleet/installs": {
+    /**
+     * paginated installs for an app fleet
+     * @description Returns the app's installs matching the fleet filters, ordered by rollout, health severity, then name. Pass app_branch_id and app_branch_group to page through one install group, for example when a lane card's panel is opened.
+     */
+    get: operations["GetAppFleetInstalls"];
+  };
   "/v1/apps/{app_id}/input-config": {
     /**
      * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
@@ -2272,7 +2286,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking, config drift, and per-resource alignment for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+     * @description Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
      */
     get: operations["GetInstallOverview"];
   };
@@ -4058,6 +4072,8 @@ export interface components {
     "app.AppBranchRunConfig": {
       github_label?: string;
       mode?: components["schemas"]["app.AppBranchRunMode"];
+      paths?: string[];
+      paths_ignore?: string[];
       tag_prefix?: string;
     };
     "app.AppBranchRunMetadata": {
@@ -8477,6 +8493,56 @@ export interface components {
     };
     /** @enum {string} */
     "service.AppConfigTemplateType": "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "job" | "container-image" | "ecr-container-image";
+    "service.AppFleetBranch": {
+      counts?: components["schemas"]["service.AppFleetCounts"];
+      groups?: components["schemas"]["service.AppFleetGroup"][];
+      id?: string;
+      name?: string;
+      target_run?: components["schemas"]["service.AppFleetTargetRun"];
+    };
+    "service.AppFleetCounts": {
+      applied?: number;
+      behind?: number;
+      matched?: number;
+      total?: number;
+      unknown?: number;
+    };
+    "service.AppFleetGroup": {
+      counts?: components["schemas"]["service.AppFleetCounts"];
+      has_more?: boolean;
+      installs?: components["schemas"]["service.AppFleetInstall"][];
+      match_labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      name?: string;
+      order?: number;
+    };
+    "service.AppFleetInstall": {
+      app_branch_group?: string;
+      app_branch_id?: string;
+      app_config_id?: string;
+      applied_config_id?: string;
+      health?: string;
+      id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      name?: string;
+      rollout?: string;
+      runner_status?: string;
+    };
+    "service.AppFleetResponse": {
+      branches?: components["schemas"]["service.AppFleetBranch"][];
+      summary?: components["schemas"]["service.AppFleetSummary"];
+    };
+    "service.AppFleetSummary": {
+      applied?: number;
+      behind?: number;
+      matched?: number;
+      runner_not_active?: number;
+      total?: number;
+      unknown?: number;
+    };
+    "service.AppFleetTargetRun": {
+      app_config_id?: string;
+      id?: string;
+    };
     "service.AppGroupRequest": {
       description: string;
       display_name: string;
@@ -9655,68 +9721,6 @@ export interface components {
       name?: string;
       type?: components["schemas"]["app.WorkflowType"];
     };
-    "service.InstallAlignment": {
-      error?: string;
-      resources?: components["schemas"]["service.InstallAlignmentResource"][];
-    };
-    "service.InstallAlignmentAttempt": {
-      branch_run?: components["schemas"]["service.InstallOverviewCommit"];
-      created_at?: string;
-      id?: string;
-      status?: string;
-      type?: components["schemas"]["app.WorkflowType"];
-      workflow_id?: string;
-    };
-    /** @enum {string} */
-    "service.InstallAlignmentCategory": "changes-not-applied" | "state-drift-detected" | "in-sync" | "unknown" | "disabled" | "torn-down";
-    "service.InstallAlignmentExplanation": {
-      status?: string;
-      step_id?: string;
-      summary?: string;
-      workflow_id?: string;
-    };
-    "service.InstallAlignmentOpenDeployment": {
-      created_at?: string;
-      id?: string;
-      status?: string;
-      type?: components["schemas"]["app.WorkflowType"];
-    };
-    "service.InstallAlignmentPlan": {
-      approval_id?: string;
-      changes_create?: number;
-      changes_delete?: number;
-      changes_noop?: number;
-      changes_replace?: number;
-      changes_update?: number;
-      created_at?: string;
-      owner_id?: string;
-      owner_type?: string;
-      plan_only?: boolean;
-      step_id?: string;
-      type?: components["schemas"]["app.WorkflowStepApprovalType"];
-      workflow_id?: string;
-    };
-    "service.InstallAlignmentResource": {
-      applied_build_id?: string;
-      applied_config_id?: string;
-      category?: components["schemas"]["service.InstallAlignmentCategory"];
-      component_id?: string;
-      component_type?: string;
-      expected_build_id?: string;
-      expected_config_id?: string;
-      explanation?: components["schemas"]["service.InstallAlignmentExplanation"];
-      id?: string;
-      kind?: components["schemas"]["service.InstallAlignmentResourceKind"];
-      last_attempt?: components["schemas"]["service.InstallAlignmentAttempt"];
-      name?: string;
-      newer_branch_runs?: number | null;
-      open_deployment?: components["schemas"]["service.InstallAlignmentOpenDeployment"];
-      plan?: components["schemas"]["service.InstallAlignmentPlan"];
-      reason?: string;
-      status?: string;
-    };
-    /** @enum {string} */
-    "service.InstallAlignmentResourceKind": "component" | "image" | "sandbox" | "stack";
     "service.InstallAppConfigTreeDiffResponse": {
       changed?: string;
       config_id?: string;
@@ -9943,9 +9947,9 @@ export interface components {
       workflow_id?: string;
     };
     "service.InstallOverviewResponse": {
-      alignment?: components["schemas"]["service.InstallAlignment"];
       branch_tracking?: components["schemas"]["service.InstallBranchTracking"];
       config_drift?: components["schemas"]["service.InstallConfigDrift"];
+      resource_sync_status?: components["schemas"]["service.InstallResourceSyncStatus"];
     };
     "service.InstallPermissionsRoleStatus": {
       app_config_id?: string;
@@ -9980,6 +9984,76 @@ export interface components {
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
     };
+    "service.InstallResourceSyncStatus": {
+      error?: string;
+      resources?: components["schemas"]["service.InstallResourceSyncStatusResource"][];
+    };
+    "service.InstallResourceSyncStatusAttempt": {
+      branch_run?: components["schemas"]["service.InstallOverviewCommit"];
+      created_at?: string;
+      id?: string;
+      status?: string;
+      type?: components["schemas"]["app.WorkflowType"];
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "service.InstallResourceSyncStatusCategory": "changes-not-applied" | "state-drift-detected" | "in-sync" | "unknown" | "disabled" | "torn-down";
+    "service.InstallResourceSyncStatusExplanation": {
+      status?: string;
+      step_id?: string;
+      summary?: string;
+      workflow_id?: string;
+    };
+    "service.InstallResourceSyncStatusOpenDeployment": {
+      created_at?: string;
+      id?: string;
+      status?: string;
+      type?: components["schemas"]["app.WorkflowType"];
+    };
+    "service.InstallResourceSyncStatusOrigin": {
+      run?: components["schemas"]["service.InstallOverviewCommit"];
+      workflow_id?: string;
+      workflow_type?: components["schemas"]["app.WorkflowType"];
+    };
+    "service.InstallResourceSyncStatusPlan": {
+      approval_id?: string;
+      changes_create?: number;
+      changes_delete?: number;
+      changes_noop?: number;
+      changes_replace?: number;
+      changes_update?: number;
+      created_at?: string;
+      owner_id?: string;
+      owner_type?: string;
+      plan_only?: boolean;
+      step_id?: string;
+      type?: components["schemas"]["app.WorkflowStepApprovalType"];
+      workflow_id?: string;
+    };
+    "service.InstallResourceSyncStatusResource": {
+      applied_build_id?: string;
+      applied_by?: components["schemas"]["service.InstallResourceSyncStatusOrigin"];
+      applied_config_id?: string;
+      applied_deploy_at?: string;
+      applied_deploy_id?: string;
+      category?: components["schemas"]["service.InstallResourceSyncStatusCategory"];
+      component_id?: string;
+      component_type?: string;
+      expected_build_id?: string;
+      expected_config_id?: string;
+      explanation?: components["schemas"]["service.InstallResourceSyncStatusExplanation"];
+      id?: string;
+      kind?: components["schemas"]["service.InstallResourceSyncStatusResourceKind"];
+      last_attempt?: components["schemas"]["service.InstallResourceSyncStatusAttempt"];
+      name?: string;
+      newer_branch_runs?: number | null;
+      open_deployment?: components["schemas"]["service.InstallResourceSyncStatusOpenDeployment"];
+      plan?: components["schemas"]["service.InstallResourceSyncStatusPlan"];
+      reason?: string;
+      status?: string;
+    };
+    /** @enum {string} */
+    "service.InstallResourceSyncStatusResourceKind": "component" | "image" | "sandbox" | "stack";
     "service.InstallStackUpdate": {
       input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
       role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
@@ -16588,6 +16662,150 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.EmptyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * app fleet summary, branches, and install groups
+   * @description Returns the app's installs grouped by app branch and install group, with counts per lane and the first installs of each group. Filters apply to counts and to the returned installs. Rollout compares each install's applied app config against the target run of its branch.
+   */
+  GetAppFleet: {
+    parameters: {
+      query?: {
+        /** @description search by install name or ID */
+        q?: string;
+        /** @description label filter (key:value,key:value; value * matches key presence) */
+        labels?: string;
+        /** @description comma-separated health: unhealthy,degraded,unknown,progressing,healthy,no-signal */
+        health?: string;
+        /** @description runner filter: active or not-active */
+        runner_status?: string;
+        /** @description rollout filter: applied, behind, or unknown */
+        rollout?: string;
+        /** @description compare rollout on one component's applied config instead of the whole install */
+        component_id?: string;
+        /** @description limit to one branch; __none__ for installs without a branch */
+        app_branch_id?: string;
+        /** @description limit to one install group; __none__ for installs without a group */
+        app_branch_group?: string;
+        /** @description installs returned per group */
+        per_group?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppFleetResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * paginated installs for an app fleet
+   * @description Returns the app's installs matching the fleet filters, ordered by rollout, health severity, then name. Pass app_branch_id and app_branch_group to page through one install group, for example when a lane card's panel is opened.
+   */
+  GetAppFleetInstalls: {
+    parameters: {
+      query?: {
+        /** @description search by install name or ID */
+        q?: string;
+        /** @description label filter (key:value,key:value; value * matches key presence) */
+        labels?: string;
+        /** @description comma-separated health: unhealthy,degraded,unknown,progressing,healthy,no-signal */
+        health?: string;
+        /** @description runner filter: active or not-active */
+        runner_status?: string;
+        /** @description rollout filter: applied, behind, or unknown */
+        rollout?: string;
+        /** @description compare rollout on one component's applied config instead of the whole install */
+        component_id?: string;
+        /** @description limit to one branch; __none__ for installs without a branch */
+        app_branch_id?: string;
+        /** @description limit to one install group; __none__ for installs without a group */
+        app_branch_group?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppFleetInstall"][];
         };
       };
       /** @description Bad Request */
@@ -27452,13 +27670,13 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking, config drift, and per-resource alignment for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+   * @description Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
    */
   GetInstallOverview: {
     parameters: {
       query?: {
-        /** @description include per-resource alignment; set false for branch tracking and config drift only */
-        include_alignment?: boolean;
+        /** @description include per-resource sync status; set false for branch tracking and config drift only */
+        include_resource_sync_status?: boolean;
       };
       path: {
         /** @description install ID */

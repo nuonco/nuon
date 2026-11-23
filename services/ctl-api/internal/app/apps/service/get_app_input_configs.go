@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -50,7 +51,10 @@ func (s *service) GetAppInputConfigs(ctx *gin.Context) {
 }
 
 func (s *service) findAppInputConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppInputConfig, error) {
-	app := app.App{}
+	currentApp, err := applookup.ByRef(ctx, s.db, orgID, appID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app: %w", err)
+	}
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
@@ -62,19 +66,18 @@ func (s *service) findAppInputConfigs(ctx *gin.Context, orgID, appID string) ([]
 		Preload("AppInputConfigs.AppInputs").
 		Preload("AppInputConfigs.AppInputs.AppInputGroup").
 		Preload("AppInputConfigs.AppInputGroups.AppInputs").
-		Where("org_id = ?", orgID).
-		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
-		First(&app)
+		Where(&app.App{ID: currentApp.ID, OrgID: currentApp.OrgID}, "ID", "OrgID").
+		First(currentApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	cfgs, err := db.HandlePaginatedResponse(ctx, app.AppInputConfigs)
+	cfgs, err := db.HandlePaginatedResponse(ctx, currentApp.AppInputConfigs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get app input configs: %w", err)
 	}
 
-	app.AppInputConfigs = cfgs
+	currentApp.AppInputConfigs = cfgs
 
-	return app.AppInputConfigs, nil
+	return currentApp.AppInputConfigs, nil
 }

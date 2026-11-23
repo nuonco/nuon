@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installlookup "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -66,7 +67,13 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
-	triggered, err := s.createRunbookRun(ctx, org.ID, account.ID, ctx.Param("install_id"), ctx.Param("runbook_id"), req)
+	install, err := s.resolveInstallRef(ctx, org.ID, ctx.Param("install_id"))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	triggered, err := s.createRunbookRun(ctx, account.ID, install, ctx.Param("runbook_id"), req)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -75,14 +82,10 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, triggered.Run)
 }
 
-func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, installRef, runbookRef string, req CreateRunbookRunRequest) (*runbookshelpers.TriggerRunbookRunResponse, error) {
-	install, err := s.resolveInstallRef(ctx, orgID, installRef)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *service) createRunbookRun(ctx context.Context, accountID string, install *app.Install, runbookRef string, req CreateRunbookRunRequest) (*runbookshelpers.TriggerRunbookRunResponse, error) {
+	orgID := install.OrgID
 	var runbook app.Runbook
-	err = s.db.WithContext(ctx).
+	err := s.db.WithContext(ctx).
 		Where(app.Runbook{OrgID: orgID, AppID: install.AppID}).
 		Where(s.db.Where(app.Runbook{ID: runbookRef}).Or(app.Runbook{Name: runbookRef})).
 		First(&runbook).Error
@@ -176,16 +179,12 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 
 // resolveInstallRef looks an install up by name or ID within the org.
 func (s *service) resolveInstallRef(ctx context.Context, orgID, installRef string) (*app.Install, error) {
-	var install app.Install
-	if err := s.db.WithContext(ctx).
-		Select("id", "name", "app_id", "app_config_id").
-		Where(app.Install{OrgID: orgID}).
-		Where(s.db.Where(app.Install{ID: installRef}).Or(app.Install{Name: installRef})).
-		First(&install).Error; err != nil {
+	install, err := installlookup.ByRef(ctx, s.db, orgID, installRef)
+	if err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	return &install, nil
+	return install, nil
 }
 
 // buildStepSelections validates the supplied step selections against the config's steps
