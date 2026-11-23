@@ -1,12 +1,12 @@
 {
   "announcements": [
     {
-      "id": "run-more-installs-045",
-      "title": "Run More Installs With Less Overhead",
-      "date": "November 20, 2026",
-      "description": "Private images pull through cloud connections, with no pull secret to manage. One page shows which installs are current and which need attention.",
+      "id": "fleet-view-deploys-045",
+      "title": "Fleet View, Changed-Only Deploys, and Private Registries",
+      "date": "November 23, 2026",
+      "description": "See every install of an app on one page, deploy only the components a change affects, and pull private images through cloud connections.",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/045-run-more-installs-with-less-overhead",
+      "ctaUrl": "https://docs.nuon.co/updates/045-fleet-view-deploys-private-registries",
       "image": "/images/announcements/nuon-changelog-045.png",
       "imageDark": "/images/announcements/nuon-changelog-045.png",
       "dismissible": false
