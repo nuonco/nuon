@@ -17,17 +17,24 @@ import (
 var Library string
 
 // Policies come from app configs and run on the control plane, so they must not
-// be able to reach the network from there.
-var deniedBuiltins = map[string]struct{}{
-	ast.HTTPSend.Name:        {},
-	ast.NetLookupIPAddr.Name: {},
-}
+// be able to reach the network or read the process environment from there.
+// This is an allowlist so a builtin added by an OPA upgrade stays unavailable
+// until someone reviews it and adds it here. The test in policy_test.go fails
+// when the upstream set changes.
+//
+//go:embed allowed_builtins.txt
+var allowedBuiltinsFile string
 
 var capabilities = sync.OnceValue(func() *ast.Capabilities {
+	allowed := make(map[string]struct{})
+	for _, name := range strings.Fields(allowedBuiltinsFile) {
+		allowed[name] = struct{}{}
+	}
+
 	caps := ast.CapabilitiesForThisVersion()
-	builtins := make([]*ast.Builtin, 0, len(caps.Builtins))
+	builtins := make([]*ast.Builtin, 0, len(allowed))
 	for _, builtin := range caps.Builtins {
-		if _, denied := deniedBuiltins[builtin.Name]; !denied {
+		if _, ok := allowed[builtin.Name]; ok {
 			builtins = append(builtins, builtin)
 		}
 	}

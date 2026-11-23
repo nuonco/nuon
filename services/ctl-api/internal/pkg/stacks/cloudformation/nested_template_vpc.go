@@ -13,6 +13,7 @@ import (
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
 	"gopkg.in/yaml.v3"
 
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -113,8 +114,15 @@ func (tpl *Templates) templateClient() *http.Client {
 	return templateFetchClient
 }
 
+func (tpl *Templates) urlPolicy() *urlpolicy.Policy {
+	if tpl.cfg == nil {
+		return nil
+	}
+	return tpl.cfg.URLPolicy
+}
+
 func (tpl *Templates) fetchTemplate(templateURL string) (*cfnTemplateShape, error) {
-	resp, err := tpl.templateClient().Get(templateURL)
+	resp, err := stacks.GetTemplate(tpl.templateClient(), tpl.urlPolicy(), templateURL)
 	if err != nil {
 		return nil, err
 	}

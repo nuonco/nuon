@@ -16,9 +16,9 @@ import (
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
-	"oras.land/oras-go/v2/registry/remote/retry"
 
 	"github.com/nuonco/nuon/pkg/oci/dockerhub"
+	"github.com/nuonco/nuon/pkg/oci/registryclient"
 )
 
 const (
@@ -96,9 +96,9 @@ type FetchOptions struct {
 // Always isolate: a nil repo.Client falls back to the process-global auth.DefaultClient
 // and its host-keyed auth.DefaultCache, which replays a dead token (ECR TTL 12h) and can
 // attach one fetch's credential to another's anonymous pull of the same host.
-func newAuthClient(serverAddr string, regAuth *RegistryAuth) *auth.Client {
+func newAuthClient(ctx context.Context, serverAddr string, regAuth *RegistryAuth) *auth.Client {
 	client := &auth.Client{
-		Client: retry.DefaultClient,
+		Client: registryclient.For(ctx),
 		Cache:  auth.NewCache(),
 	}
 	if regAuth != nil && regAuth.Username != "" {
@@ -128,7 +128,7 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 			serverAddr = parts[0]
 		}
 	}
-	repo.Client = newAuthClient(serverAddr, opts.Auth)
+	repo.Client = newAuthClient(ctx, serverAddr, opts.Auth)
 
 	tag := opts.Tag
 	if tag == "" {
