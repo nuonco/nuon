@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/errs"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
@@ -105,10 +106,15 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 	s.warnIfCLIOutdated(ctx)
 
+	urlPolicy := s.allowedHostsPolicy(ctx, appID)
+
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
 		Dirname:       dir,
 		V:             validator.New(),
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
+		CheckRemoteFetch: validate.RemoteFetchCheck(urlPolicy, func(violation urlpolicy.Violation) {
+			ui.PrintWarning(violation.Error())
+		}),
 	})
 	if err != nil {
 		return ui.PrintError(err)
@@ -123,7 +129,7 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	}
 
 	ui.PrintLn("validating configs")
-	err = validate.Validate(ctx, s.v, cfg)
+	err = validate.Validate(ctx, s.v, cfg, validate.WithURLPolicy(urlPolicy))
 	if err != nil {
 		if config.IsWarningErr(err) {
 			ui.PrintError(err)

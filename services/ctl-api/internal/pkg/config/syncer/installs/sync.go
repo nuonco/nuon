@@ -244,6 +244,11 @@ func createInstall(ctx context.Context, installHelpers *installhelpers.Helpers, 
 }
 
 func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install, appBranchID, cloudConnectionID string, beforeApply []func(*gorm.DB, *sync.InstallSyncResult) error) (*sync.InstallSyncResult, error) {
+	overrides := build.InstallConfigInputFromConfig(installCfg)
+	if err := installHelpers.CheckAppStackOverridesURLPolicy(ctx, existing.AppID, overrides.VPCNestedTemplateURL, overrides.RunnerNestedTemplateURL, overrides.CustomNestedStacks); err != nil {
+		return nil, fmt.Errorf("invalid stack overrides for install %s: %w", installCfg.Name, err)
+	}
+
 	upstream := existingToConfig(existing)
 	for key := range upstream.Labels {
 		if _, declared := installCfg.Labels[key]; !declared && existing.LabelTemplates[key] == "" {

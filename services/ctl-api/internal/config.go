@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/services/config"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/orgfeatures"
 )
@@ -203,6 +205,13 @@ func init() {
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_token_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
+
+	config.RegisterDefault("allowed_hosts_mode", "enforce")
+	config.RegisterDefault("allowed_hosts_runner_api", []string{})
+	config.RegisterDefault("allowed_hosts_public_api", []string{})
+	config.RegisterDefault("allowed_hosts_runner_bootstrap", []string{})
+	config.RegisterDefault("allowed_hosts_stack_templates", []string{})
+	config.RegisterDefault("allowed_hosts_config_fetch", []string{})
 
 	// OAuth 2.0 authorization server (used by MCP clients)
 	config.RegisterDefault("oauth_dcr_enabled", true) // allow dynamic client registration (RFC 7591)
@@ -402,6 +411,15 @@ type Config struct {
 	// When true, GET .../processes/:id/shutdowns is public so pre-auth runners
 	// can still observe shutdown requests during upgrades.
 	PublicRunnerProcessShutdowns bool `config:"public_runner_process_shutdowns"`
+
+	AllowedHostsMode            string   `config:"allowed_hosts_mode" validate:"omitempty,oneof=warn enforce"`
+	AllowedHostsRunnerAPI       []string `config:"allowed_hosts_runner_api"`
+	AllowedHostsPublicAPI       []string `config:"allowed_hosts_public_api"`
+	AllowedHostsRunnerBootstrap []string `config:"allowed_hosts_runner_bootstrap"`
+	AllowedHostsStackTemplates  []string `config:"allowed_hosts_stack_templates"`
+	AllowedHostsConfigFetch     []string `config:"allowed_hosts_config_fetch"`
+
+	URLPolicy *urlpolicy.Policy `config:"-" validate:"-"`
 
 	// OAuth 2.0 authorization server (MCP clients)
 	OAuthDCREnabled       bool     `config:"oauth_dcr_enabled"`
@@ -829,6 +847,72 @@ func validateRunnerIdentityConfig(cfg *Config) error {
 	return nil
 }
 
+var (
+	builtinRunnerBootstrapHosts = []string{
+		"https://raw.githubusercontent.com/nuonco/runner/",
+		"https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/",
+	}
+	builtinStackTemplateHosts = []string{
+		"https://nuon-artifacts.s3.us-west-2.amazonaws.com/",
+		"https://raw.githubusercontent.com/nuonco/",
+	}
+)
+
+func newURLPolicy(cfg *Config) (*urlpolicy.Policy, error) {
+	stackTemplates := append([]string{}, builtinStackTemplateHosts...)
+	if origin := urlOrigin(cfg.SandboxArtifactsBaseURL); origin != "" {
+		stackTemplates = append(stackTemplates, origin)
+	}
+
+	policy, err := urlpolicy.New(urlpolicy.Config{
+		Mode:      urlpolicy.Mode(cfg.AllowedHostsMode),
+		AllowHTTP: cfg.ServiceDeployment == "local",
+		Categories: map[urlpolicy.Category]urlpolicy.CategoryConfig{
+			urlpolicy.CategoryRunnerAPI: {
+				Entries:  cfg.AllowedHostsRunnerAPI,
+				Builtins: nonEmpty(urlOrigin(cfg.RunnerAPIURL)),
+			},
+			urlpolicy.CategoryPublicAPI: {
+				Entries:  cfg.AllowedHostsPublicAPI,
+				Builtins: nonEmpty(urlOrigin(cfg.PublicAPIURL)),
+			},
+			urlpolicy.CategoryRunnerBootstrap: {
+				Entries:  cfg.AllowedHostsRunnerBootstrap,
+				Builtins: builtinRunnerBootstrapHosts,
+			},
+			urlpolicy.CategoryStackTemplates: {
+				Entries:  cfg.AllowedHostsStackTemplates,
+				Builtins: stackTemplates,
+			},
+			urlpolicy.CategoryConfigFetch: {
+				Entries: cfg.AllowedHostsConfigFetch,
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("invalid allowed hosts config: %w", err)
+	}
+	return policy, nil
+}
+
+func urlOrigin(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host
+}
+
+func nonEmpty(values ...string) []string {
+	var out []string
+	for _, value := range values {
+		if value != "" {
+			out = append(out, value)
+		}
+	}
+	return out
+}
+
 func NewConfig() (*Config, error) {
 	var cfg Config
 	if err := config.LoadInto(nil, &cfg); err != nil {
@@ -850,6 +934,12 @@ func NewConfig() (*Config, error) {
 	if err := validateRunnerIdentityConfig(&cfg); err != nil {
 		return nil, err
 	}
+
+	urlPolicy, err := newURLPolicy(&cfg)
+	if err != nil {
+		return nil, err
+	}
+	cfg.URLPolicy = urlPolicy
 
 	switch {
 	case cfg.IsGCP():

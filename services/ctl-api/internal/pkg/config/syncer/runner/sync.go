@@ -8,14 +8,19 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 )
 
 // Sync creates the app runner configuration via the shared builder in
 // internal/pkg/config/build, which the CreateAppRunnerConfig handler also uses.
-func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID string, state *sync.State) error {
-	appRunnerConfig := build.RunnerConfig(build.RunnerInputFromConfig(*cfg.Runner, appID, appConfigID))
+func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID string, state *sync.State, policy *urlpolicy.Policy) error {
+	appRunnerConfig, err := build.RunnerConfig(build.RunnerInputFromConfig(*cfg.Runner, appID, appConfigID, policy))
+	if err != nil {
+		return syncerr.From("app-runner", "invalid runner config", err)
+	}
 
 	if res := db.WithContext(ctx).Create(appRunnerConfig); res.Error != nil {
 		return sync.SyncInternalErr{

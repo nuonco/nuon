@@ -72,3 +72,17 @@ func (c *client) DeleteApp(ctx context.Context, appID string) (bool, error) {
 
 	return true, nil
 }
+
+// GetAppAllowedHosts returns where the control plane allows the app's config
+// URLs to point.
+func (c *client) GetAppAllowedHosts(ctx context.Context, appID string) (*models.ServiceAppAllowedHosts, error) {
+	resp, err := c.genClient.Operations.GetAppAllowedHosts(&operations.GetAppAllowedHostsParams{
+		Context: ctx,
+		AppID:   appID,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
