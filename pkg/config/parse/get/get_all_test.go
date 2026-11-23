@@ -736,3 +736,40 @@ func TestGetAll_SourceRejectsGitBeforeExecutingIt(t *testing.T) {
 	_, err = os.Stat(marker)
 	require.True(t, os.IsNotExist(err), "a denied import must not invoke git")
 }
+
+func TestGetAll_CheckRemoteRunsBeforeTheFetch(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		_, _ = w.Write([]byte("contents"))
+	}))
+	defer srv.Close()
+
+	var checked []string
+	obj := &testStruct{Obj: srv.URL + "/values.yaml"}
+	err := Parse(context.Background(), obj, &Options{
+		FieldTimeout: time.Second * 5,
+		RootDir:      t.TempDir(),
+		CheckRemote: func(field, rawURL string) error {
+			checked = append(checked, field+" "+rawURL)
+			return errors.New("not allowed")
+		},
+	})
+	require.ErrorContains(t, err, "not allowed")
+	require.Equal(t, []string{"testStruct.Obj " + srv.URL + "/values.yaml"}, checked)
+	require.Zero(t, hits.Load())
+
+	// Local files are not remote fetches.
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "local.yaml"), []byte("local"), 0o600))
+	obj = &testStruct{Obj: "./local.yaml"}
+	err = Parse(context.Background(), obj, &Options{
+		FieldTimeout: time.Second * 5,
+		RootDir:      dir,
+		CheckRemote: func(field, rawURL string) error {
+			return errors.New("not allowed")
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "local", obj.Obj)
+}
