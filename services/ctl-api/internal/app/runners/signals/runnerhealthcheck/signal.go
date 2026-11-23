@@ -26,7 +26,6 @@ import (
 const (
 	SignalType                signal.SignalType = "runner_healthcheck"
 	runnerUnhealthyAlertDelay                   = 15 * time.Minute
-	atomicRunnerStatusVersion                   = "runner-healthcheck-atomic-runner-status-v1"
 )
 
 type Signal struct {
@@ -219,7 +218,7 @@ func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) er
 		}
 	}
 
-	return s.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy")
+	return s.updateRunnerStatus(ctx, app.RunnerStatusActive, "runner healthy")
 }
 
 func (s *Signal) toggleInstallCronEmitter(ctx workflow.Context, runner *app.Runner, state activities.InstallCronState) error {
@@ -255,7 +254,7 @@ func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, 
 	}
 
 	if runner.Status != app.RunnerStatusOffline || runner.StatusV2.Status != app.Status(app.RunnerStatusOffline) {
-		return s.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, reason)
+		return s.updateRunnerStatus(ctx, app.RunnerStatusOffline, reason)
 	}
 
 	if now.Sub(offlineAt) < runnerUnhealthyAlertDelay {
@@ -356,31 +355,7 @@ func (s *Signal) notifyRunnerUnhealthy(ctx workflow.Context, tmw tmetrics.Writer
 	return nil
 }
 
-func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description string) error {
-	statusVersion := workflow.GetVersion(ctx, atomicRunnerStatusVersion, workflow.DefaultVersion, 1)
-	if statusVersion == workflow.DefaultVersion {
-		if runner.Status != status {
-			if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-				RunnerID:          s.RunnerID,
-				Status:            status,
-				StatusDescription: description,
-			}); err != nil {
-				return errors.Wrap(err, "unable to update runner status")
-			}
-		}
-		if runner.StatusV2.Status == app.Status(status) {
-			return nil
-		}
-		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
-			RunnerID:          s.RunnerID,
-			Status:            status,
-			StatusDescription: description,
-		}); err != nil {
-			return errors.Wrap(err, "unable to update runner status v2")
-		}
-		return nil
-	}
-
+func (s *Signal) updateRunnerStatus(ctx workflow.Context, status app.RunnerStatus, description string) error {
 	if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            status,

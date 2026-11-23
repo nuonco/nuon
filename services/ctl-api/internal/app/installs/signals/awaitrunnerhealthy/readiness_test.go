@@ -111,24 +111,6 @@ func TestRequireActiveStillFailsFastForOfflineRunner(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
-func TestExistingHistoryKeepsRequireActiveFailFastForStartingRunner(t *testing.T) {
-	env, sig, runner := readinessTestEnvironment(t, ModeRequireActive)
-	runner.Status = app.RunnerStatusAwaitingHeartbeat
-	env.OnGetVersion(requireActiveAwaitsStartingRunnerVersion, workflow.DefaultVersion, 1).
-		Return(workflow.DefaultVersion).
-		Once()
-
-	env.OnActivity((*activities.Activities).GetCurrentRunnerProcess, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil, temporal.NewNonRetryableApplicationError("not found", "not found", nil)).
-		Once()
-
-	env.ExecuteWorkflow(func(ctx workflow.Context) error { return sig.Execute(ctx) })
-
-	require.True(t, env.IsWorkflowCompleted())
-	require.ErrorContains(t, env.GetWorkflowError(), "runner has no active process")
-	env.AssertExpectations(t)
-}
-
 func TestDisabledRunnerSkipsProcessReadiness(t *testing.T) {
 	env, sig, runner := readinessTestEnvironment(t, ModeRequireActive)
 	runner.Status = app.RunnerStatusActive
@@ -157,13 +139,10 @@ func TestActiveProcessWinsOverStaleAggregateStatus(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
-func TestExistingHistoryKeepsAggregateFailFastPolicy(t *testing.T) {
+func TestDefaultModeKeepsAggregateFailFastPolicy(t *testing.T) {
 	env, sig, runner := readinessTestEnvironment(t, "")
 	runner.Status = app.RunnerStatusOffline
 	runner.StatusV2.Status = app.Status(app.RunnerStatusOffline)
-	env.OnGetVersion(processReadinessPolicyVersion, workflow.DefaultVersion, 1).
-		Return(workflow.DefaultVersion).
-		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error { return sig.Execute(ctx) })
 

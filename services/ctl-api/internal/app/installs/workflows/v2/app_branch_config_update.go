@@ -14,11 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-const (
-	appBranchGroupDirectiveVersion   = "app-branch-group-directive-v1"
-	appBranchConfigOnlyDeployVersion = "app-branch-config-only-deploy-v1"
-)
-
 func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	newAppConfigID := generics.FromPtrStr(flw.Metadata["new_app_config_id"])
@@ -28,11 +23,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.New("new_app_config_id not found in workflow metadata")
 	}
 
-	useGroupDirective := workflow.GetVersion(ctx, appBranchGroupDirectiveVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if useGroupDirective {
-		if err := classifyAndMaybeWait(ctx, flw, installID, newAppConfigID); err != nil {
-			return nil, err
-		}
+	if err := classifyAndMaybeWait(ctx, flw, installID, newAppConfigID); err != nil {
+		return nil, err
 	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
@@ -71,9 +63,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, configStep)
 
-	configOnlyDeploy := workflow.GetVersion(ctx, appBranchConfigOnlyDeployVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	sandboxChanged := diff != nil && (diff.SandboxChanged || (!configOnlyDeploy && diff.SandboxBuildChanged))
-	if useGroupDirective && installConfigDiffEmpty(diff) && !sandboxChanged {
+	sandboxChanged := diff != nil && diff.SandboxChanged
+	if installConfigDiffEmpty(diff) && !sandboxChanged {
 		return sg.Result(steps), nil
 	}
 

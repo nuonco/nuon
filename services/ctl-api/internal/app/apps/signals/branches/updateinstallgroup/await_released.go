@@ -28,7 +28,6 @@ func (s *Signal) awaitInstallUpdatesReleased(
 	installEntries []app.InstallGroupRunInstall,
 ) (*installUpdateFailure, error) {
 	logger := workflow.GetLogger(ctx)
-	treatCancelAsCancel := workflow.GetVersion(ctx, installGroupCancelAsCancelVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	byID := make(map[string]int, len(enqueued))
 	waiting := make(map[string]struct{}, len(enqueued))
@@ -106,7 +105,7 @@ func (s *Signal) awaitInstallUpdatesReleased(
 		}
 		i := byID[e.installID]
 		switch {
-		case err != nil && treatCancelAsCancel && callback.IsCancelled(err):
+		case err != nil && callback.IsCancelled(err):
 			finish(i, e.installID, e.workflowID, statusCancelled, err.Error(), err)
 		case err != nil:
 			finish(i, e.installID, e.workflowID, statusError, err.Error(), nil)
@@ -116,7 +115,7 @@ func (s *Signal) awaitInstallUpdatesReleased(
 				status = res.Status
 			}
 			errMsg := fmt.Sprintf("install %s workflow %s: finished as %s", e.installID, e.workflowID, status)
-			if treatCancelAsCancel && status == statusCancelled {
+			if status == statusCancelled {
 				finish(i, e.installID, e.workflowID, statusCancelled, errMsg, nil)
 				return
 			}

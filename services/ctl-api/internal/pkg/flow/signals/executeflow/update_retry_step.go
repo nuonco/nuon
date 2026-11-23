@@ -27,12 +27,6 @@ type RetryStepResponse struct {
 // conductor to reach its settled park after a retryable error.
 const retryConductorParkWait = 30 * time.Second
 
-// retryStepFlowOwnedVersion gates the flow-owned retry path (flow lookup,
-// park wait, direct create-step-retry forward) so an update handler that was
-// in flight when the worker rolled keeps replaying the group-forwarded
-// command sequence.
-const retryStepFlowOwnedVersion = "retry-step-flow-owned"
-
 // retryStepHandler retries an errored step.
 //
 // Resident hosts always own the clone: the group handler returns on
@@ -74,10 +68,6 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 
 	if s.Resident {
 		return s.retryStepResident(ctx, req, step)
-	}
-
-	if workflow.GetVersion(ctx, retryStepFlowOwnedVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return s.retryStepLegacy(ctx, req, step)
 	}
 
 	if s.cancelRequested {
@@ -212,35 +202,4 @@ func (s *Signal) forwardRetryAndClone(ctx workflow.Context, stepID string, group
 		return fmt.Errorf("unable to clone step for retry: %w", err)
 	}
 	return nil
-}
-
-// retryStepLegacy is the pre-retryStepFlowOwnedVersion command sequence, kept
-// only so in-flight histories replay deterministically.
-func (s *Signal) retryStepLegacy(ctx workflow.Context, req RetryStepRequest, step *app.WorkflowStep) (*RetryStepResponse, error) {
-	_, err := workflowactivities.AwaitForwardRetryStepToGroup(ctx, workflowactivities.ForwardRetryStepToGroupRequest{
-		StepID:      req.StepID,
-		StepGroupID: step.WorkflowStepGroupID,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to forward retry to group: %w", err)
-	}
-
-	if s.awaitingResume || (s.Resident && !s.executeStarted) {
-		updated, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
-		if err != nil {
-			return nil, fmt.Errorf("unable to re-read step %s: %w", req.StepID, err)
-		}
-
-		if directive.Step(updated.ResultDirective) == directive.StepRetryGroup {
-			if err := s.cloneGroupForRetry(ctx, updated.GroupIdx); err != nil {
-				return nil, fmt.Errorf("unable to clone group for retry: %w", err)
-			}
-		} else if err := executeworkflowstepgroup.CloneStepForRetry(ctx, req.StepID, s.WorkflowID); err != nil {
-			return nil, fmt.Errorf("unable to clone step for retry: %w", err)
-		}
-
-		s.markResumeRequested(ctx, app.WorkflowRunTypeRetry, req.StepID)
-	}
-
-	return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
 }
