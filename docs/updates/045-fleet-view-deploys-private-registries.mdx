@@ -41,7 +41,7 @@ See every install of an app on one page.
 
 ## Deploy only what changed
 
-Ship a config change to just the [components](/concepts/components) it affects. Nuon compares each component with its last successful deploy and deploys only the ones that changed.
+Nuon now automatically reconciles your install with what has changed in your application. When a [component](/concepts/components) changes, Nuon figures out what has drifted and deploys the right components to update your install.
 
 - Rebuild a component only when its config or source changes
 - See the changed files and the commit behind each deployment
