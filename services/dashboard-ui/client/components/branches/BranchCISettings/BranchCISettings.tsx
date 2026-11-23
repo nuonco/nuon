@@ -70,7 +70,7 @@ export const BranchCISettingsCard = ({
         <LabeledValue label="Denied paths">
           <PatternList patterns={parsePathPatterns(deniedPaths)} empty="None" />
         </LabeledValue>
-        <LabeledValue label="Ignored changes regex">
+        <LabeledValue label="Ignored changes regex (deprecated)">
           {ignoreChangesRegex ? (
             <Code>{ignoreChangesRegex}</Code>
           ) : (
@@ -190,8 +190,10 @@ export const BranchCISettingsModal = ({
               <FormInput
                 field={field}
                 id="ignore-changes-regex"
-                labelProps={{ labelText: 'Ignored changes regex (optional)' }}
-                helperText="A run is not attempted when every changed file matches this RE2 regex."
+                labelProps={{
+                  labelText: 'Ignored changes regex (deprecated)',
+                }}
+                helperText="Deprecated. Use allowed paths or denied paths."
                 placeholder={'^(docs/|README\\.md)'}
                 disabled={isPending}
               />

@@ -91,7 +91,8 @@ func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "preview", "default preview run settings for this branch")
 	addDescription(schema, "run", "controls which VCS events automatically run this branch")
 	addDescription(schema, "post_deploy_runbooks", "names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time")
-	addDescription(schema, "ignore_changes_regex", "RE2 regex matched against every changed file path; a run whose entire changed file set matches is not attempted")
+	addDescription(schema, "ignore_changes_regex", "Deprecated: use [run].paths or [run].paths_ignore.")
+	markDeprecated(schema, "ignore_changes_regex", "")
 	addDescription(schema, "send_statuses_on_ignore", "whether to send a successful commit status when a run is ignored by ignore_changes_regex")
 }
 

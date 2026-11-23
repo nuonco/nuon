@@ -463,8 +463,7 @@ paths = ["my-app/**", "shared/**"]
 ```
 
 `send_statuses_on_ignore` posts a successful commit status when a pull request preview is skipped, so a required check
-does not block the PR. `ignore_changes_regex` still works: it skips a run when every changed path matches an RE2
-pattern.
+does not block the PR. `ignore_changes_regex` is deprecated. Use `[run].paths` or `[run].paths_ignore`.
 
 ## Roll back a change
 
@@ -499,8 +498,8 @@ exactly one install group.
 **The branch synced but has no install groups.** The branch config is missing its `[connected_repo]` /
 `[public_repo]` block, or install groups were omitted. Add them and `nuon branches sync` again.
 
-**A push did not start a run.** Check `[run].mode`, that `branch` matches the ref you pushed, `[run].paths` or
-`[run].paths_ignore` (a push that matches nothing is skipped on purpose), and `ignore_changes_regex`.
+**A push did not start a run.** Check `[run].mode`, that `branch` matches the ref you pushed, and `[run].paths` or
+`[run].paths_ignore` (a push that matches nothing is skipped on purpose). `ignore_changes_regex` is deprecated.
 
 **The pull request has no Nuon comment.** Your org has no GitHub App connection for that repository's owner, or
 `[preview].comment` is false. The preview run itself can still succeed.
