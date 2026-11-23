@@ -68,10 +68,6 @@ func IsCancelled(err error) bool {
 	return false
 }
 
-// cancelledCallbackErrVersion gates cancelled results erroring instead of
-// returning as success; in-flight histories carried on past them.
-const cancelledCallbackErrVersion = "callback-cancelled-result-err-v1"
-
 // AwaitWithTimeout waits for a completion signal on the Ref's signal channel.
 // A timeout <= 0 waits with no wall-clock deadline (for human-gated waits).
 func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Result, error) {
@@ -109,9 +105,6 @@ func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Re
 				msg,
 				"SIGNAL_FAILED", nil)
 		case "cancelled":
-			if workflow.GetVersion(ctx, cancelledCallbackErrVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-				return &result, nil
-			}
 			msg := result.StatusDescription
 			if msg == "" {
 				msg = "cancelled"

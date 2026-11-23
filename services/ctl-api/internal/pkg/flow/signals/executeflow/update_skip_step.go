@@ -31,11 +31,6 @@ type SkipStepResponse struct {
 // conductor to reach its settled park after a terminal error.
 const skipConductorParkWait = 30 * time.Second
 
-// skipStepFlowOwnedVersion gates the flow-owned skip path (flow lookup, park
-// wait, direct status update) so an update handler that was in flight when
-// the worker rolled keeps replaying the group-forwarded command sequence.
-const skipStepFlowOwnedVersion = "skip-step-flow-owned"
-
 // skipStepHandler skips an errored step.
 //
 // Two ownership cases (mirrors retryStepHandler):
@@ -62,14 +57,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	}
 
 	if s.Resident {
-		if workflow.GetVersion(ctx, "resident-flow-owned-skip-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-			return s.skipStepResidentLegacy(ctx, req, step)
-		}
 		return s.skipStepResident(ctx, req, step)
-	}
-
-	if workflow.GetVersion(ctx, skipStepFlowOwnedVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return s.skipStepLegacy(ctx, req, step)
 	}
 
 	if s.cancelRequested {
@@ -206,13 +194,12 @@ func (s *Signal) skipStepResident(ctx workflow.Context, req SkipStepRequest, ste
 	if s.cancelRequested {
 		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
 	}
-	recoverSkipped := workflow.GetVersion(ctx, "resident-skip-recovery-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	canSkip := func(step *app.WorkflowStep) bool {
 		if step.Retried || !step.Skippable {
 			return false
 		}
 		return step.Status.Status == app.StatusError || step.Status.Status == app.AwaitingApproval ||
-			(recoverSkipped && step.Status.Status == app.StatusUserSkipped && step.ResultDirective == string(residentSkipDirective(step)))
+			(step.Status.Status == app.StatusUserSkipped && step.ResultDirective == string(residentSkipDirective(step)))
 	}
 	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
 	if err != nil {
@@ -267,93 +254,6 @@ func (s *Signal) skipStepResident(ctx workflow.Context, req SkipStepRequest, ste
 	return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: true}, nil
 }
 
-func (s *Signal) skipStepResidentLegacy(ctx workflow.Context, req SkipStepRequest, step *app.WorkflowStep) (*SkipStepResponse, error) {
-	if s.cancelRequested {
-		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
-	}
-
-	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get workflow %s: %w", s.WorkflowID, err)
-	}
-	if flw.Status.Status == app.StatusCancelled {
-		s.cancelRequested = true
-		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
-	}
-
-	if !step.Skippable {
-		return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: false}, nil
-	}
-
-	stepDirective := directive.Step(step.ResultDirective)
-	residentParked := stepDirective == directive.StepAwaitRetry || stepDirective == directive.StepAwaitApproval
-
-	resp, err := workflowactivities.AwaitForwardSkipStepToGroup(ctx, workflowactivities.ForwardSkipStepToGroupRequest{
-		StepID:      req.StepID,
-		StepGroupID: step.WorkflowStepGroupID,
-	})
-	if err != nil && !residentParked {
-		return nil, fmt.Errorf("unable to forward skip-step to group: %w", err)
-	}
-	if err != nil {
-		if l, _ := log.WorkflowLogger(ctx); l != nil {
-			l.Warn("skip-step: unable to forward skip to unwound group",
-				zap.String("step_id", req.StepID),
-				zap.Error(err))
-		}
-	}
-
-	if residentParked {
-		skipDirective := residentSkipDirective(step)
-		if resp != nil && resp.Directive != "" {
-			skipDirective = directive.Step(resp.Directive)
-		}
-
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusUserSkipped,
-				StatusHumanDescription: "Step was skipped by the user.",
-				Metadata: map[string]any{
-					"skipped": true,
-				},
-			},
-		}); err != nil {
-			return nil, fmt.Errorf("unable to mark step %s as skipped: %w", step.ID, err)
-		}
-		executeworkflowstepgroup.NotifyOnSkip(ctx, step)
-		if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, workflowactivities.UpdateFlowStepResultDirectiveRequest{
-			StepID:    step.ID,
-			Directive: string(skipDirective),
-		}); err != nil {
-			return nil, fmt.Errorf("unable to write skip directive: %w", err)
-		}
-		if err := s.repairResidentSkippedGroup(ctx, step, skipDirective); err != nil {
-			return nil, err
-		}
-
-		s.markResumeRequested(ctx, app.WorkflowRunTypeSkip, req.StepID)
-	}
-
-	skippable := true
-	if resp != nil {
-		skippable = resp.Skippable
-	}
-
-	// Set unconditionally (like approve/unpause): gating on awaitingResume
-	// loses skips that land between the group unwinding and the flow parking.
-	// A skip that lands mid-run is dropped by the main loop's stale-resume
-	// reset.
-	if !residentParked && skippable {
-		s.markResumeRequested(ctx, app.WorkflowRunTypeSkip, req.StepID)
-	}
-
-	return &SkipStepResponse{
-		WorkflowID: s.WorkflowID,
-		Skippable:  skippable,
-	}, nil
-}
-
 func residentSkipDirective(step *app.WorkflowStep) directive.Step {
 	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 		if skipGroup, ok := step.QueueSignal.Signal.(signal.SignalWithSkipGroup); ok && skipGroup.SkipGroup() {
@@ -361,88 +261,4 @@ func residentSkipDirective(step *app.WorkflowStep) directive.Step {
 		}
 	}
 	return directive.StepContinue
-}
-
-func (s *Signal) repairResidentSkippedGroup(ctx workflow.Context, step *app.WorkflowStep, skipDirective directive.Step) error {
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
-		FlowID: s.WorkflowID,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to load group steps after skip: %w", err)
-	}
-
-	hasPending := false
-	for _, candidate := range steps {
-		sameGroup := candidate.GroupIdx == step.GroupIdx
-		if step.WorkflowStepGroupID != "" {
-			sameGroup = candidate.WorkflowStepGroupID == step.WorkflowStepGroupID
-		}
-		if !sameGroup || candidate.ID == step.ID || isStepTerminal(candidate.Status.Status) {
-			continue
-		}
-
-		if skipDirective == directive.StepSkipGroup && candidate.Idx > step.Idx {
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: candidate.ID,
-				Status: app.CompositeStatus{
-					Status:                 app.StatusDiscarded,
-					StatusHumanDescription: "Step was discarded after the group was skipped.",
-				},
-			}); err != nil {
-				return fmt.Errorf("unable to discard skipped group step %s: %w", candidate.ID, err)
-			}
-			continue
-		}
-		hasPending = true
-	}
-
-	if step.WorkflowStepGroupID == "" {
-		return nil
-	}
-
-	groupDirective := directive.GroupContinue
-	if skipDirective == directive.StepSkipGroup {
-		groupDirective = directive.GroupSkipGroup
-	}
-	if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStepGroupResultDirective(ctx, workflowactivities.UpdateFlowStepGroupResultDirectiveRequest{
-		StepGroupID: step.WorkflowStepGroupID,
-		Directive:   string(groupDirective),
-	}); err != nil {
-		return fmt.Errorf("unable to update skipped group directive: %w", err)
-	}
-
-	groupStatus := app.StatusSuccess
-	groupDescription := "group completed after step was skipped"
-	if hasPending {
-		groupStatus = app.StatusPending
-		groupDescription = "group pending after step was skipped"
-	}
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: step.WorkflowStepGroupID,
-		Status: app.CompositeStatus{
-			Status:                 groupStatus,
-			StatusHumanDescription: groupDescription,
-		},
-	}); err != nil {
-		return fmt.Errorf("unable to update skipped group status: %w", err)
-	}
-
-	return nil
-}
-
-// skipStepLegacy is the pre-skipStepFlowOwnedVersion command sequence, kept
-// only so in-flight histories replay deterministically.
-func (s *Signal) skipStepLegacy(ctx workflow.Context, req SkipStepRequest, step *app.WorkflowStep) (*SkipStepResponse, error) {
-	resp, err := workflowactivities.AwaitForwardSkipStepToGroup(ctx, workflowactivities.ForwardSkipStepToGroupRequest{
-		StepID:      req.StepID,
-		StepGroupID: step.WorkflowStepGroupID,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to forward skip-step to group: %w", err)
-	}
-
-	return &SkipStepResponse{
-		WorkflowID: s.WorkflowID,
-		Skippable:  resp.Skippable,
-	}, nil
 }

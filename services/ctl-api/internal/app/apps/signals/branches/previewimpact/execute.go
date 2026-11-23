@@ -12,8 +12,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const optionalPreviewImpactCommentVersion = "app-branch-optional-preview-impact-comment-v1"
-
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
@@ -150,8 +148,7 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	if run.PRNumber == nil {
 		return
 	}
-	if workflow.GetVersion(ctx, optionalPreviewImpactCommentVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
-		!run.PreviewGitHubComment() {
+	if !run.PreviewGitHubComment() {
 		return
 	}
 

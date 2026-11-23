@@ -28,11 +28,6 @@ import (
 
 const SignalType signal.SignalType = "component-deploy-sync-and-plan"
 
-const planCompositeErrorVersion = "deploy-sync-and-plan-composite-error-v1"
-
-// Histories that cloned before this version did not look up the deploy's build.
-const clonePinsDeployBuildVersion = "deploy-sync-and-plan-clone-pins-deploy-build-v1"
-
 type Signal struct {
 	signal.LifecycleBase
 
@@ -99,12 +94,7 @@ func (s *Signal) SkipGroup() bool { return true }
 
 // OnSkip closes the log stream the plan left open for apply. A skip discards
 // apply, and a retry creates a new deploy, so nothing else would close it.
-// The version gate keeps replays of skips that ran before this hook from
-// scheduling the close.
 func (s *Signal) OnSkip(ctx workflow.Context) error {
-	if workflow.GetVersion(ctx, "deploy-plan-skip-closes-log-stream-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return nil
-	}
 	if s.WorkflowStepID == "" {
 		return nil
 	}
@@ -165,8 +155,7 @@ func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneSte
 	buildID := s.BuildID
 	// Manual deploys record the requested build only on the deploy, which the
 	// clone drops, so Execute would otherwise fall back to the app config's build.
-	if buildID == "" && s.DeployID != "" &&
-		workflow.GetVersion(ctx, clonePinsDeployBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if buildID == "" && s.DeployID != "" {
 		deploy, err := activities.AwaitGetDeployByDeployID(ctx, s.DeployID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get deploy to pin its build for retry")
@@ -642,12 +631,9 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	}
 	s.runnerJobID = runnerJob.ID
 
-	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if planCompositeErrorsEnabled {
-		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
-			InstallDeployID: installDeploy.ID,
-		})
-	}
+	_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+		InstallDeployID: installDeploy.ID,
+	})
 
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
@@ -657,7 +643,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	})
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
-		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
+		if deployerrors.IsDeployPlanRenderFailed(err) {
 			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
 				InstallDeployID: installDeploy.ID,
 				ComponentName:   installDeploy.ComponentName,

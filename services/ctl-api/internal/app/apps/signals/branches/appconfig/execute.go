@@ -17,11 +17,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const (
-	configValidationCompositeErrorVersion = "app-branch-config-validation-composite-error-v1"
-	previewCommentConfigFailureVersion    = "app-branch-preview-comment-config-failure-v1"
-)
-
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
@@ -130,28 +125,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		if detail, ok := branchrunerrors.ValidationDetail(err); ok {
-			if workflow.GetVersion(ctx, configValidationCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-				if setErr := activities.AwaitSetAppBranchRunCompositeError(ctx, activities.SetAppBranchRunCompositeErrorRequest{
-					RunID:  s.RunID,
-					Detail: detail,
-				}); setErr != nil {
-					l.Warn("unable to set app branch run composite error", "error", setErr)
-				}
-
-				if run.IsPreview() && run.PRNumber != nil && run.PreviewGitHubComment() && vcsConfigID != "" {
-					if workflow.GetVersion(ctx, previewCommentConfigFailureVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-						s.writePreviewComment(ctx, l, run, branch, vcsConfigID, &activities.PRCommentPhases{
-							Config: activities.PRCommentPhaseInvalid,
-						}, activities.PRCommentStatusFailed, detail)
-					}
-				}
-
-				return temporal.NewNonRetryableApplicationError(
-					detail,
-					branchrunerrors.ConfigValidationFailedTemporalType,
-					err,
-				)
+			if setErr := activities.AwaitSetAppBranchRunCompositeError(ctx, activities.SetAppBranchRunCompositeErrorRequest{
+				RunID:  s.RunID,
+				Detail: detail,
+			}); setErr != nil {
+				l.Warn("unable to set app branch run composite error", "error", setErr)
 			}
+
+			if run.IsPreview() && run.PRNumber != nil && run.PreviewGitHubComment() && vcsConfigID != "" {
+				s.writePreviewComment(ctx, l, run, branch, vcsConfigID, &activities.PRCommentPhases{
+					Config: activities.PRCommentPhaseInvalid,
+				}, activities.PRCommentStatusFailed, detail)
+			}
+
+			return temporal.NewNonRetryableApplicationError(
+				detail,
+				branchrunerrors.ConfigValidationFailedTemporalType,
+				err,
+			)
 		}
 		return fmt.Errorf("unable to fetch intermediate config: %w", err)
 	}
@@ -215,44 +206,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 		if diffErr != nil {
 			l.Warn("unable to diff intermediate configs, continuing", "error", diffErr)
-		} else if !diffResult.Changed && !run.Force && workflow.GetVersion(ctx, "app-branch-preview-check-source-refs-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-			_ = activities.AwaitUpdateAppBranchRunNoConfigChanges(ctx, &activities.UpdateAppBranchRunNoConfigChangesInput{
-				RunID: s.RunID,
-			})
-
-			if run.PRNumber != nil && run.PreviewGitHubComment() {
-				commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
-					RunID: s.RunID,
-				})
-				commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-					OrgName:     branch.Org.Name,
-					AppName:     branch.App.Name,
-					AppBranchID: branch.ID,
-					BranchName:  branch.Name,
-					RunID:       s.RunID,
-					RunURL:      previewRunURL(commentContext),
-					Status:      activities.PRCommentStatusSkipped,
-					Mode:        run.PreviewMode(),
-				})
-				_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
-					VcsConfigID:       vcsConfigID,
-					PRNumber:          *run.PRNumber,
-					AppBranchID:       run.AppBranchID,
-					ExistingCommentID: run.GithubCommentID,
-					Body:              commentBody,
-				})
-			}
-			if s.StepID != "" {
-				_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-					ID: s.StepID,
-					Status: app.CompositeStatus{
-						Status:                 app.StatusSuccess,
-						StatusHumanDescription: "no config changes detected",
-					},
-				})
-			}
-
-			return nil
 		}
 
 		if diffResult.Diff != nil {

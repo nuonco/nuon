@@ -167,7 +167,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
-	if installStackOutputs.AWSStackOutputs != nil && workflow.GetVersion(ctx, "update-runner-cloud-identity-role", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if installStackOutputs.AWSStackOutputs != nil {
 		l := workflow.GetLogger(ctx)
 		update, err := activities.AwaitUpdateRunnerCloudIdentityRole(ctx, &activities.UpdateRunnerCloudIdentityRole{
 			RunnerID:         install.RunnerID,

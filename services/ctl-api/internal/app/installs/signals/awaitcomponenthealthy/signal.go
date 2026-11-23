@@ -58,8 +58,6 @@ func (s *Signal) AutoRetry() bool { return true }
 // most of the global retry budget for the retry button.
 const gateMaxAutoRetries = 3
 
-const runnableProbesVersion = "await-component-healthy-runnable-probes-v1"
-
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return gateMaxAutoRetries }
 
 func (s *Signal) WithParams(params *signal.Params) {
@@ -142,11 +140,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// them — something external must push before the deploy proceeds.
 	declaredProbes := make([]string, 0, len(ccc.HealthProbes)+len(ccc.HealthRequiredChecks))
 	declaredProbes = append(declaredProbes, ccc.HealthRequiredChecks...)
-	probes := ccc.HealthProbes
-	if workflow.GetVersion(ctx, runnableProbesVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		probes = probes.Runnable()
-	}
-	for _, probe := range probes {
+	for _, probe := range ccc.HealthProbes.Runnable() {
 		if probe.Name != "" {
 			declaredProbes = append(declaredProbes, probe.Name)
 		}

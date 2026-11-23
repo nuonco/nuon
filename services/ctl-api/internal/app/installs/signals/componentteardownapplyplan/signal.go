@@ -27,8 +27,6 @@ import (
 
 const SignalType signal.SignalType = "component-teardown-apply-plan"
 
-const planCompositeErrorVersion = "teardown-apply-plan-composite-error-v1"
-
 type Signal struct {
 	signal.LifecycleBase
 
@@ -182,22 +180,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("component ID is required")
 	}
 
-	var installDeploy *app.InstallDeploy
-	if workflow.GetVersion(ctx, "teardown-apply-plan-authorization-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		installDeploy, err = activities.AwaitGetInstallDeployForApplyStep(ctx, activities.GetInstallDeployForApplyStep{
-			InstallWorkflowID: s.FlowID,
-			ComponentID:       s.ComponentID,
-		})
-		if err != nil {
-			s.updateDeployStatus(ctx, "", app.InstallDeployStatusError, "unable to get install deploy from previous step")
-		}
-	} else {
-		installDeploy, err = activities.AwaitGetApprovedInstallDeployForApplyStep(ctx, activities.GetApprovedInstallDeployForApplyStepRequest{
-			InstallWorkflowID: s.FlowID,
-			ComponentID:       s.ComponentID,
-			ApplyStepID:       s.InstallWorkflowStepID,
-		})
-	}
+	installDeploy, err := activities.AwaitGetApprovedInstallDeployForApplyStep(ctx, activities.GetApprovedInstallDeployForApplyStepRequest{
+		InstallWorkflowID: s.FlowID,
+		ComponentID:       s.ComponentID,
+		ApplyStepID:       s.InstallWorkflowStepID,
+	})
 	if err != nil {
 		return errors.Wrap(err, "unable to get install deploy")
 	}
@@ -247,11 +234,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	baselineErr := activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
 		DeployID: installDeploy.ID,
 	})
-	if baselineErr != nil && workflow.GetVersion(ctx, "require-applied-baseline-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+	if baselineErr != nil {
 		baselineErr = errors.Wrap(baselineErr, "unable to record component teardown baseline")
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "applied, but unable to record the applied baseline")
 	} else {
-		baselineErr = nil
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 		s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
 	}
@@ -331,12 +317,9 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	s.runnerJobID = runnerJob.ID
 
 	// NOTE(jm): this is probably going to need to be refactored
-	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if planCompositeErrorsEnabled {
-		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
-			InstallDeployID: installDeploy.ID,
-		})
-	}
+	_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+		InstallDeployID: installDeploy.ID,
+	})
 
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
@@ -346,7 +329,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	})
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
-		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
+		if deployerrors.IsDeployPlanRenderFailed(err) {
 			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
 				InstallDeployID: installDeploy.ID,
 				ComponentName:   installDeploy.ComponentName,
