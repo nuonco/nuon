@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/config/features"
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
 func (g *get) GetAll(ctx context.Context) error {
@@ -335,6 +336,13 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string, 
 
 	ctx, cancel := context.WithTimeout(ctx, g.opts.FieldTimeout)
 	defer cancel()
+	if g.opts.CheckRemote != nil {
+		// The hops named in the config were checked above. A redirect is a hop
+		// the server names, so it is checked as it happens.
+		ctx = publicnet.WithRedirectCheck(ctx, func(target *url.URL) error {
+			return g.opts.CheckRemote(field, target.String())
+		})
+	}
 
 	// go-getter's ClientModeFile path for git is broken for `//path/to/file`
 	// references: GitGetter.GetFile() always strips the last path segment of
@@ -464,7 +472,16 @@ func confinedLocalPath(input string) (string, bool, error) {
 
 func (g *get) remoteGetters() map[string]getter.Getter {
 	if g.opts.Source == nil {
-		return nil
+		// Only HTTP(S) changes: go-getter's default client follows any
+		// redirect. Every other getter stays as it was.
+		getters := make(map[string]getter.Getter, len(getter.Getters))
+		for name, defaultGetter := range getter.Getters {
+			getters[name] = defaultGetter
+		}
+		httpGetter := &getter.HttpGetter{Netrc: true, Client: g.httpClient}
+		getters["http"] = httpGetter
+		getters["https"] = httpGetter
+		return getters
 	}
 	httpGetter := &getter.HttpGetter{
 		Client:                g.httpClient,
