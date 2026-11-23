@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -79,13 +80,13 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	branchID := ctx.Query("branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	appID := ctx.Param("app_id")
-	_, err = s.findApp(ctx, org.ID, appID)
+	currentApp, err := applookup.ByRef(ctx, s.db, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, branchID, q, triggerTypes, lbls)
+	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, currentApp.ID, branchID, q, triggerTypes, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", appID, err))
 		return
@@ -100,7 +101,7 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, 
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
+			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v2"))
 		}).
 		Preload("Configs.Triggers").
 		Preload("Configs.Triggers.Component").
@@ -128,7 +129,20 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, 
 
 	if triggerTypes != "" {
 		tx = tx.Where(
-			"action_workflows.id IN (SELECT awc.action_workflow_id FROM action_workflow_configs_latest_view_v1 awc JOIN action_workflow_trigger_configs awtc ON awtc.action_workflow_config_id = awc.id WHERE awtc.type = ? AND awtc.deleted_at = 0)",
+			`EXISTS (
+				SELECT 1 FROM action_workflow_configs awc
+				WHERE awc.id = (
+					SELECT awc2.id FROM action_workflow_configs awc2
+					WHERE awc2.action_workflow_id = action_workflows.id
+					ORDER BY awc2.created_at DESC, awc2.id DESC
+					LIMIT 1
+				)
+					AND EXISTS (
+						SELECT 1 FROM action_workflow_trigger_configs awtc
+						WHERE awtc.action_workflow_config_id = awc.id
+							AND awtc.type = ? AND awtc.deleted_at = 0
+					)
+			)`,
 			triggerTypes,
 		)
 	}
@@ -146,17 +160,16 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, 
 	return actionWorkflows, nil
 }
 
-func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
-	app := app.App{}
+func (s *service) findAppByID(ctx context.Context, orgID, appID string) (*app.App, error) {
+	var currentApp app.App
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Org.VCSConnections").
-		Where("name = ? AND org_id = ?", appID, orgID).
-		Or("id = ?", appID).
-		First(&app)
+		Where(&app.App{ID: appID, OrgID: orgID}, "ID", "OrgID").
+		First(&currentApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return &app, nil
+	return &currentApp, nil
 }

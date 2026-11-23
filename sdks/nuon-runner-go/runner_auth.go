@@ -33,6 +33,19 @@ func (c *client) RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunner
 	return resp.Payload, nil
 }
 
+func (c *client) RunnerAuthAWSSTS(ctx context.Context, req *models.ServiceRunnerAuthAWSSTSRequest) (*models.ServiceRunnerAuthAWSSTSResponse, error) {
+	resp, err := c.genClient.Operations.RunnerAuthAWSSTS(&operations.RunnerAuthAWSSTSParams{
+		Req:        req,
+		Context:    ctx,
+		HTTPClient: c.unauthClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error) {
 	resp, err := c.genClient.Operations.RunnerAuthGCP(&operations.RunnerAuthGCPParams{
 		Req:        req,

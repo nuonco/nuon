@@ -36,6 +36,9 @@ export const DeployGroupStepContainer = ({
   const deployedCount = installEntries.filter(
     (e: any) => e.status === 'success' || e.status === 'deployed'
   ).length
+  const updatedToDesired =
+    installEntries.length > 0 &&
+    installEntries.every((e: any) => e.phase === 'desired')
 
   const { data: appInstalls } = useQuery({
     placeholderData: keepPreviousData,
@@ -86,6 +89,7 @@ export const DeployGroupStepContainer = ({
       rows={rows}
       emptyMessage={emptyMessage}
       variant={isPreviewApply ? 'preview' : 'group'}
+      updatedToDesired={updatedToDesired}
     />
   )
 }

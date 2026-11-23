@@ -211,7 +211,6 @@ var errOAuthGrantConsumed = errors.New("oauth grant already consumed")
 func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, grant oauthGrant, consumedDesc string) {
 	accessTTL := time.Duration(s.cfg.OAuthAccessTokenTTL) * time.Minute
 	refreshTTL := time.Duration(s.cfg.OAuthRefreshTokenTTL) * time.Minute
-	sourceType, sourceID := tokenSource(grant.SourceTokenID)
 
 	var access *app.Token
 	var refreshValue string
@@ -232,12 +231,11 @@ func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, gr
 
 		var err error
 		access, err = s.createAccessToken(tx, accessToken{
-			AccountID:  grant.AccountID,
-			Role:       oauthScopeToRole(grant.Scope),
-			TokenType:  app.TokenTypeOAuth,
-			TTL:        accessTTL,
-			SourceType: sourceType,
-			SourceID:   sourceID,
+			AccountID:     grant.AccountID,
+			Role:          oauthScopeToRole(grant.Scope),
+			TokenType:     app.TokenTypeOAuth,
+			TTL:           accessTTL,
+			SourceTokenID: grant.SourceTokenID,
 		})
 		if err != nil {
 			return err

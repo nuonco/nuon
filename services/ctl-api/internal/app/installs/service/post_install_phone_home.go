@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -19,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/driftresolution"
 )
 
 type InstallPhoneHomeRequest map[string]any
@@ -352,6 +354,17 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 		var current app.InstallStackVersion
 		if err := tx.First(&current, "id = ?", stackVersion.ID).Error; err != nil {
 			return errors.Wrap(err, "unable to load stack version")
+		}
+		if err := tx.Select("id").Clauses(clause.Locking{Strength: "KEY SHARE"}).
+			Where(app.Org{ID: current.OrgID}).Take(&app.Org{}).Error; err != nil {
+			return errors.Wrap(err, "unable to lock stack version org")
+		}
+		if _, err := driftresolution.LockInstall(ctx, tx, current.InstallID); err != nil {
+			return errors.Wrap(err, "unable to lock stack version install")
+		}
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(app.InstallStackVersion{ID: current.ID}).Take(&current).Error; err != nil {
+			return errors.Wrap(err, "unable to lock stack version")
 		}
 		wasCancelled := current.Status.Status == app.StatusCancelled
 		// Drop the await hook so a cancelled provision workflow is not resumed.

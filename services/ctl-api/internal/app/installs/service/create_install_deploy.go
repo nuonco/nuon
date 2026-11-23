@@ -16,6 +16,7 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -320,7 +321,7 @@ func (s *service) createIdempotentInstallDeploy(
 			}
 			return tx.WithContext(ctx).Model(&app.InstallDeploy{}).
 				Where("id = ?", createdDeploy.ID).
-				Update("install_workflow_id", wf.ID).Error
+				Updates(map[string]any{"install_workflow_id": wf.ID, "plan_only": wf.PlanOnly}).Error
 		},
 	})
 	if err != nil {
@@ -365,7 +366,17 @@ func (s *service) insertInstallDeploy(
 	if err := db.WithContext(ctx).Preload("AppConfig").Where(app.Install{ID: installID}).First(&install).Error; err != nil {
 		return nil, "", "", "", err
 	}
-	if install.AppConfig.BuildsPinned {
+	var build app.ComponentBuild
+	res := db.WithContext(ctx).
+		Preload("AppBranchRun.Preview").
+		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection.Component").
+		First(&build, "id = ?", req.BuildID)
+	if res.Error != nil {
+		return nil, "", "", "", fmt.Errorf("unable to get build %s: %w", req.BuildID, res.Error)
+	}
+
+	if install.AppConfig.BuildsPinned && !buildselection.OnPinnedBranch(&build, install.AppConfig.AppBranchID.String) {
 		enabled, err := s.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureManualBuildSelection)
 		if err != nil {
 			return nil, "", "", "", fmt.Errorf("unable to check manual build selection feature: %w", err)
@@ -376,15 +387,6 @@ func (s *service) insertInstallDeploy(
 				Description: "Use an app branch run to deploy changes to this install.",
 			}
 		}
-	}
-
-	var build app.ComponentBuild
-	res := db.WithContext(ctx).
-		Preload("ComponentConfigConnection").
-		Preload("ComponentConfigConnection.Component").
-		First(&build, "id = ?", req.BuildID)
-	if res.Error != nil {
-		return nil, "", "", "", fmt.Errorf("unable to get build %s: %w", req.BuildID, res.Error)
 	}
 
 	componentID := build.ComponentConfigConnection.ComponentID

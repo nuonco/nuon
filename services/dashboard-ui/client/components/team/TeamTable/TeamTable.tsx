@@ -6,6 +6,7 @@ import { Menu } from '@/components/common/Menu'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import type { TAccount } from '@/types'
 import { RemoveUserButton } from '@/components/team/RemoveUser'
 import { ChangeRoleButton } from '@/components/team/ChangeRole'
@@ -16,6 +17,7 @@ export type TTeamMemberRow = {
   email: string
   role: string
   status: string
+  accountCreatedAt?: string
   account: TAccount
 }
 
@@ -31,6 +33,7 @@ export function parseAccountToTableData(
       email: member.email || '',
       role: roleTitles(roleType),
       status: 'active',
+      accountCreatedAt: member.created_at,
       account: member,
     }
   })
@@ -94,7 +97,10 @@ export const TeamTable = ({
         header: 'Email',
         accessorKey: 'email',
         cell: (props) => (
-          <Text variant="body" className="text-primary-600 dark:text-primary-400">
+          <Text
+            variant="body"
+            className="text-primary-600 dark:text-primary-400"
+          >
             {props.getValue<string>()}
           </Text>
         ),
@@ -103,7 +109,10 @@ export const TeamTable = ({
         header: 'Role',
         accessorKey: 'role',
         cell: (props) => (
-          <Text variant="body" className="text-primary-600 dark:text-primary-400">
+          <Text
+            variant="body"
+            className="text-primary-600 dark:text-primary-400"
+          >
             {props.getValue<string>()}
           </Text>
         ),
@@ -116,6 +125,17 @@ export const TeamTable = ({
             Joined
           </Status>
         ),
+      },
+      {
+        header: 'Account created',
+        accessorKey: 'accountCreatedAt',
+        meta: { defaultHidden: true },
+        cell: (props) =>
+          props.getValue<string>() ? (
+            <Time time={props.getValue<string>()} format="relative" />
+          ) : (
+            <Text theme="neutral">—</Text>
+          ),
       },
       {
         id: 'action',
@@ -133,6 +153,7 @@ export const TeamTable = ({
 
   return (
     <Table<TTeamMemberRow>
+      tableId="team"
       columns={columns}
       data={parseAccountToTableData(data, roleTitles)}
       isLoading={isLoading}

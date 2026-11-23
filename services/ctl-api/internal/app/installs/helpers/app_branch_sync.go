@@ -30,6 +30,10 @@ type AppBranchRunForInstall struct {
 	InstallGroupName             string
 	InstallGroupAssignmentSource app.InstallAppBranchGroupAssignmentSource
 	AlreadyCurrent               bool
+
+	// DesiredOnly is set when desired-config-rollout is on: the install should
+	// record the run's config as its desired config instead of deploying.
+	DesiredOnly bool
 }
 
 // AppBranchConfigUpdateInput describes the config update to run for an install.
@@ -144,13 +148,19 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 		return nil, fmt.Errorf("unable to get install group for app branch run: %w", err)
 	}
 
-	alreadyCurrent, err := h.installOnAppConfig(ctx, install, run.AppConfigID)
+	rolloutDesired, err := h.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureDesiredConfigRollout)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check desired config rollout feature: %w", err)
+	}
+
+	alreadyCurrent, err := h.installOnAppConfig(ctx, install, run.AppConfigID, rolloutDesired)
 	if err != nil {
 		return nil, err
 	}
 	resolved.AppBranchRunID = run.ID
 	resolved.AppConfigID = run.AppConfigID
 	resolved.AlreadyCurrent = alreadyCurrent
+	resolved.DesiredOnly = rolloutDesired && !alreadyCurrent
 	return resolved, nil
 }
 
@@ -180,8 +190,12 @@ func (h *Helpers) LatestDeployableAppBranchRun(ctx context.Context, appBranchID 
 	return &run, nil
 }
 
-func (h *Helpers) installOnAppConfig(ctx context.Context, install *app.Install, appConfigID string) (bool, error) {
+func (h *Helpers) installOnAppConfig(ctx context.Context, install *app.Install, appConfigID string, rolloutDesired bool) (bool, error) {
 	if install.DeployedAppConfigID() == appConfigID {
+		return true, nil
+	}
+
+	if rolloutDesired && install.AppConfigID == appConfigID {
 		return true, nil
 	}
 

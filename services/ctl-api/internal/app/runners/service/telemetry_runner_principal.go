@@ -67,7 +67,7 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 
 func hasTelemetryRunnerRole(acct *app.Account, orgID string) bool {
 	for _, role := range acct.Roles {
-		if role.RoleType == app.RoleTypeRunner && role.OrgID.ValueString() == orgID {
+		if (role.RoleType == app.RoleTypeRunner || role.RoleType == app.RoleTypeRunnerIdentity) && role.OrgID.ValueString() == orgID {
 			return true
 		}
 	}

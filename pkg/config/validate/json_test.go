@@ -1,12 +1,16 @@
 package validate
 
 import (
+	"context"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/schema"
 )
 
 // mockResultError implements gojsonschema.ResultError for testing
@@ -121,6 +125,16 @@ func TestFormatValidationErrors(t *testing.T) {
 			result := formatValidationErrors(tt.errors, cfg)
 			assert.Equal(t, tt.expected, result)
 		})
+	}
+}
+
+func TestValidateJSONSchema_InstallWithoutAppBranch(t *testing.T) {
+	errs, err := schema.Validate(context.Background(), &config.AppConfig{
+		Installs: []*config.Install{{Name: "acme"}},
+	})
+	require.NoError(t, err)
+	for _, e := range errs {
+		assert.False(t, strings.HasPrefix(e.Field(), "installs"), "unexpected install error: %s", e)
 	}
 }
 

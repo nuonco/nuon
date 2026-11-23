@@ -132,7 +132,7 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		}
 	}
 
-	installConfig, err := s.helpers.GetLatestInstallConfig(ctx, installID)
+	installConfig, err := s.helpers.GetLatestInstallConfig(ctx, install.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing approval option: %w", err)
 	}
@@ -186,7 +186,7 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		return nil, fmt.Errorf("unable to get app input config for install %s: %w", installID, err)
 	}
 
-	installInputs, err := s.getLatestInstallInputs(ctx, installID)
+	installInputs, err := s.getLatestInstallInputs(ctx, install.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get inputs for install %s: %w", installID, err)
 	}

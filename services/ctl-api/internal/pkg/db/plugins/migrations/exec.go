@@ -48,16 +48,26 @@ func (m *Migrator) Exec(ctx context.Context) error {
 		m.l.Info(fmt.Sprintf("executing %s migration method", method.name),
 			zap.String("db_type", m.dbType))
 
-		for _, model := range m.models {
-			if err := method.objMethod(ctx, model); err != nil {
-				tableName := plugins.TableName(m.db, model)
+		apply := func() error {
+			for _, model := range m.models {
+				if err := method.objMethod(ctx, model); err != nil {
+					tableName := plugins.TableName(m.db, model)
 
-				m.l.Error("unable to migrate model",
-					zap.Error(err),
-					zap.String("model", tableName))
+					m.l.Error("unable to migrate model",
+						zap.Error(err),
+						zap.String("model", tableName))
 
+					return err
+				}
+			}
+			return nil
+		}
+		if method.name == "views" && m.db.Dialector.Name() == "postgres" {
+			if err := m.applyViewsTransactionally(ctx, apply); err != nil {
 				return err
 			}
+		} else if err := apply(); err != nil {
+			return err
 		}
 	}
 

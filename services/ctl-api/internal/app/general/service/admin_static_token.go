@@ -9,9 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -77,21 +77,5 @@ func (s *service) createStaticToken(ctx context.Context, subjectOrEmail string, 
 		return nil, fmt.Errorf("invalid account: %w", err)
 	}
 
-	token := app.Token{
-		CreatedByID: acct.ID,
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeStatic,
-		ExpiresAt:   time.Now().Add(duration),
-		IssuedAt:    time.Now(),
-		Issuer:      acct.ID,
-		AccountID:   acct.ID,
-	}
-
-	res := s.db.WithContext(ctx).
-		Create(&token)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create static token: %w", res.Error)
-	}
-
-	return &token, nil
+	return s.acctClient.IssueStaticToken(ctx, account.StaticTokenRequest{AccountID: acct.ID, CreatedByID: acct.ID, Duration: duration})
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func Component(ctx context.Context, db *gorm.DB, cccID string) (*app.ComponentBuild, error) {
@@ -31,7 +30,7 @@ func Component(ctx context.Context, db *gorm.DB, cccID string) (*app.ComponentBu
 	if build == nil && ccc.AppConfig.BuildsPinned {
 		return nil, fmt.Errorf("app config %s has no successful selected build for component %s", ccc.AppConfigID, ccc.ComponentID)
 	}
-	if build != nil && build.ComponentConfigConnection.ID != "" {
+	if build != nil {
 		var pinned app.ComponentBuild
 		if err := db.WithContext(ctx).
 			Preload("ComponentConfigConnection").
@@ -53,80 +52,19 @@ func Components(ctx context.Context, db *gorm.DB, configs []app.ComponentConfigC
 	for _, cfg := range configs {
 		configIDs = append(configIDs, cfg.ID)
 	}
-	liveBuild := "b.deleted_at = 0 AND "
-	liveConfig := "bc.deleted_at = 0 AND "
-	if db.Statement.Unscoped {
-		liveBuild = ""
-		liveConfig = ""
+	var rows []struct {
+		ComponentConfigConnectionID string
+		SelectedBuildID             string
 	}
-	configAppJoin := "JOIN app_configs a ON a.id = bc.app_config_id"
-	legacyAppJoin := "JOIN app_configs a ON a.id = old.app_config_id"
-	if views.TableOrViewName(db, &app.ComponentConfigConnection{}, "") == "component_config_connections" {
-		configAppJoin = ""
-		legacyAppJoin = ""
+	if err := db.WithContext(ctx).
+		Table("component_config_connections_selected_build_view_v1").
+		Select("component_config_connection_id", "selected_build_id").
+		Where("component_config_connection_id IN ? AND selected_build_id IS NOT NULL", configIDs).
+		Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("unable to load selected component builds: %w", err)
 	}
-	var pins []struct {
-		TargetConfigID string
-		BuildID        string
-		BuildConfigID  string
-		ComponentID    string
-	}
-	if err := db.WithContext(ctx).Raw(`
-		SELECT c.id AS target_config_id, b.id AS build_id, b.component_config_connection_id AS build_config_id, bc.component_id
-		FROM component_config_connections c
-		JOIN component_builds b ON b.id = c.latest_build_id
-		JOIN component_config_connections bc ON bc.id = b.component_config_connection_id
-		`+configAppJoin+`
-		WHERE c.id IN ? AND `+liveBuild+liveConfig+`COALESCE(NULLIF(b.status_v2->>'status', ''), b.status) = ? AND bc.component_id = c.component_id`,
-		configIDs, app.ComponentBuildStatusActive).Scan(&pins).Error; err != nil {
-		return nil, fmt.Errorf("unable to load pinned component builds: %w", err)
-	}
-	for _, pin := range pins {
-		selected[pin.TargetConfigID] = &app.ComponentBuild{
-			ID: pin.BuildID, Status: app.ComponentBuildStatusActive, ComponentConfigConnectionID: pin.BuildConfigID,
-			ComponentConfigConnection: app.ComponentConfigConnection{ID: pin.BuildConfigID, ComponentID: pin.ComponentID},
-		}
-	}
-	legacyIDs := make([]string, 0, len(configs))
-	for _, cfg := range configs {
-		if selected[cfg.ID] != nil {
-			continue
-		}
-		if cfg.AppConfig.BuildsPinned {
-			continue
-		}
-		legacyIDs = append(legacyIDs, cfg.ID)
-	}
-	if len(legacyIDs) == 0 {
-		return selected, nil
-	}
-	var legacy []struct {
-		TargetConfigID string
-		BuildID        string
-		BuildConfigID  string
-	}
-	if err := db.WithContext(ctx).Raw(`
-		WITH wanted AS MATERIALIZED (
-			SELECT id, component_id, checksum FROM component_config_connections WHERE id IN ?
-		), candidate_configs AS (
-			SELECT id AS target_config_id, id AS build_config_id FROM wanted WHERE COALESCE(checksum, '') = ''
-			UNION ALL
-			SELECT w.id, old.id FROM wanted w
-			JOIN component_config_connections old ON old.component_id = w.component_id AND old.checksum = w.checksum
-			`+legacyAppJoin+`
-			WHERE COALESCE(w.checksum, '') <> ''
-		)
-		SELECT DISTINCT ON (c.target_config_id) c.target_config_id, b.id AS build_id, b.component_config_connection_id AS build_config_id
-		FROM candidate_configs c JOIN component_builds b ON b.component_config_connection_id = c.build_config_id
-		WHERE `+liveBuild+`b.status = ?
-		ORDER BY c.target_config_id, b.created_at DESC, b.id ASC`, legacyIDs, app.ComponentBuildStatusActive).
-		Scan(&legacy).Error; err != nil {
-		return nil, fmt.Errorf("unable to load active build for component config: %w", err)
-	}
-	for _, build := range legacy {
-		selected[build.TargetConfigID] = &app.ComponentBuild{
-			ID: build.BuildID, Status: app.ComponentBuildStatusActive, ComponentConfigConnectionID: build.BuildConfigID,
-		}
+	for _, row := range rows {
+		selected[row.ComponentConfigConnectionID] = &app.ComponentBuild{ID: row.SelectedBuildID, Status: app.ComponentBuildStatusActive}
 	}
 	return selected, nil
 }
@@ -148,6 +86,18 @@ func ValidateComponent(ctx context.Context, db *gorm.DB, appConfigID, componentI
 	if componentID == "" || buildID == "" {
 		return fmt.Errorf("component ID and build ID are required")
 	}
+	var build app.ComponentBuild
+	if err := db.WithContext(ctx).
+		Preload("AppBranchRun.Preview").
+		Preload("ComponentConfigConnection").
+		Where(app.ComponentBuild{ID: buildID}).
+		First(&build).Error; err != nil {
+		return err
+	}
+	if build.ComponentConfigConnection.ComponentID == componentID &&
+		OnPinnedBranch(&build, cfg.AppBranchID.String) {
+		return nil
+	}
 	var ccc app.ComponentConfigConnection
 	if err := db.WithContext(ctx).
 		Where(app.ComponentConfigConnection{AppConfigID: appConfigID, ComponentID: componentID}).
@@ -162,6 +112,13 @@ func ValidateComponent(ctx context.Context, db *gorm.DB, appConfigID, componentI
 		return fmt.Errorf("build %s is not selected by app config %s for component %s", buildID, appConfigID, componentID)
 	}
 	return nil
+}
+
+func OnPinnedBranch(build *app.ComponentBuild, branchID string) bool {
+	if branchID == "" || build == nil || build.AppBranchRun == nil || build.AppBranchRun.IsPreview() {
+		return false
+	}
+	return build.AppBranchRun.AppBranchID == branchID
 }
 
 func ValidateDeploy(ctx context.Context, db *gorm.DB, deploy *app.InstallDeploy) error {

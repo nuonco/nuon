@@ -4,13 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 type EnsureInstallStackServiceAccountRequest struct {
@@ -37,31 +31,10 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 		return nil, fmt.Errorf("unable to validate request: %w", err)
 	}
 
-	var stack app.InstallStack
-	if res := a.db.WithContext(ctx).
-		Where(app.InstallStack{ID: req.InstallStackID}).
-		First(&stack); res.Error != nil {
-		return nil, generics.TemporalGormError(res.Error, "unable to load install stack: %w")
+	binding, err := a.acctClient.EnsureStack(ctx, req.InstallStackID)
+	if err != nil {
+		return nil, generics.TemporalGormError(err, "unable to ensure install stack account: %w")
 	}
 
-	var accountID string
-	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		binding, err := account.New(account.Params{DB: tx}).EnsureManagedServiceAccount(ctx, account.ManagedServiceAccountRequest{
-			OrgID: stack.OrgID, OwnerType: plugins.TableName(tx, app.InstallStack{}), OwnerID: stack.ID,
-			Purpose: app.ManagedServiceAccountPurposeStack, InstanceKey: "default", Subject: stack.ID,
-		})
-		if err != nil {
-			return fmt.Errorf("unable to ensure stack service account: %w", err)
-		}
-		accountID = binding.AccountID
-		authzClient := authz.New(authz.Params{DB: tx})
-		if err := authzClient.EnsureStackInstallRole(ctx, stack.OrgID, stack.InstallID, accountID); err != nil {
-			return fmt.Errorf("unable to ensure stack service account role: %w", err)
-		}
-		return authzClient.RemoveAccountOrgRoleByType(ctx, app.RoleTypeOrgAdmin, stack.OrgID, accountID)
-	}); err != nil {
-		return nil, err
-	}
-
-	return &EnsureInstallStackServiceAccountResponse{AccountID: accountID}, nil
+	return &EnsureInstallStackServiceAccountResponse{AccountID: binding.AccountID}, nil
 }

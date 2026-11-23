@@ -14,21 +14,24 @@ import {
   inputUpdateResource,
   inSyncResources,
   mixedAlignmentResources,
+  selectedCommit,
 } from '@/components/__fixtures__/install-alignment'
-import type { TInstallAlignmentResource } from '@/types'
-import { explanationEvidence, hasOngoingDeployment } from '../alignment-utils'
+import type { TInstallResourceSyncStatusResource } from '@/types'
+import { hasOngoingDeployment } from '../alignment-utils'
 import { DriftResourceCard } from '../DriftResourceCard'
 import { DriftedResources, type IDriftedResources } from './DriftedResources'
 
 const card =
-  (view: TCollectionView) => (resource: TInstallAlignmentResource) => (
+  (view: TCollectionView) => (resource: TInstallResourceSyncStatusResource) => (
     <DriftResourceCard
       resource={resource}
       view={view}
-      explanationHref={explanationEvidence(resource) ? '#evidence' : undefined}
-      branchRunHref="#branch-run"
-      lastAttemptHref="#last-attempt"
+      driftCheckHref={resource.plan?.plan_only ? '#drift-check' : undefined}
+      historyHref="#deploy-history"
       deploymentHref="#deployment"
+      originHref={(origin) =>
+        origin?.run ? `#run-${origin.run.run_id}` : undefined
+      }
       onViewPlan={resource.plan ? () => {} : undefined}
     />
   )
@@ -57,6 +60,11 @@ const Interactive = ({
         search={search}
         view={view}
         renderCard={card(view)}
+        originHref={(origin) =>
+          origin?.run ? `#run-${origin.run.run_id}` : undefined
+        }
+        repo="acme/payments"
+        selectedCommit={selectedCommit}
         {...props}
       />
     </div>
@@ -125,11 +133,6 @@ export const InputUpdates = () => (
           type: 'input_update',
           status: 'approval-awaiting',
           created_at: new Date(Date.now() - 1_800_000).toISOString(),
-        },
-        explanation: {
-          summary: 'These changes are waiting for approval.',
-          status: 'approval-awaiting',
-          workflow_id: 'wf-open-input-worker',
         },
       }),
     ]}

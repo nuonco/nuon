@@ -22,6 +22,11 @@ func revokeAccountCredentials(tx *gorm.DB, accountID string) error {
 }
 
 func deleteAccountCredentials(tx *gorm.DB, accountIDs []string) error {
+	var tokenIDs []string
+	if err := tx.Unscoped().Model(&app.Token{}).Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("account_id IN ?", accountIDs).Order("id").Pluck("id", &tokenIDs).Error; err != nil {
+		return errors.Wrap(err, "unable to lock account tokens")
+	}
 	if res := tx.Where("account_id IN ?", accountIDs).Delete(&app.Token{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account tokens")
 	}
@@ -34,7 +39,7 @@ func deleteAccountCredentials(tx *gorm.DB, accountIDs []string) error {
 	if res := tx.Where("account_id IN ?", accountIDs).Delete(&app.DeviceAuthorization{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to revoke account device authorizations")
 	}
-	return nil
+	return RevokeDerivedCredentials(tx, app.TokenSourceTypeToken, tokenIDs)
 }
 
 func RevokeDerivedCredentials(tx *gorm.DB, sourceType app.TokenSourceType, sourceIDs []string) error {

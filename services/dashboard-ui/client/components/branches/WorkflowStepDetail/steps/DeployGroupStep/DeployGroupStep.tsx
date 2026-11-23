@@ -11,6 +11,7 @@ export interface IDeployGroupStep {
   rows: IInstallDeployRow[]
   emptyMessage?: string
   variant?: 'group' | 'preview'
+  updatedToDesired?: boolean
 }
 
 export const DeployGroupStep = ({
@@ -20,6 +21,7 @@ export const DeployGroupStep = ({
   rows,
   emptyMessage,
   variant = 'group',
+  updatedToDesired = false,
 }: IDeployGroupStep) => {
   const title =
     variant === 'preview' ? (
@@ -54,7 +56,8 @@ export const DeployGroupStep = ({
           </div>
           {totalInstalls > 0 && (
             <Text variant="subtext" family="mono" theme="neutral">
-              {deployedCount} / {totalInstalls} deployed
+              {deployedCount} / {totalInstalls}{' '}
+              {updatedToDesired ? 'updated to desired' : 'deployed'}
             </Text>
           )}
         </div>

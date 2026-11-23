@@ -7,6 +7,9 @@ import (
 //go:embed action_workflow_configs_latest_view_v1.sql
 var ActionWorkflowConfigsViewV1 string
 
+//go:embed action_workflow_configs_latest_view_v2.sql
+var ActionWorkflowConfigsViewV2 string
+
 //go:embed app_label_keys_view_v1.sql
 var AppLabelKeysViewV1 string
 
@@ -42,6 +45,9 @@ var DriftsViewV3 string
 
 //go:embed drifts_view_v4.sql
 var DriftsViewV4 string
+
+//go:embed drifts_view_v5.sql
+var DriftsViewV5 string
 
 //go:embed app_configs_view_v2.sql
 var AppConfigViewV2 string
@@ -88,6 +94,9 @@ var InstallActionWorkflowRunsStateViewV1 string
 //go:embed install_sandbox_runs_state_view_v1.sql
 var InstallSandboxRunsStateViewV1 string
 
+//go:embed install_sandbox_runs_live_view_v1.sql
+var InstallSandboxRunsLiveViewV1 string
+
 //go:embed install_deploys_state_view_v1.sql
 var InstallDeploysStateViewV1 string
 
@@ -96,6 +105,12 @@ var InstallStackVersionRunsStateViewV1 string
 
 //go:embed install_deploys_latest_view_v1.sql
 var InstallDeploysLatestViewV1 string
+
+//go:embed component_config_connections_selected_build_view_v1.sql
+var ComponentConfigConnectionsSelectedBuildViewV1 string
+
+//go:embed install_deploys_live_view_v1.sql
+var InstallDeploysLiveViewV1 string
 
 //go:embed install_inputs_view_v1.sql
 var InstallInputsViewV1 string
@@ -147,6 +162,9 @@ var InstallComponentResourceStatesViewV1 string
 
 //go:embed installs_view_v9.sql
 var InstallsViewV9 string
+
+//go:embed installs_fleet_view_v1.sql
+var InstallsFleetViewV1 string
 
 //go:embed workflow_step_approvals_pending_view_v1.sql
 var WorkflowStepApprovalsPendingViewV1 string

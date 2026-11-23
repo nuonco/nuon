@@ -180,6 +180,10 @@ func (c *clientAdapter) RunnerAuthAWSIID(context.Context, *models.ServiceRunnerA
 	return nil, unsupported("RunnerAuthAWSIID")
 }
 
+func (c *clientAdapter) RunnerAuthAWSSTS(context.Context, *models.ServiceRunnerAuthAWSSTSRequest) (*models.ServiceRunnerAuthAWSSTSResponse, error) {
+	return nil, unsupported("RunnerAuthAWSSTS")
+}
+
 func (c *clientAdapter) RunnerAuthGCP(context.Context, *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error) {
 	return nil, unsupported("RunnerAuthGCP")
 }
