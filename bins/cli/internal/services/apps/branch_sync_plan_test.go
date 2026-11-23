@@ -138,6 +138,10 @@ func TestBranchSyncRunConfigDiff(t *testing.T) {
 		{name: "mode removed", local: nil, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModeManualOnly}, changed: true},
 		{name: "tag prefix change", local: &config.AppBranchRunConfig{Mode: "on_tag", TagPrefix: "release-"}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModeOnTag, TagPrefix: "v"}, changed: true},
 		{name: "github label change", local: &config.AppBranchRunConfig{Mode: "on_github_label", GithubLabel: "deploy"}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModeOnGithubLabel, GithubLabel: "ship"}, changed: true},
+		{name: "paths unchanged", local: &config.AppBranchRunConfig{Paths: []string{"apps/acme/**"}}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModePush, Paths: []string{"apps/acme/**"}}},
+		{name: "empty paths matches absent", local: &config.AppBranchRunConfig{Paths: []string{}}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModePush}},
+		{name: "paths change", local: &config.AppBranchRunConfig{Paths: []string{"apps/acme/**", "shared/**"}}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModePush, Paths: []string{"apps/acme/**"}}, changed: true},
+		{name: "paths_ignore removed", local: nil, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModePush, PathsIgnore: []string{"docs/**"}}, changed: true},
 	}
 
 	for _, tc := range tests {

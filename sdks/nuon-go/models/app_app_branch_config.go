@@ -44,10 +44,7 @@ type AppAppBranchConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// IgnoreChangesRegex is an RE2 pattern matched against every changed file path
-	// in a git-run or git-preview run. When every changed file matches, the run is
-	// marked not-attempted instead of building and deploying. Empty disables the
-	// check, and a forced run bypasses it.
+	// Deprecated: use run.paths or run.paths_ignore.
 	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
 
 	// install groups

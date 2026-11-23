@@ -37,9 +37,7 @@ type CreateAppBranchConfigRequest struct {
 	// Omit to carry the current setting forward; send an empty array to clear it.
 	PostDeployRunbookIDs *[]string `json:"post_deploy_runbook_ids,omitempty"`
 
-	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
-	// it matches this RE2 pattern. Omit to carry the current setting forward; send
-	// an empty string to clear it.
+	// Deprecated: use run_config.paths or run_config.paths_ignore.
 	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty" swaggertype:"string" extensions:"x-nullable"`
 
 	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
