@@ -86,6 +86,7 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, branchID, q string, 
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("components.labels", lbls)).
+		Where(&app.Component{AppID: appCfg.AppID, OrgID: appCfg.OrgID}, "AppID", "OrgID").
 		Where("id IN ?", []string(appCfg.ComponentIDs)).
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
