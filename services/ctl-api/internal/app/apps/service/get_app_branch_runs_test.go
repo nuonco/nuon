@@ -346,6 +346,49 @@ func (s *GetAppBranchRunsTestSuite) TestFilteredPagination() {
 	require.ElementsMatch(s.T(), failedIDs, append(runIDs(firstPage), runIDs(secondPage)...))
 }
 
+func (s *GetAppBranchRunsTestSuite) TestExcludesIgnoredPreviewRuns() {
+	branch := s.createBranch()
+	cfg := &app.AppBranchConfig{AppBranchID: branch.ID}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(cfg).Error)
+
+	link := func(workflow *app.Workflow, runType app.AppBranchRunType, status string) {
+		run := &app.AppBranchRun{
+			AppBranchID:       branch.ID,
+			AppBranchConfigID: cfg.ID,
+			WorkflowID:        &workflow.ID,
+			RunType:           runType,
+			Status:            status,
+		}
+		require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(run).Error)
+		s.T().Cleanup(func() {
+			s.service.DB.Unscoped().Delete(&app.AppBranchRun{}, "id = ?", run.ID)
+		})
+	}
+
+	ignoredPreview := s.seedRun(branch.ID, app.WorkflowTypeAppBranchesRun, app.StatusNotAttempted, testseed.WithWorkflowPlanOnly(true))
+	link(ignoredPreview, app.AppBranchRunTypeGitPreview, string(app.StatusNotAttempted))
+	failedPreview := s.seedRun(branch.ID, app.WorkflowTypeAppBranchesRun, app.StatusError, testseed.WithWorkflowPlanOnly(true))
+	link(failedPreview, app.AppBranchRunTypeGitPreview, "failed")
+	ignoredGitRun := s.seedRun(branch.ID, app.WorkflowTypeAppBranchesRun, app.StatusNotAttempted)
+	link(ignoredGitRun, app.AppBranchRunTypeGit, string(app.StatusNotAttempted))
+	unlinked := s.seedRun(branch.ID, app.WorkflowTypeAppBranchesConfigRepoUpdate, app.StatusSuccess)
+
+	s.Run("ignored previews are hidden", func() {
+		runs, _ := s.fetchRuns(branch.ID, "")
+		require.ElementsMatch(s.T(), []string{failedPreview.ID, ignoredGitRun.ID, unlinked.ID}, runIDs(runs))
+	})
+
+	s.Run("ignored previews stay hidden when filtering by status", func() {
+		runs, _ := s.fetchRuns(branch.ID, "?status=not-attempted")
+		require.Equal(s.T(), []string{ignoredGitRun.ID}, runIDs(runs))
+	})
+
+	s.Run("ignored previews stay hidden from the preview list", func() {
+		runs, _ := s.fetchRuns(branch.ID, "?preview=true")
+		require.Equal(s.T(), []string{failedPreview.ID}, runIDs(runs))
+	})
+}
+
 func (s *GetAppBranchRunsTestSuite) TestEmpty() {
 	branch := s.createBranch()
 

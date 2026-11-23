@@ -26,9 +26,7 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *HelpersConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
-	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
-	// it matches this RE2 pattern. Omit to carry the current setting forward; send
-	// an empty string to clear it.
+	// Deprecated: use run_config.paths or run_config.paths_ignore.
 	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
 
 	// install groups
