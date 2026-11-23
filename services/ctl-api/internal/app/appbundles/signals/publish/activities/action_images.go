@@ -15,6 +15,7 @@ import (
 	bundle "github.com/nuonco/nuon/pkg/appbundle/bundle"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/publicnet"
 	"github.com/nuonco/nuon/pkg/runner/oci"
 )
 
@@ -102,7 +103,7 @@ func actionImageRoot(ctx context.Context, imageRef string, logical bundle.Logica
 	} else if tagged, ok := named.(reference.Tagged); ok {
 		ref = tagged.Tag()
 	}
-	repo, err := oci.GetRepo(ctx, &configs.OCIRegistryRepository{
+	repo, err := oci.GetRepo(publicnet.WithPublicOnly(ctx), &configs.OCIRegistryRepository{
 		RegistryType: configs.OCIRegistryTypePublicOCI, Repository: named.Name(), LoginServer: reference.Domain(named),
 	})
 	if err != nil {

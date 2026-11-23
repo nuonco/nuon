@@ -16,6 +16,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig, o
 		opt(&o)
 	}
 
+	var redirectWarnings []string
+	redirect := stackTemplateRedirectCheck(o.urlPolicy, &redirectWarnings)
+
 	fns := []func() error{
 		func() error {
 			return ValidateVersion(a)
@@ -87,11 +90,16 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig, o
 		func() error {
 			return ValidateTemplateRefs(a)
 		},
+		// The policy runs before the validators that fetch stack templates, so
+		// in enforce mode an off-list URL is rejected without being requested.
 		func() error {
-			return ValidateCustomNestedStackOutputs(a)
+			return ValidateURLPolicy(o.urlPolicy, a)
 		},
 		func() error {
-			return ValidateAzureRunnerIdentities(a)
+			return validateCustomNestedStackOutputs(a, redirect)
+		},
+		func() error {
+			return validateAzureRunnerIdentities(a, redirect)
 		},
 		func() error {
 			return validateAzureCustomNestedStacks(a)
@@ -113,9 +121,6 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig, o
 		func() error {
 			return ValidateGCPCloudSQLDeleteOutsideBreakGlass(a)
 		},
-		func() error {
-			return ValidateURLPolicy(o.urlPolicy, a)
-		},
 	}
 
 	var warnings []string
@@ -130,6 +135,7 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig, o
 		warnings = append(warnings, warningMessage(err))
 	}
 
+	warnings = append(warnings, redirectWarnings...)
 	if len(warnings) > 0 {
 		return config.ErrConfig{
 			Description: strings.Join(warnings, "\n"),

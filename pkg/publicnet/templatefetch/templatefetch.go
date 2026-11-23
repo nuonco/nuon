@@ -48,7 +48,9 @@ func refuse(format string, args ...any) error {
 // from app config, so the fetch must not reach anything but the public
 // internet. The client requires https, dials only public addresses (pinning the
 // checked address so a DNS rebind cannot swap it), follows a bounded number of
-// https-only redirects, and fails reads past MaxBytes.
+// https-only redirects, and fails reads past MaxBytes. A caller that also
+// restricts hosts attaches its check with publicnet.WithRedirectCheck on the
+// request context, and each redirect target is checked before it is followed.
 //
 // Every environment, including local dev, fetches templates from remote
 // sources; only tests need NewLocalClient.
@@ -80,7 +82,13 @@ func newClient(allowInsecure bool) *http.Client {
 				return refuse("template fetch: too many redirects")
 			}
 			req.Header.Del("Referer")
-			return validateURL(req.URL, allowInsecure)
+			if err := validateURL(req.URL, allowInsecure); err != nil {
+				return err
+			}
+			if err := publicnet.CheckRedirectTarget(req); err != nil {
+				return refuse("template fetch: redirect refused: %s", err)
+			}
+			return nil
 		},
 	}
 }

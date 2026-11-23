@@ -7,9 +7,9 @@ import (
 
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
-	"oras.land/oras-go/v2/registry/remote/retry"
 
 	"github.com/nuonco/nuon/pkg/oci/dockerhub"
+	"github.com/nuonco/nuon/pkg/oci/registryclient"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	pkgregistry "github.com/nuonco/nuon/pkg/runner/registry"
 	"github.com/nuonco/nuon/pkg/runner/registry/acr"
@@ -69,7 +69,7 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*remote.R
 	// anonymous pulls the nil Credential drives oras-go's anonymous bearer
 	// token flow with a clean cache.
 	authClient := &auth.Client{
-		Client: retry.DefaultClient,
+		Client: registryclient.For(ctx),
 		Cache:  auth.NewCache(),
 	}
 	if accessInfo.Auth != nil && accessInfo.Auth.Username != "" {

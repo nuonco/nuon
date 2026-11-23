@@ -1,16 +1,19 @@
 package validate
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/publicnet"
 	"github.com/nuonco/nuon/pkg/publicnet/templatefetch"
 )
 
@@ -20,8 +23,17 @@ type cfnOutputsShape struct {
 
 var templateOutputsClient = templatefetch.NewClient()
 
-func fetchTemplate(templateURL string) ([]byte, error) {
-	resp, err := templateOutputsClient.Get(templateURL)
+// redirectCheck is run on each redirect target of a template fetch; nil checks
+// nothing. See urlpolicy.Policy.RedirectCheck.
+type redirectCheck func(target *url.URL) error
+
+func fetchTemplate(templateURL string, redirect redirectCheck) ([]byte, error) {
+	ctx := publicnet.WithRedirectCheck(context.Background(), redirect)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, templateURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := templateOutputsClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +46,8 @@ func fetchTemplate(templateURL string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
-	body, err := fetchTemplate(templateURL)
+func fetchTemplateOutputs(templateURL string, redirect redirectCheck) (map[string]struct{}, error) {
+	body, err := fetchTemplate(templateURL, redirect)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +70,10 @@ func parseTemplateOutputs(templateURL string, body []byte) (map[string]struct{},
 }
 
 func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
+	return validateCustomNestedStackOutputs(a, nil)
+}
+
+func validateCustomNestedStackOutputs(a *config.AppConfig, redirect redirectCheck) error {
 	if a.Stack == nil || len(a.Stack.CustomNestedStacks) == 0 {
 		return nil
 	}
@@ -81,7 +97,7 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 		if templateURL == "" {
 			continue
 		}
-		outputs, err := fetchTemplateOutputs(templateURL)
+		outputs, err := fetchTemplateOutputs(templateURL, redirect)
 		if templatefetch.IsRefused(err) {
 			return fmt.Errorf("%s nested template URL %q cannot be fetched: %w", resourceName, templateURL, err)
 		}
@@ -101,7 +117,7 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 			continue
 		}
 
-		outputs, err := customNestedStackOutputs(stack)
+		outputs, err := customNestedStackOutputs(stack, redirect)
 		if templatefetch.IsRefused(err) {
 			return fmt.Errorf("custom_nested_stacks (%s): template_url %q cannot be fetched: %w", stack.Name, stack.TemplateURL, err)
 		}
@@ -144,9 +160,9 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 // customNestedStackOutputs reads outputs from the contents the parser already
 // loaded through go-getter, which is how template_url may name a local file.
 // Only a stack without loaded contents is fetched over the network.
-func customNestedStackOutputs(stack config.CustomNestedStack) (map[string]struct{}, error) {
+func customNestedStackOutputs(stack config.CustomNestedStack, redirect redirectCheck) (map[string]struct{}, error) {
 	if stack.Contents != "" {
 		return parseTemplateOutputs(stack.TemplateURL, []byte(stack.Contents))
 	}
-	return fetchTemplateOutputs(stack.TemplateURL)
+	return fetchTemplateOutputs(stack.TemplateURL, redirect)
 }
