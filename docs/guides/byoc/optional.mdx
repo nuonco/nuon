@@ -252,12 +252,12 @@ This list blocks the known variables. It is not a guarantee that no other variab
 - The control plane checks every app config when it is synced. A sync that sets a URL outside a restricted list fails with an error that names the field and the setting.
 - The control plane checks per-install stack overrides against `ALLOWED_HOSTS_STACK_TEMPLATES` when an install config is created or updated, through the API or `nuon installs sync`.
 - `nuon apps validate` fetches the allowed hosts from the control plane and reports the same violations before you push.
+- Redirects. When the control plane or the CLI fetches an allowed URL and the server redirects, the redirect target is checked against the same list. A target outside the list fails the fetch. In `warn` mode it is reported and followed.
 
 The following are not checked yet:
 
 - Configs that were synced before you set a list. They are checked at their next sync.
 - The runner settings API.
-- Redirects. Only the URL written in the config is checked. If an allowed location redirects elsewhere, the control plane follows the redirect.
 
 ### Turn It On
 
