@@ -21,6 +21,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -530,4 +531,61 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettingsValidAWSMaxInsta
 			}
 		})
 	}
+}
+
+func (s *UpdateRunnerSettingsTestSuite) setRunnerAPIPolicy(mode urlpolicy.Mode) {
+	policy, err := urlpolicy.New(urlpolicy.Config{
+		Mode: mode,
+		Categories: map[urlpolicy.Category]urlpolicy.CategoryConfig{
+			urlpolicy.CategoryRunnerAPI: {Entries: []string{"https://runner.acme.example.com"}},
+		},
+	})
+	require.NoError(s.T(), err)
+
+	cfg := s.service.RunnersService.cfg
+	original := cfg.URLPolicy
+	cfg.URLPolicy = policy
+	s.T().Cleanup(func() { cfg.URLPolicy = original })
+}
+
+func (s *UpdateRunnerSettingsTestSuite) storedRunnerAPIURL() string {
+	var dbSettings app.RunnerGroupSettings
+	require.NoError(s.T(), s.service.DB.First(&dbSettings, "runner_group_id = ?", s.testRunnerGrp.ID).Error)
+	return dbSettings.RunnerAPIURL
+}
+
+func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings_RunnerAPIURLPolicy() {
+	path := "/v1/runners/" + s.testRunner.ID + "/settings"
+
+	s.Run("enforce rejects an off-list url", func() {
+		s.setRunnerAPIPolicy(urlpolicy.ModeEnforce)
+
+		rr := s.makeRequest("PATCH", path, UpdateRunnerSettingsRequest{RunnerAPIURL: "https://runner.mallory.example.com"})
+		require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+		assert.Contains(s.T(), rr.Body.String(), "runner_api_url")
+		assert.Equal(s.T(), s.testSettings.RunnerAPIURL, s.storedRunnerAPIURL())
+	})
+
+	s.Run("enforce accepts an allowed url", func() {
+		s.setRunnerAPIPolicy(urlpolicy.ModeEnforce)
+
+		rr := s.makeRequest("PATCH", path, UpdateRunnerSettingsRequest{RunnerAPIURL: "https://runner.acme.example.com"})
+		require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+		assert.Equal(s.T(), "https://runner.acme.example.com", s.storedRunnerAPIURL())
+	})
+
+	s.Run("enforce ignores an unset url", func() {
+		s.setRunnerAPIPolicy(urlpolicy.ModeEnforce)
+
+		rr := s.makeRequest("PATCH", path, UpdateRunnerSettingsRequest{BinaryVersion: "v9.9.9"})
+		require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+	})
+
+	s.Run("warn accepts an off-list url", func() {
+		s.setRunnerAPIPolicy(urlpolicy.ModeWarn)
+
+		rr := s.makeRequest("PATCH", path, UpdateRunnerSettingsRequest{RunnerAPIURL: "https://runner.mallory.example.com"})
+		require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+		assert.Equal(s.T(), "https://runner.mallory.example.com", s.storedRunnerAPIURL())
+	})
 }
