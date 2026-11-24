@@ -218,7 +218,11 @@ export const DeploymentTemplateContent = ({
   )
 }
 
-export const DeploymentAlerts = () => {
+export const DeploymentAlerts = ({
+  showApprovals = true,
+}: {
+  showApprovals?: boolean
+}) => {
   const { workflow, failedSteps } = useWorkflow()
   const { hasResponded } = useRespondedApprovals()
   const steps = deploymentSteps(workflow)
@@ -239,7 +243,7 @@ export const DeploymentAlerts = () => {
   return (
     <>
       <WorkflowAlertBanners workflow={workflow} failedSteps={failedSteps} />
-      {approvals.map((step) => (
+      {(showApprovals ? approvals : []).map((step) => (
         <ApprovalBanner key={step.id} step={step} />
       ))}
       {policySteps.length ? (
