@@ -20,6 +20,8 @@ interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   // Overrides a tab's label. Otherwise derived from the key, which lowercases
   // everything after the first character.
   tabLabels?: Record<string, string>
+  // Replaces a tab's label with arbitrary content (e.g. an icon plus text).
+  tabLabelNodes?: Record<string, ReactNode>
   tabsClassName?: string
   tabControlsClassName?: string
   naturalHeight?: boolean
@@ -34,6 +36,7 @@ export const Tabs = ({
   tabControlsClassName,
   tabs,
   tabLabels,
+  tabLabelNodes,
   tabsClassName,
   naturalHeight = false,
   actions,
@@ -180,7 +183,9 @@ export const Tabs = ({
             onFocus={() => handleTabHoverOrFocus(tabKey)}
             onBlur={handleTabsBlur}
           >
-            {tabLabels?.[tabKey] ?? toSentenceCase(camelToWords(tabKey))}
+            {tabLabelNodes?.[tabKey] ??
+              tabLabels?.[tabKey] ??
+              toSentenceCase(camelToWords(tabKey))}
           </Button>
         ))}
         {actions ? (
