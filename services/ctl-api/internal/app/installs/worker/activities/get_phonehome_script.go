@@ -9,6 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/publicnet"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -29,6 +31,13 @@ type GetPhoneHomeScriptRequest struct {
 	// URL is the app's AppRunnerConfig.PhoneHomeScriptURL. Empty falls back to the
 	// environment override and then to DefaultAWSPhoneHomeScript.
 	URL string `json:"url,omitempty"`
+}
+
+func WithPhoneHomeRedirectCheck(ctx context.Context, policy *urlpolicy.Policy, appURL string) context.Context {
+	if appURL == "" {
+		return ctx
+	}
+	return publicnet.WithRedirectCheck(ctx, policy.RedirectCheck(urlpolicy.CategoryRunnerBootstrap, "runner.phone_home_script_url"))
 }
 
 // FetchPhoneHomeScriptRaw is the single resolution + fetch path for the phone-home
@@ -83,5 +92,5 @@ func (a *Activities) GetPhoneHomeScriptRaw(ctx context.Context, req *GetPhoneHom
 	if req != nil {
 		appURL = req.URL
 	}
-	return FetchPhoneHomeScriptRaw(ctx, appURL, a.cfg.PhoneHomeScriptURL)
+	return FetchPhoneHomeScriptRaw(WithPhoneHomeRedirectCheck(ctx, a.cfg.URLPolicy, appURL), appURL, a.cfg.PhoneHomeScriptURL)
 }

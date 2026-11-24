@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/netip"
 	"syscall"
+
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
 const probeDestinationBlocked = "probe destination is not allowed: loopback, link-local and cloud metadata addresses cannot be probed"
@@ -14,15 +16,11 @@ var errProbeDestinationBlocked = errors.New(probeDestinationBlocked)
 
 var nat64Prefix = netip.MustParsePrefix("64:ff9b::/96")
 
+// Cloud metadata addresses come from publicnet.IsMetadataAddr, so this list and
+// publicnet's cannot drift.
 var blockedProbePrefixes = []netip.Prefix{
 	netip.MustParsePrefix("0.0.0.0/8"),
-	netip.MustParsePrefix("100.100.100.200/32"),
-	netip.MustParsePrefix("168.63.129.16/32"),
-	netip.MustParsePrefix("192.0.0.192/32"),
 	netip.MustParsePrefix("64:ff9b:1::/48"),
-	netip.MustParsePrefix("fd00:ec2::23/128"),
-	netip.MustParsePrefix("fd00:ec2::254/128"),
-	netip.MustParsePrefix("fd20:ce::254/128"),
 }
 
 func probeAddrBlocked(addr netip.Addr) bool {
@@ -33,6 +31,9 @@ func probeAddrBlocked(addr netip.Addr) bool {
 	}
 
 	if addr.IsLoopback() || addr.IsUnspecified() || addr.IsLinkLocalUnicast() || addr.IsMulticast() {
+		return true
+	}
+	if publicnet.IsMetadataAddr(addr) {
 		return true
 	}
 	for _, prefix := range blockedProbePrefixes {
