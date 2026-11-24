@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { APPROVAL_BANNER_COPY } from '@/components/approvals/ApprovalBanner'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
@@ -175,55 +175,75 @@ const StepRail = ({
   attemptsByStep: Record<string, IRunAttempt[]>
   selectedId?: string
   onSelect: (id: string) => void
-}) => (
-  <nav aria-label="Workflow steps" className="flex flex-col gap-0.5">
-    {steps.map((step) => (
-      <Tooltip
-        key={step.id}
-        className="!w-full"
-        position="right"
-        tipContent={
-          <StepTooltipContent
-            step={step}
-            steps={steps}
-            attempts={attemptsByStep[step.id ?? '']}
-          />
-        }
-        tipContentClassName="!whitespace-normal"
-      >
-        <button
-          type="button"
-          aria-current={step.id === selectedId ? 'step' : undefined}
-          className={cn(
-            'flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left cursor-pointer',
-            'hover:bg-black/5 dark:hover:bg-white/10',
-            'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary-600',
-            { 'bg-black/5 dark:bg-white/10': step.id === selectedId }
-          )}
-          onClick={() => onSelect(step.id ?? '')}
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <Status
-              isWithoutText
-              status={step.status?.status || 'unknown'}
-              variant="timeline"
-            />
-            <Text nowrap className="truncate">
-              {getWorkflowStepTitle(step)}
-            </Text>
-          </span>
-          <span className="flex shrink-0 items-center gap-2">
-            <StepAttemptLabel
+}) => {
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const nav = navRef.current
+    const current = nav?.querySelector<HTMLElement>('[aria-current="step"]')
+    if (!nav || !current) return
+
+    const offset =
+      current.getBoundingClientRect().top - nav.getBoundingClientRect().top
+    if (offset < 0) nav.scrollTop += offset
+    else if (offset + current.offsetHeight > nav.clientHeight)
+      nav.scrollTop += offset + current.offsetHeight - nav.clientHeight
+  }, [selectedId])
+
+  return (
+    <nav
+      ref={navRef}
+      aria-label="Workflow steps"
+      className="flex flex-col gap-0.5 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto"
+    >
+      {steps.map((step) => (
+        <Tooltip
+          key={step.id}
+          className="!w-full"
+          position="right"
+          tipContent={
+            <StepTooltipContent
               step={step}
-              attemptCount={attemptsByStep[step.id ?? '']?.length ?? 1}
+              steps={steps}
+              attempts={attemptsByStep[step.id ?? '']}
             />
-            <StepTiming step={step} />
-          </span>
-        </button>
-      </Tooltip>
-    ))}
-  </nav>
-)
+          }
+          tipContentClassName="!whitespace-normal"
+        >
+          <button
+            type="button"
+            aria-current={step.id === selectedId ? 'step' : undefined}
+            className={cn(
+              'flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left cursor-pointer',
+              'hover:bg-black/5 dark:hover:bg-white/10',
+              'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary-600',
+              { 'bg-black/5 dark:bg-white/10': step.id === selectedId }
+            )}
+            onClick={() => onSelect(step.id ?? '')}
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <Status
+                isWithoutText
+                status={step.status?.status || 'unknown'}
+                variant="timeline"
+              />
+              <Text nowrap className="truncate">
+                {getWorkflowStepTitle(step)}
+              </Text>
+            </span>
+            <span className="flex shrink-0 items-center gap-2">
+              <StepAttemptLabel
+                step={step}
+                attemptCount={attemptsByStep[step.id ?? '']?.length ?? 1}
+              />
+              <StepTiming step={step} />
+            </span>
+          </button>
+        </Tooltip>
+      ))}
+    </nav>
+  )
+}
 
 const FailedStepPrompt = ({
   step,

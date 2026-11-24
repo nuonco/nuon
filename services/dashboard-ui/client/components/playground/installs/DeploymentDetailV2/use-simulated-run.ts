@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { TOTELLog, TWorkflowStep } from '@/types'
-import { RUN_SCRIPT } from './run-script'
+import { RUN_SCRIPT, type IScriptStep } from './run-script'
 import {
   advanceRun,
   initRun,
@@ -13,6 +13,7 @@ import {
 export interface IUseSimulatedRun {
   tickMs?: number
   autoApprove?: boolean
+  script?: IScriptStep[]
 }
 
 export interface ISimulatedRun {
@@ -31,13 +32,14 @@ export interface ISimulatedRun {
 export const useSimulatedRun = ({
   tickMs = 800,
   autoApprove = false,
+  script = RUN_SCRIPT,
 }: IUseSimulatedRun = {}): ISimulatedRun => {
-  const [state, setState] = useState(() => initRun(RUN_SCRIPT, Date.now()))
+  const [state, setState] = useState(() => initRun(script, Date.now()))
   const isFinished = state.phase === 'done' || state.phase === 'denied'
 
   const dispatch = useCallback(
     (action: TRunAction) =>
-      setState((current) => advanceRun(RUN_SCRIPT, current, action)),
+      setState((current) => advanceRun(script, current, action)),
     []
   )
 
@@ -50,7 +52,7 @@ export const useSimulatedRun = ({
     return () => clearInterval(id)
   }, [autoApprove, dispatch, isFinished, tickMs])
 
-  const steps = useMemo(() => toWorkflowSteps(RUN_SCRIPT, state), [state])
+  const steps = useMemo(() => toWorkflowSteps(script, state), [script, state])
 
   return {
     steps,
@@ -62,6 +64,6 @@ export const useSimulatedRun = ({
     deny: () => dispatch({ type: 'deny', now: Date.now() }),
     retry: () => dispatch({ type: 'retry', now: Date.now() }),
     skip: () => dispatch({ type: 'skip', now: Date.now() }),
-    restart: () => setState(initRun(RUN_SCRIPT, Date.now())),
+    restart: () => setState(initRun(script, Date.now())),
   }
 }

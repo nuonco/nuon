@@ -12,6 +12,7 @@ import { Toggle } from '@/components/common/form/Toggle'
 import { DeploymentDetailV2 } from './DeploymentDetailV2'
 import { deploymentScenario } from './fixtures'
 import { RunView } from './RunView'
+import type { IScriptStep } from './run-script'
 import { useSimulatedRun, type ISimulatedRun } from './use-simulated-run'
 
 const RunControls = ({
@@ -54,9 +55,15 @@ const runViewOf = (run: ISimulatedRun, autoApprove: boolean) => (
   />
 )
 
-export const SimulatedRunView = () => {
+export const SimulatedRunView = ({
+  script,
+  tickMs,
+}: {
+  script?: IScriptStep[]
+  tickMs?: number
+}) => {
   const [autoApprove, setAutoApprove] = useState(false)
-  const run = useSimulatedRun({ autoApprove })
+  const run = useSimulatedRun({ autoApprove, script, tickMs })
 
   return (
     <>

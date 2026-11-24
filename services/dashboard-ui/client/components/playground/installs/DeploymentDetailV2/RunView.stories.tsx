@@ -3,10 +3,15 @@ export default {
 }
 
 import type { TWorkflowStep } from '@/types'
+import { LARGE_RUN_SCRIPT } from './run-script'
 import { SimulatedRunView } from './SimulatedRun'
 import { StepTooltipContent } from './StepTooltip'
 
 export const Running = () => <SimulatedRunView />
+
+export const ManySteps = () => (
+  <SimulatedRunView script={LARGE_RUN_SCRIPT} tickMs={300} />
+)
 
 const plan = {
   id: 'step-plan',

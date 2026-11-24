@@ -172,3 +172,17 @@ export const RUN_SCRIPT: IScriptStep[] = [
     ],
   },
 ]
+
+const LARGE_COMPONENTS = Array.from(
+  { length: 22 },
+  (_, index) => `acme-svc-${String(index + 1).padStart(2, '0')}`
+)
+
+export const LARGE_RUN_SCRIPT: IScriptStep[] = [
+  RUN_SCRIPT[0],
+  ...LARGE_COMPONENTS.flatMap((name) => [
+    helmPlan(name, { create: 0, update: 1, delete: 0, noop: 4 }),
+    helmApply(name, undefined, 60),
+  ]),
+  RUN_SCRIPT[RUN_SCRIPT.length - 1],
+]
