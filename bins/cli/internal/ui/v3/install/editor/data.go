@@ -215,10 +215,7 @@ func (m *model) validateForm() error {
 func changedInputs(mappings []inputMapping, values []string) map[string]string {
 	changed := map[string]string{}
 	for i, mapping := range mappings {
-		value := ""
-		if i < len(values) {
-			value = values[i]
-		}
+		value := values[i]
 		if mapping.sensitive && strings.TrimSpace(value) == "" {
 			continue
 		}
