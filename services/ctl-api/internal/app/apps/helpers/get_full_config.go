@@ -73,9 +73,10 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 			SELECT DISTINCT ON (component_id) id
 			FROM %s
 			WHERE component_id IN ? AND app_config_version <= ?
+				AND app_config_id IN (SELECT id FROM app_configs WHERE app_id = ? AND org_id = ?)
 			ORDER BY component_id, app_config_version DESC`,
 			views.CurrentViewName(h.db, &app.ComponentConfigConnection{})),
-			missingComponentIds, appCfg.Version,
+			missingComponentIds, appCfg.Version, appCfg.AppID, appCfg.OrgID,
 		).Scan(&boundedCfgIDs)
 		if res.Error != nil {
 			return nil, errors.Wrap(res.Error, "unable to resolve component configs at config version")

@@ -41,6 +41,7 @@ type planApplyIdentity struct {
 	InstallID   string
 	TargetID    string
 	ComponentID string
+	BuildID     string
 }
 
 type applyPlanPair struct {
@@ -58,6 +59,7 @@ var applyPlanPairs = []applyPlanPair{
 				InstallComponentID: id.TargetID,
 				InstallID:          id.InstallID,
 				ComponentID:        id.ComponentID,
+				BuildID:            id.BuildID,
 				FlowID:             flowID,
 				SandboxMode:        sandboxMode,
 			}
@@ -117,13 +119,13 @@ var applyPlanPairs = []applyPlanPair{
 func planApplyIdentityOf(sig signal.Signal) (planApplyIdentity, bool) {
 	switch s := sig.(type) {
 	case *componentdeploysyncandplan.Signal:
-		return planApplyIdentity{s.InstallID, s.InstallComponentID, s.ComponentID}, true
+		return planApplyIdentity{InstallID: s.InstallID, TargetID: s.InstallComponentID, ComponentID: s.ComponentID, BuildID: s.BuildID}, true
 	case *componentdeployapplyplan.Signal:
-		return planApplyIdentity{s.InstallID, s.InstallComponentID, s.ComponentID}, true
+		return planApplyIdentity{InstallID: s.InstallID, TargetID: s.InstallComponentID, ComponentID: s.ComponentID, BuildID: s.BuildID}, true
 	case *componentteardownsyncandplan.Signal:
-		return planApplyIdentity{s.InstallID, s.InstallComponentID, s.ComponentID}, true
+		return planApplyIdentity{InstallID: s.InstallID, TargetID: s.InstallComponentID, ComponentID: s.ComponentID}, true
 	case *componentteardownapplyplan.Signal:
-		return planApplyIdentity{s.InstallID, s.InstallComponentID, s.ComponentID}, true
+		return planApplyIdentity{InstallID: s.InstallID, TargetID: s.InstallComponentID, ComponentID: s.ComponentID}, true
 	case *provisionsandboxplan.Signal:
 		return planApplyIdentity{InstallID: s.InstallID, TargetID: s.InstallSandboxID}, true
 	case *provisionsandboxapplyplan.Signal:
@@ -188,6 +190,9 @@ func TestApplyRetryAlwaysReplansProperty(t *testing.T) {
 				InstallID:   hegel.Draw(ht, hegel.Text().MinSize(1).MaxSize(30)),
 				TargetID:    hegel.Draw(ht, hegel.Text().MinSize(1).MaxSize(30)),
 				ComponentID: hegel.Draw(ht, hegel.Text().MinSize(1).MaxSize(30)),
+			}
+			if pair.applyType == componentdeployapplyplan.SignalType {
+				id.BuildID = hegel.Draw(ht, hegel.Text().MinSize(0).MaxSize(30))
 			}
 			flowID := hegel.Draw(ht, hegel.Text().MinSize(0).MaxSize(30))
 			sandboxMode := hegel.Draw(ht, hegel.Booleans())

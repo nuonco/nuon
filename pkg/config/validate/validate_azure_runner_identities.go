@@ -22,6 +22,10 @@ type armParametersShape struct {
 // "userAssignedIdentities" parameter. Only the built-in runner (empty URL) or a
 // template that declares that parameter can attach the identities to the VMSS.
 func ValidateAzureRunnerIdentities(a *config.AppConfig) error {
+	return validateAzureRunnerIdentities(a, nil)
+}
+
+func validateAzureRunnerIdentities(a *config.AppConfig, redirect redirectCheck) error {
 	if a.Stack == nil || a.Stack.Type != "azure-bicep" || a.Stack.RunnerNestedTemplateURL == "" {
 		return nil
 	}
@@ -29,7 +33,7 @@ func ValidateAzureRunnerIdentities(a *config.AppConfig) error {
 		return nil
 	}
 
-	params, err := fetchTemplateParameters(a.Stack.RunnerNestedTemplateURL)
+	params, err := fetchTemplateParameters(a.Stack.RunnerNestedTemplateURL, redirect)
 	if templatefetch.IsRefused(err) {
 		return fmt.Errorf("runner_nested_template_url %q cannot be fetched: %w", a.Stack.RunnerNestedTemplateURL, err)
 	}
@@ -59,8 +63,8 @@ func hasAzurePermissionRole(p *config.PermissionsConfig) bool {
 	return false
 }
 
-func fetchTemplateParameters(templateURL string) (map[string]json.RawMessage, error) {
-	body, err := fetchTemplate(templateURL)
+func fetchTemplateParameters(templateURL string, redirect redirectCheck) (map[string]json.RawMessage, error) {
+	body, err := fetchTemplate(templateURL, redirect)
 	if err != nil {
 		return nil, err
 	}

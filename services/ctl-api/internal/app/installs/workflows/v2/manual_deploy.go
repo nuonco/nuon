@@ -30,6 +30,10 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
 		return nil, err
 	}
+	targets, err := flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
 
 	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
@@ -63,6 +67,29 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
+	primaryBuildID := ""
+	if targets != nil {
+		primaryBuildID = targets.PrimaryBuildID
+		if installDeploy.OrgID != targets.OrgID || installDeploy.InstallComponentID != targets.InstallComponents[targets.PrimaryComponentID] || installDeploy.ComponentBuildID != targets.PrimaryBuildID || generics.FromPtrStr(installDeploy.InstallWorkflowID) != flw.ID || installDeploy.AppConfigID != targets.AppConfigID {
+			return nil, errors.New("primary deploy does not match prepared manual deploy target")
+		}
+		if err := hydrateRunbookComponentTargets(appCfg, targets); err != nil {
+			return nil, err
+		}
+		selected := make([]*app.InstallActionWorkflow, 0, len(targets.Actions))
+		for _, action := range awData {
+			if target, ok := targets.Actions[action.ActionWorkflowID]; ok && target.InstallActionWorkflowID == action.ID {
+				if action.InstallID != targets.InstallID || action.OrgID != targets.OrgID || action.ActionWorkflow.AppID != targets.AppID || action.ActionWorkflow.OrgID != targets.OrgID {
+					return nil, errors.New("lifecycle action does not belong to prepared manual deploy")
+				}
+				selected = append(selected, action)
+			}
+		}
+		if len(selected) != len(targets.Actions) {
+			return nil, errors.New("prepared lifecycle action is no longer installed")
+		}
+		awData = selected
+	}
 
 	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
@@ -79,6 +106,18 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install component")
+	}
+	if targets != nil {
+		if comp.ID != targets.PrimaryComponentID || comp.AppID != targets.AppID || comp.OrgID != targets.OrgID {
+			return nil, errors.New("component does not belong to prepared manual deploy")
+		}
+		if err := targets.CheckComponent(comp.ID, installComp); err != nil {
+			return nil, err
+		}
+		comp.Type = targets.PrimaryType
+		if target, ok := targets.Components[comp.ID]; ok {
+			comp.Name = target.Name
+		}
 	}
 
 	// When the primary is a non-image component, walk its image deps and
@@ -133,6 +172,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 			InstallComponentID: installComp.ID,
 			InstallID:          installID,
 			DeployID:           generics.FromPtrStr(installDeployID),
+			BuildID:            primaryBuildID,
 			ComponentID:        comp.ID,
 			FlowID:             "",
 			SandboxMode:        false,
@@ -155,6 +195,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 			InstallComponentID: installComp.ID,
 			InstallID:          installID,
 			DeployID:           generics.FromPtrStr(installDeployID),
+			BuildID:            primaryBuildID,
 			ComponentID:        comp.ID,
 			FlowID:             "",
 			SandboxMode:        false,
@@ -167,6 +208,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 			InstallComponentID: installComp.ID,
 			InstallID:          installID,
 			ComponentID:        comp.ID,
+			BuildID:            primaryBuildID,
 			FlowID:             "",
 			SandboxMode:        false,
 		}, flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(appCfg, comp.ID)))
@@ -201,15 +243,21 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 
 	// now queue up any deploy that _depend_ on the input
-	componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
-		InstallID:   install.ID,
-		ComponentID: comp.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app component graph")
+	var dependencyCompIDs []string
+	if targets != nil {
+		if generics.FromPtrStr(deployDependents) != strconv.FormatBool(true) {
+			return sg.Result(steps), nil
+		}
+		dependencyCompIDs = targets.ComponentOrder
+	} else {
+		componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
+			InstallID: install.ID, ComponentID: comp.ID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get app component graph")
+		}
+		dependencyCompIDs = generics.SliceAfterValue(componentIDs, comp.ID)
 	}
-
-	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
 	dependencyDeploySteps, err := getComponentDeploySteps(ctx, dg, dependencyCompIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")

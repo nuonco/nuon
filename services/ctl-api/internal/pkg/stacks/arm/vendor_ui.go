@@ -92,7 +92,7 @@ func displayOnlyUIElement(el map[string]any) bool {
 }
 
 func (t *Templates) fetchLimitedBody(rawURL string) ([]byte, error) {
-	resp, err := t.templateClient().Get(rawURL)
+	resp, err := stacks.GetTemplate(t.templateClient(), t.urlPolicy(), rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch ui definition %s: %w", rawURL, err)
 	}
