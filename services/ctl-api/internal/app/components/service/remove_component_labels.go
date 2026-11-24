@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -54,15 +53,15 @@ func (s *service) RemoveAppComponentLabels(ctx *gin.Context) {
 		return
 	}
 
-	var component app.Component
-	if err := s.db.WithContext(ctx).First(&component, "id = ?", componentID).Error; err != nil {
+	component, err := s.findAppLabelComponent(ctx, componentID)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, err))
 		return
 	}
 
 	component.Labels.RemoveKeys(req.Keys)
 
-	if err := s.db.WithContext(ctx).Model(&component).Select("labels").Updates(&component).Error; err != nil {
+	if err := s.db.WithContext(ctx).Model(component).Select("labels").Updates(component).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update component labels: %w", err))
 		return
 	}
