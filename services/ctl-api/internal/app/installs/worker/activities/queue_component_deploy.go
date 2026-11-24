@@ -66,6 +66,12 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		InstallWorkflowID:  installWorkflowID,
 		Role:               req.Role,
 	}
+	validation := installDeploy
+	installCmp.Install = install
+	validation.InstallComponent = &installCmp
+	if err := buildselection.ValidatePreparedDeploy(ctx, a.db, &validation); err != nil {
+		return nil, err
+	}
 
 	res = a.db.WithContext(ctx).Create(&installDeploy)
 	if res.Error != nil {

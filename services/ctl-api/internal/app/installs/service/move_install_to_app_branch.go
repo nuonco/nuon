@@ -14,6 +14,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -51,6 +52,11 @@ func (r *MoveInstallToAppBranchRequest) Validate(v *validator.Validate) error {
 // @Router					/v1/installs/{install_id}/app-branch [PATCH]
 func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	var req MoveInstallToAppBranchRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -63,13 +69,13 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 	}
 
 	var install app.Install
-	if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where(&app.Install{ID: installID, OrgID: orgID}, "ID", "OrgID").First(&install).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}
 
 	var branch app.AppBranch
-	if err := s.db.WithContext(ctx).First(&branch, "id = ?", req.AppBranchID).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where(&app.AppBranch{ID: req.AppBranchID, OrgID: orgID}, "ID", "OrgID").First(&branch).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.Error(stderr.ErrUser{
 				Err:         fmt.Errorf("app branch %s not found", req.AppBranchID),

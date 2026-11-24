@@ -13,6 +13,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/labeladded"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -46,6 +47,11 @@ func (r *RemoveInstallLabelsRequest) Validate(v *validator.Validate) error {
 // @Router					/v1/installs/{install_id}/labels [DELETE]
 func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	var req RemoveInstallLabelsRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -58,7 +64,7 @@ func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 	}
 
 	var install app.Install
-	if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where(&app.Install{ID: installID, OrgID: orgID}, "ID", "OrgID").First(&install).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}

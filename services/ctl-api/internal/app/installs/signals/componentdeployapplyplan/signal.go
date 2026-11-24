@@ -33,6 +33,7 @@ type Signal struct {
 	InstallComponentID    string
 	InstallID             string
 	ComponentID           string
+	BuildID               string
 	FlowID                string
 	FlowStepID            string
 	InstallWorkflowStepID string
@@ -120,6 +121,7 @@ func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.Cl
 				InstallComponentID: s.InstallComponentID,
 				InstallID:          s.InstallID,
 				ComponentID:        s.ComponentID,
+				BuildID:            s.BuildID,
 				FlowID:             s.FlowID,
 				SandboxMode:        s.SandboxMode,
 			},
@@ -132,6 +134,7 @@ func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.Cl
 				InstallComponentID: s.InstallComponentID,
 				InstallID:          s.InstallID,
 				ComponentID:        s.ComponentID,
+				BuildID:            s.BuildID,
 				FlowID:             s.FlowID,
 				SandboxMode:        s.SandboxMode,
 			},
