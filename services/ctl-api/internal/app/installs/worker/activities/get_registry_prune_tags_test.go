@@ -63,6 +63,7 @@ type pruneDeploySpec struct {
 type pruneCase struct {
 	appMode       *string
 	appRetain     *int
+	appGraceDays  *int
 	installMode   *string
 	componentName []string
 	compRetain    map[int]int
@@ -71,6 +72,7 @@ type pruneCase struct {
 
 	wantErr      string
 	wantMode     string
+	wantGrace    *time.Duration
 	wantNoTags   bool
 	wantOwned    []int
 	wantKeepTags []int
@@ -235,7 +237,7 @@ func (s *registryPruneTestSuite) TestGetRegistryPruneTags() {
 			appMode:       ptr("enforce"),
 			appRetain:     ptr(1),
 			componentName: []string{"alpha"},
-			req:           GetRegistryPruneTagsRequest{GracePeriod: time.Hour},
+			req:           GetRegistryPruneTagsRequest{GracePeriodOverride: ptr(time.Hour)},
 			deploys: []pruneDeploySpec{
 				{status: active, age: 5 * time.Hour},
 				{status: errored, age: 20 * time.Minute},
@@ -245,6 +247,54 @@ func (s *registryPruneTestSuite) TestGetRegistryPruneTags() {
 			wantOwned:    []int{0, 1, 2},
 			wantKeepTags: []int{1, 2},
 			wantKeepIDs:  []int{1, 2},
+		},
+		"default grace period is 30 days": {
+			appMode:       ptr("enforce"),
+			appRetain:     ptr(1),
+			componentName: []string{"alpha"},
+			deploys: []pruneDeploySpec{
+				{status: active, age: 40 * 24 * time.Hour},
+				{status: errored, age: 20 * 24 * time.Hour},
+				{status: active, age: time.Hour},
+			},
+			wantMode:     "enforce",
+			wantGrace:    ptr(30 * 24 * time.Hour),
+			wantOwned:    []int{0, 1, 2},
+			wantKeepTags: []int{1, 2},
+			wantKeepIDs:  []int{1, 2},
+		},
+		"app grace_period_days keeps recent deploys": {
+			appMode:       ptr("enforce"),
+			appRetain:     ptr(1),
+			appGraceDays:  ptr(1),
+			componentName: []string{"alpha"},
+			deploys: []pruneDeploySpec{
+				{status: active, age: 48 * time.Hour},
+				{status: errored, age: 20 * time.Hour},
+				{status: active, age: 10 * time.Minute},
+			},
+			wantMode:     "enforce",
+			wantGrace:    ptr(24 * time.Hour),
+			wantOwned:    []int{0, 1, 2},
+			wantKeepTags: []int{1, 2},
+			wantKeepIDs:  []int{1, 2},
+		},
+		"admin override beats app grace_period_days": {
+			appMode:       ptr("enforce"),
+			appRetain:     ptr(1),
+			appGraceDays:  ptr(30),
+			componentName: []string{"alpha"},
+			req:           GetRegistryPruneTagsRequest{GracePeriodOverride: ptr(time.Duration(0))},
+			deploys: []pruneDeploySpec{
+				{status: active, age: 5 * time.Hour},
+				{status: errored, age: 20 * time.Minute},
+				{status: active, age: 10 * time.Minute},
+			},
+			wantMode:     "enforce",
+			wantGrace:    ptr(time.Duration(0)),
+			wantOwned:    []int{0, 1, 2},
+			wantKeepTags: []int{2},
+			wantKeepIDs:  []int{2},
 		},
 		"zero grace period does not protect recent deploys": {
 			appMode:       ptr("enforce"),
@@ -278,12 +328,13 @@ func (s *registryPruneTestSuite) runCase(tc pruneCase) {
 	cfg := s.seeder.CreateAppConfig(ctx, t, a.ID)
 	install := s.seeder.CreateInstall(ctx, t, a)
 
-	if tc.appMode != nil || tc.appRetain != nil {
+	if tc.appMode != nil || tc.appRetain != nil || tc.appGraceDays != nil {
 		require.NoError(t, s.db.WithContext(ctx).Create(&app.AppRegistryRetentionConfig{
-			AppID:       a.ID,
-			AppConfigID: cfg.ID,
-			Mode:        tc.appMode,
-			RetainCount: tc.appRetain,
+			AppID:           a.ID,
+			AppConfigID:     cfg.ID,
+			Mode:            tc.appMode,
+			RetainCount:     tc.appRetain,
+			GracePeriodDays: tc.appGraceDays,
 		}).Error)
 	}
 	if tc.installMode != nil {
@@ -357,6 +408,9 @@ func (s *registryPruneTestSuite) runCase(tc pruneCase) {
 	}
 	req := tc.req
 	req.InstallID = install.ID
+	if req.GracePeriodOverride == nil && tc.appGraceDays == nil && tc.wantGrace == nil {
+		req.GracePeriodOverride = ptr(time.Duration(0))
+	}
 	got, err := acts.GetRegistryPruneTags(ctx, &req)
 
 	if tc.wantErr != "" {
@@ -366,6 +420,9 @@ func (s *registryPruneTestSuite) runCase(tc pruneCase) {
 	}
 	require.NoError(t, err)
 	require.Equal(t, tc.wantMode, got.Mode)
+	if tc.wantGrace != nil {
+		require.Equal(t, *tc.wantGrace, got.GracePeriod)
+	}
 
 	if tc.wantNoTags {
 		require.Empty(t, got.OwnedTags)

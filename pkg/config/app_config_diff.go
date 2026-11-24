@@ -893,6 +893,7 @@ func diffRegistryRetention(old, new *RegistryRetention) *diff.Diff {
 	children := []*diff.Diff{
 		diff.NewDiff(diff.WithKey("mode"), diff.WithOptionalStringDiff(old.Mode, new.Mode)),
 		diff.NewDiff(diff.WithKey("retain_count"), diff.WithOptionalIntDiff(old.RetainCount, new.RetainCount)),
+		diff.NewDiff(diff.WithKey("grace_period_days"), diff.WithOptionalIntDiff(old.GracePeriodDays, new.GracePeriodDays)),
 	}
 	return sectionDiff("registry_retention", old, new, children)
 }

@@ -28,6 +28,8 @@ type AppRegistryRetentionConfig struct {
 
 	Mode        *string `json:"mode,omitempty" gorm:"default null" temporaljson:"mode,omitempty" extensions:"x-nullable"`
 	RetainCount *int    `json:"retain_count,omitempty" gorm:"default null" temporaljson:"retain_count,omitempty" extensions:"x-nullable"`
+
+	GracePeriodDays *int `json:"grace_period_days,omitempty" gorm:"default null" temporaljson:"grace_period_days,omitempty" extensions:"x-nullable"`
 }
 
 func (a *AppRegistryRetentionConfig) Indexes(db *gorm.DB) []migrations.Index {
@@ -52,6 +54,14 @@ func (a *AppRegistryRetentionConfig) BeforeCreate(tx *gorm.DB) error {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 	return nil
+}
+
+func ResolveRegistryGracePeriod(appCfg *AppRegistryRetentionConfig) time.Duration {
+	days := config.DefaultRegistryRetentionGracePeriodDays
+	if appCfg != nil && appCfg.GracePeriodDays != nil {
+		days = *appCfg.GracePeriodDays
+	}
+	return time.Duration(days) * 24 * time.Hour
 }
 
 func ResolveRegistryRetention(installConfig *InstallConfig, appCfg *AppRegistryRetentionConfig, ccc *ComponentConfigConnection) (string, int) {

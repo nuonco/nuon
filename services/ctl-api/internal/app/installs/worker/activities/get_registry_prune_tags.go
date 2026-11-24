@@ -12,14 +12,15 @@ import (
 )
 
 type GetRegistryPruneTagsRequest struct {
-	InstallID      string `validate:"required"`
-	SharedRepo     bool
-	GracePeriod    time.Duration
-	IncludeWhenOff bool
+	InstallID           string `validate:"required"`
+	SharedRepo          bool
+	GracePeriodOverride *time.Duration
+	IncludeWhenOff      bool
 }
 
 type GetRegistryPruneTagsResponse struct {
 	Mode             string
+	GracePeriod      time.Duration
 	OwnedTags        []string
 	OwnedTagPatterns []string
 	KeepTags         []string
@@ -57,7 +58,13 @@ func (a *Activities) GetRegistryPruneTags(ctx context.Context, req *GetRegistryP
 	}
 
 	mode, defaultCount := app.ResolveRegistryRetention(install.InstallConfig, retentionCfg, nil)
-	resp := &GetRegistryPruneTagsResponse{Mode: mode}
+	resp := &GetRegistryPruneTagsResponse{
+		Mode:        mode,
+		GracePeriod: app.ResolveRegistryGracePeriod(retentionCfg),
+	}
+	if req.GracePeriodOverride != nil {
+		resp.GracePeriod = *req.GracePeriodOverride
+	}
 	if mode == config.RegistryRetentionModeOff && !req.IncludeWhenOff {
 		return resp, nil
 	}
@@ -159,7 +166,7 @@ func (a *Activities) GetRegistryPruneTags(ctx context.Context, req *GetRegistryP
 		RetainCounts: retainCounts,
 		DefaultCount: defaultCount,
 		LivePlans:    livePlans,
-		GracePeriod:  req.GracePeriod,
+		GracePeriod:  resp.GracePeriod,
 		Now:          time.Now(),
 	})
 	resp.OwnedTags = sets.Owned

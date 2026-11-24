@@ -28,3 +28,14 @@ func ValidateRegistryRetentionRetainCount(count *int) error {
 	}
 	return nil
 }
+
+func ValidateRegistryRetentionGracePeriodDays(days *int) error {
+	if err := config.ValidateRegistryRetentionGracePeriodDays(days); err != nil {
+		return stderr.ErrUser{
+			Err:         errors.New("invalid_registry_retention_grace_period_days"),
+			Code:        "invalid_registry_retention_grace_period_days",
+			Description: err.Error(),
+		}
+	}
+	return nil
+}

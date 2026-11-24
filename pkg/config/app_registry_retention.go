@@ -12,8 +12,9 @@ const (
 	RegistryRetentionModeDryRun  = "dry_run"
 	RegistryRetentionModeEnforce = "enforce"
 
-	DefaultRegistryRetentionMode        = RegistryRetentionModeOff
-	DefaultRegistryRetentionRetainCount = 3
+	DefaultRegistryRetentionMode            = RegistryRetentionModeOff
+	DefaultRegistryRetentionRetainCount     = 3
+	DefaultRegistryRetentionGracePeriodDays = 30
 )
 
 var registryRetentionModes = []string{
@@ -40,9 +41,19 @@ func ValidateRegistryRetentionRetainCount(count *int) error {
 	}
 }
 
+func ValidateRegistryRetentionGracePeriodDays(days *int) error {
+	if days == nil || *days >= 0 {
+		return nil
+	}
+	return ErrConfig{
+		Description: fmt.Sprintf("registry_retention grace_period_days %d is invalid, must be 0 or more", *days),
+	}
+}
+
 type RegistryRetention struct {
-	Mode        *string `mapstructure:"mode,omitempty" toml:"mode,omitempty" json:"mode,omitempty"`
-	RetainCount *int    `mapstructure:"retain_count,omitempty" toml:"retain_count,omitempty" json:"retain_count,omitempty"`
+	Mode            *string `mapstructure:"mode,omitempty" toml:"mode,omitempty" json:"mode,omitempty"`
+	RetainCount     *int    `mapstructure:"retain_count,omitempty" toml:"retain_count,omitempty" json:"retain_count,omitempty"`
+	GracePeriodDays *int    `mapstructure:"grace_period_days,omitempty" toml:"grace_period_days,omitempty" json:"grace_period_days,omitempty"`
 }
 
 func (a RegistryRetention) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -55,7 +66,11 @@ func (a RegistryRetention) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("retain_count").Short("images to retain").
 		Long("Number of most recent images to keep per component in each install's registry. Must be at least 1. Components can override this value. Leave unset to use the platform default.").
 		Example(3).
-		Example(10)
+		Example(10).
+		Field("grace_period_days").Short("days to keep recent images").
+		Long("Images synced or deployed within this many days are never pruned, regardless of retain_count. Must be 0 or more. Leave unset to use the platform default of 30.").
+		Example(30).
+		Example(7)
 }
 
 func (a *RegistryRetention) parse() error {
@@ -69,7 +84,10 @@ func (a *RegistryRetention) Validate() error {
 	if err := ValidateRegistryRetentionMode(a.Mode); err != nil {
 		return err
 	}
-	return ValidateRegistryRetentionRetainCount(a.RetainCount)
+	if err := ValidateRegistryRetentionRetainCount(a.RetainCount); err != nil {
+		return err
+	}
+	return ValidateRegistryRetentionGracePeriodDays(a.GracePeriodDays)
 }
 
 type ComponentRegistryRetention struct {

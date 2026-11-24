@@ -2,6 +2,7 @@ package app
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -80,6 +81,37 @@ func TestResolveRegistryRetention(t *testing.T) {
 			mode, retain := ResolveRegistryRetention(tc.install, tc.app, tc.component)
 			assert.Equal(t, tc.wantMode, mode)
 			assert.Equal(t, tc.wantRetain, retain)
+		})
+	}
+}
+
+func TestResolveRegistryGracePeriod(t *testing.T) {
+	num := func(n int) *int { return &n }
+	day := 24 * time.Hour
+
+	tests := map[string]struct {
+		app  *AppRegistryRetentionConfig
+		want time.Duration
+	}{
+		"default when no app section": {
+			want: config.DefaultRegistryRetentionGracePeriodDays * day,
+		},
+		"default when app section omits it": {
+			app:  &AppRegistryRetentionConfig{RetainCount: num(5)},
+			want: config.DefaultRegistryRetentionGracePeriodDays * day,
+		},
+		"app sets days": {
+			app:  &AppRegistryRetentionConfig{GracePeriodDays: num(7)},
+			want: 7 * day,
+		},
+		"zero disables the grace period": {
+			app:  &AppRegistryRetentionConfig{GracePeriodDays: num(0)},
+			want: 0,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, ResolveRegistryGracePeriod(tc.app))
 		})
 	}
 }

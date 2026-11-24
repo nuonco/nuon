@@ -13,4 +13,5 @@ title: 'Registry Retention'
 |----------|----------|----------|----------|
 | **`mode`**<br/>string | registry retention mode Controls pruning of old images from each install's registry. off never prunes, dry_run reports what would be pruned without deleting, enforce deletes. Installs can override ... | **Optional** | `"off"`, `"dry_run"`, `"enforce"` |
 | **`retain_count`**<br/>integer | images to retain Number of most recent images to keep per component in each install's registry. Must be at least 1. Components can override this value. Leave unset to use the platform default. | **Optional** | `3`, `10` |
+| **`grace_period_days`**<br/>integer | days to keep recent images Images synced or deployed within this many days are never pruned, regardless of retain_count. Must be 0 or more. Leave unset to use the platform default of 30. | **Optional** | `30`, `7` |
 

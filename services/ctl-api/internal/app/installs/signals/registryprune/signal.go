@@ -22,10 +22,7 @@ import (
 
 const SignalType signal.SignalType = "registry-prune"
 
-const (
-	GracePeriod = 30 * 24 * time.Hour
-	MaxDeletes  = 200
-)
+const MaxDeletes = 200
 
 type Signal struct {
 	InstallID          string `json:"install_id"`
@@ -87,16 +84,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	grace := GracePeriod
+	var graceOverride *time.Duration
 	if s.GracePeriodSeconds != nil {
-		grace = time.Duration(*s.GracePeriodSeconds) * time.Second
+		d := time.Duration(*s.GracePeriodSeconds) * time.Second
+		graceOverride = &d
 	}
 
 	tags, err := activities.AwaitGetRegistryPruneTags(ctx, &activities.GetRegistryPruneTagsRequest{
-		InstallID:      s.InstallID,
-		SharedRepo:     true,
-		GracePeriod:    grace,
-		IncludeWhenOff: s.DryRun,
+		InstallID:           s.InstallID,
+		SharedRepo:          true,
+		GracePeriodOverride: graceOverride,
+		IncludeWhenOff:      s.DryRun,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to compute registry prune tags: %w", err)
@@ -119,7 +117,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		OwnedTags:        tags.OwnedTags,
 		OwnedTagPatterns: tags.OwnedTagPatterns,
 		KeepTags:         tags.KeepTags,
-		GracePeriod:      grace,
+		GracePeriod:      tags.GracePeriod,
 		MaxDeletes:       MaxDeletes,
 		WorkflowID:       fmt.Sprintf("%s-create-oci-prune-plan", wfID),
 	})

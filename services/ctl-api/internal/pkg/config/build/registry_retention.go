@@ -18,11 +18,16 @@ func RegistryRetentionConfig(retention *config.RegistryRetention, appID, appConf
 	if err := validation.ValidateRegistryRetentionRetainCount(retention.RetainCount); err != nil {
 		return nil, err
 	}
+	if err := validation.ValidateRegistryRetentionGracePeriodDays(retention.GracePeriodDays); err != nil {
+		return nil, err
+	}
 
 	return &app.AppRegistryRetentionConfig{
 		AppID:       appID,
 		AppConfigID: appConfigID,
 		Mode:        retention.Mode,
 		RetainCount: retention.RetainCount,
+
+		GracePeriodDays: retention.GracePeriodDays,
 	}, nil
 }

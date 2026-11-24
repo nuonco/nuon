@@ -29,6 +29,9 @@ type AppAppRegistryRetentionConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// grace period days
+	GracePeriodDays *int64 `json:"grace_period_days,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
