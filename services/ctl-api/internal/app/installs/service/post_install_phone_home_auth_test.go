@@ -241,6 +241,36 @@ func TestCheckObservedCloudAccount(t *testing.T) {
 			wantReason: phoneHomeAuthOK,
 		},
 		{
+			name:       "runner roles in the expected account pass",
+			install:    &app.Install{ExpectedAccountID: expected},
+			props:      map[string]any{"account_id": expected, "runner_iam_role_arn": "arn:aws:iam::" + expected + ":role/runner", "provision_iam_role_arn": ""},
+			wantReason: phoneHomeAuthOK,
+		},
+		{
+			name:       "a runner role in another account is rejected",
+			install:    &app.Install{ExpectedAccountID: expected},
+			props:      map[string]any{"account_id": expected, "maintenance_iam_role_arn": "arn:aws:iam::999999999999:role/maintenance"},
+			wantReason: phoneHomeRejectAccountMismatch,
+		},
+		{
+			name:       "a runner role that is not an iam arn is rejected",
+			install:    &app.Install{ExpectedAccountID: expected},
+			props:      map[string]any{"provision_iam_role_arn": "not-an-arn"},
+			wantReason: phoneHomeRejectAccountMismatch,
+		},
+		{
+			name:       "a non-string runner role is rejected",
+			install:    &app.Install{ExpectedAccountID: expected},
+			props:      map[string]any{"runner_iam_role_arn": 123},
+			wantReason: phoneHomeRejectAccountMismatch,
+		},
+		{
+			name:       "runner roles are not checked without an expected account",
+			install:    &app.Install{},
+			props:      map[string]any{"runner_iam_role_arn": "arn:aws:iam::999999999999:role/runner"},
+			wantReason: phoneHomeAuthOK,
+		},
+		{
 			name:       "a non-string account is treated as absent",
 			install:    &app.Install{ExpectedAccountID: expected},
 			props:      map[string]any{"account_id": 123456789012},

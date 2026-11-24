@@ -23,6 +23,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -422,4 +423,88 @@ func (s *StackPhoneHomeTestSuite) TestRejectsNonStringInputs() {
 		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
 		"inputs":       map[string]any{"domain": 7},
 	}).Code)
+}
+
+func (s *StackPhoneHomeTestSuite) TestRejectsReportFromUnexpectedAccount() {
+	const expected = "123456789012"
+	install := s.seedInstall(s.testOrg.ID)
+	s.seedQueue(install.ID)
+	require.NoError(s.T(), s.deps.DB.Model(&app.Install{}).Where("id = ?", install.ID).
+		Update("cloud_platform_metadata", gorm.Expr("?::jsonb", `{"target_account_id":"`+expected+`"}`)).Error)
+	version := s.deps.Seeder.CreateInstallStackVersion(s.ctx, s.T(), install.ID, install.InstallStack.ID, s.appCfg.ID)
+
+	rejected := map[string]map[string]any{
+		"missing account_id":      {},
+		"another account":         {"account_id": "999999999999"},
+		"role in another account": {"account_id": expected, "provision_iam_role_arn": "arn:aws:iam::999999999999:role/provision"},
+	}
+	for name, body := range rejected {
+		s.Run(name, func() {
+			body["request_type"] = installshelpers.PhoneHomeRequestTypeCreate
+			rr := s.post(install.ID, body)
+			s.Equal(http.StatusForbidden, rr.Code, "body: %s", rr.Body.String())
+		})
+	}
+
+	var runs []app.InstallStackVersionRun
+	require.NoError(s.T(), s.deps.DB.Where("install_stack_version_id = ?", version.ID).Find(&runs).Error)
+	s.Empty(runs)
+
+	rr := s.post(install.ID, map[string]any{
+		"request_type":           installshelpers.PhoneHomeRequestTypeCreate,
+		"account_id":             expected,
+		"provision_iam_role_arn": "arn:aws:iam::" + expected + ":role/provision",
+	})
+	s.Equal(http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
+}
+
+func (s *StackPhoneHomeTestSuite) TestRetiredStackVersionIsConflict() {
+	for status, want := range map[app.Status]int{
+		app.InstallStackVersionStatusExpired:  http.StatusConflict,
+		app.InstallStackVersionStatusOutdated: http.StatusConflict,
+		app.StatusCancelled:                   http.StatusCreated,
+	} {
+		s.Run(string(status), func() {
+			install := s.seedInstall(s.testOrg.ID)
+			s.seedQueue(install.ID)
+			version := s.deps.Seeder.CreateInstallStackVersion(s.ctx, s.T(), install.ID, install.InstallStack.ID, s.appCfg.ID)
+			require.NoError(s.T(), s.deps.DB.Model(&app.InstallStackVersion{}).Where("id = ?", version.ID).
+				Update("status", app.NewCompositeStatus(s.ctx, status)).Error)
+
+			rr := s.post(install.ID, map[string]any{"request_type": installshelpers.PhoneHomeRequestTypeCreate})
+			s.Equal(want, rr.Code, "body: %s", rr.Body.String())
+
+			var runs []app.InstallStackVersionRun
+			require.NoError(s.T(), s.deps.DB.Where("install_stack_version_id = ?", version.ID).Find(&runs).Error)
+			s.Equal(want == http.StatusCreated, len(runs) == 1)
+		})
+	}
+}
+
+func (s *StackPhoneHomeTestSuite) TestRouteRequiresGrantOnThisInstallStack() {
+	install := s.seedInstall(s.testOrg.ID)
+	s.seedQueue(install.ID)
+	version := s.deps.Seeder.CreateInstallStackVersion(s.ctx, s.T(), install.ID, install.InstallStack.ID, s.appCfg.ID)
+
+	postAs := func(perms permissions.Set) int {
+		acct := *s.testAcc
+		acct.AllPermissions = perms
+		router := tests.NewTestRouter(tests.RouterOptions{L: s.deps.L, DB: s.deps.DB, TestOrg: s.testOrg, TestAcc: &acct})
+		require.NoError(s.T(), s.svc.RegisterStackRoutes(router))
+		raw, err := json.Marshal(map[string]any{"request_type": installshelpers.PhoneHomeRequestTypeCreate})
+		require.NoError(s.T(), err)
+		req := httptest.NewRequest(http.MethodPost, "/v1/stacks/"+install.ID+"/phone-home", bytes.NewBuffer(raw))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	s.Equal(http.StatusNotFound, postAs(permissions.Set{s.testOrg.ID: permissions.PermissionAll}))
+	s.Equal(http.StatusNotFound, postAs(permissions.Set{permissions.StackObject(s.testOrg.ID, "inlother000000000000000000"): permissions.PermissionAll}))
+	var runs []app.InstallStackVersionRun
+	require.NoError(s.T(), s.deps.DB.Where("install_stack_version_id = ?", version.ID).Find(&runs).Error)
+	s.Empty(runs)
+
+	s.Equal(http.StatusCreated, postAs(permissions.Set{permissions.StackObject(s.testOrg.ID, install.ID): permissions.PermissionAll}))
 }

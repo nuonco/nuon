@@ -25,6 +25,12 @@ const (
 func run(t *testing.T, kind permissions.ResourceKind, verb permissions.Permission, method string, perms permissions.Set, orgID, installID string) *gin.Context {
 	t.Helper()
 
+	return serve(t, func(r gin.IRouter) *gin.RouterGroup { return Route(r, kind, verb, "install_id") }, method, perms, orgID, installID)
+}
+
+func serve(t *testing.T, register func(gin.IRouter) *gin.RouterGroup, method string, perms permissions.Set, orgID, installID string) *gin.Context {
+	t.Helper()
+
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
 	var ctx *gin.Context
@@ -47,7 +53,7 @@ func run(t *testing.T, kind permissions.ResourceKind, verb permissions.Permissio
 		path = "/v1/stacks/:install_id/config"
 		requestPath = "/v1/stacks/" + installID + "/config"
 	}
-	Route(engine, kind, verb, "install_id").Handle(method, path, func(*gin.Context) {})
+	register(engine).Handle(method, path, func(*gin.Context) {})
 	engine.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(method, requestPath, nil))
 
 	return ctx
@@ -166,4 +172,41 @@ func TestRouteEnforcesDeclaredVerb(t *testing.T) {
 			http.MethodPost, set, orgID, installID)
 		assertAllowed(t, ctx)
 	})
+}
+
+func TestExactRoute(t *testing.T) {
+	createStack := func(t *testing.T, perms permissions.Set) *gin.Context {
+		return serve(t, func(r gin.IRouter) *gin.RouterGroup {
+			return ExactRoute(r, permissions.KindStack, permissions.PermissionCreate, "install_id")
+		}, http.MethodPost, perms, orgID, installID)
+	}
+	grant := func(object string, perm permissions.Permission) permissions.Set {
+		set := permissions.Set(permissions.NewSet())
+		require.NoError(t, set.Add(map[string]*string{object: perm.ToStrPtr()}))
+		return set
+	}
+
+	allowed := map[string]permissions.Set{
+		"exact all grant":    scopedStack(t, orgID, installID, permissions.PermissionAll),
+		"exact create grant": scopedStack(t, orgID, installID, permissions.PermissionCreate),
+	}
+	for name, perms := range allowed {
+		t.Run(name, func(t *testing.T) {
+			assertAllowed(t, createStack(t, perms))
+		})
+	}
+
+	denied := map[string]permissions.Set{
+		"org-wide grant, as a runner holds":   grant(orgID, permissions.PermissionAll),
+		"wildcard grant":                      grant("*", permissions.PermissionAll),
+		"grant on another install's stack":    scopedStack(t, orgID, otherInstallID, permissions.PermissionAll),
+		"grant on the same install elsewhere": scopedStack(t, "org_two", installID, permissions.PermissionAll),
+		"exact grant with the wrong verb":     scopedStack(t, orgID, installID, permissions.PermissionRead),
+		"no grant":                            permissions.Set(permissions.NewSet()),
+	}
+	for name, perms := range denied {
+		t.Run(name, func(t *testing.T) {
+			assertNotFound(t, createStack(t, perms), "install not found")
+		})
+	}
 }
