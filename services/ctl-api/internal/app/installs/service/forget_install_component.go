@@ -43,22 +43,16 @@ func (s *service) ForgetInstallComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 
 	// Verify install exists and belongs to org
-	if _, err := s.findInstall(ctx, org.ID, installID); err != nil {
+	install, err := s.findInstall(ctx, org.ID, installID)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}
 
 	// Get install component to verify it exists
-	installComponent, err := s.getInstallComponent(ctx, installID, componentID)
+	installComponent, err := s.getInstallComponent(ctx, install.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install component %s: %w", componentID, err))
-		return
-	}
-
-	// Get install details to access app config ID
-	install, err := s.findInstall(ctx, org.ID, installID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install details: %w", err))
 		return
 	}
 

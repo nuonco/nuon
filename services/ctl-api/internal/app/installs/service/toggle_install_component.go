@@ -74,17 +74,29 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	component, err := s.helpers.GetComponent(ctx, componentID)
-	if err != nil {
+	var component app.Component
+	if err := s.db.WithContext(ctx).Where(&app.Component{ID: componentID, AppID: install.AppID, OrgID: install.OrgID}, "ID", "AppID", "OrgID").First(&component).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get component: %w", err))
 		return
 	}
 
-	var latestConfig *app.ComponentConfigConnection
-	if len(component.ComponentConfigs) > 0 {
-		latestConfig = &component.ComponentConfigs[0]
+	appConfig, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component in install app config: %w", err))
+		return
 	}
-	if latestConfig == nil || !latestConfig.IsToggleable() {
+	var componentConfig *app.ComponentConfigConnection
+	for i := range appConfig.ComponentConfigConnections {
+		if appConfig.ComponentConfigConnections[i].ComponentID == component.ID {
+			componentConfig = &appConfig.ComponentConfigConnections[i]
+			break
+		}
+	}
+	if componentConfig == nil || componentConfig.OrgID != install.OrgID || appConfig.AppID != install.AppID || appConfig.OrgID != install.OrgID {
+		ctx.Error(stderr.NewInvalidRequest(errors.New("component config does not belong to the install's app and org")))
+		return
+	}
+	if !componentConfig.IsToggleable() {
 		ctx.Error(stderr.ErrUser{
 			Err:         errors.New("component is not toggleable"),
 			Description: "This component is not configured as toggleable",

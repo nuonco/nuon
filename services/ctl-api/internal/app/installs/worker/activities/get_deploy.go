@@ -23,6 +23,7 @@ func (a *Activities) GetDeploy(ctx context.Context, req GetDeployRequest) (*app.
 func (a *Activities) getDeploy(ctx context.Context, deployID string) (*app.InstallDeploy, error) {
 	installDeploy := app.InstallDeploy{}
 	res := a.db.WithContext(ctx).
+		Preload("InstallWorkflow").
 		Preload("ComponentBuild").
 		Preload("OCIArtifact").
 		Preload("LogStream").

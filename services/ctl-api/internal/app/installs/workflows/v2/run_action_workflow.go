@@ -29,6 +29,11 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 		},
 	}
 
+	if appConfigID := generics.FromPtrStr(sg.flw.Metadata["manual_action_app_config_id"]); appConfigID != "" {
+		sig.AppConfigID = appConfigID
+		sig.ActionWorkflowConfigID = generics.FromPtrStr(sg.flw.Metadata["action_workflow_config_id"])
+	}
+
 	name := fmt.Sprintf("%s action workflow run", string(app.ActionWorkflowTriggerTypeManual))
 	return sg.installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, false)
 }

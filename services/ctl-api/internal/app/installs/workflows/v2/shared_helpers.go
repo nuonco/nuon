@@ -130,6 +130,13 @@ func buildComponentConfigMaps(appCfg *app.AppConfig) (
 }
 
 func resolvePinnedComponentBuild(ctx workflow.Context, dg *genCtx, compID string) (*app.ComponentBuild, error) {
+	targets, err := dg.flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
+	if targets != nil && compID == targets.PrimaryComponentID {
+		return activities.AwaitGetComponentBuildByComponentBuildID(ctx, targets.PrimaryBuildID)
+	}
 	if dg.flw.Request != nil && dg.flw.Request.DriftResolution != nil && dg.flw.Request.DriftResolution.ComponentID == compID {
 		return activities.AwaitGetComponentBuildByComponentBuildID(ctx, dg.flw.Request.DriftResolution.BuildID)
 	}
@@ -385,6 +392,10 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to batch get install components")
 	}
+	targets, err := dg.flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
 
 	for i, compID := range componentIDs {
 		// Yield to the Temporal scheduler periodically to avoid deadlock detection
@@ -415,6 +426,12 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			}
 			steps = append(steps, skipStep)
 			continue
+		}
+
+		if targets != nil {
+			if err := targets.CheckComponent(compID, installComps[compID]); err != nil {
+				return nil, err
+			}
 		}
 
 		// Dep-aware image-sync prepend.
@@ -709,8 +726,12 @@ func getImageDepSyncStepsForIDs(
 ) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	groupStarted := false
+	targets, err := dg.flw.ExecutionTargets()
+	if err != nil {
+		return nil, err
+	}
 	loader := &genCtxDepLoader{
-		InstallDeploys: imagesync.InstallDeploys{InstallID: dg.installID},
+		InstallDeploys: imagesync.InstallDeploys{InstallID: dg.installID, Targets: targets},
 		dg:             dg,
 	}
 
@@ -792,11 +813,20 @@ func (l *genCtxDepLoader) LatestActiveBuildID(ctx workflow.Context, componentID 
 // the install's runner, where a second wait immediately after can only
 // re-confirm the same result.
 func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
-	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
-		InstallID: dg.installID,
-	})
+	targets, err := dg.flw.ExecutionTargets()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install graph")
+		return nil, err
+	}
+	var componentIDs []string
+	if targets != nil {
+		componentIDs = targets.ComponentOrder
+	} else {
+		componentIDs, err = activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
+			InstallID: dg.installID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get install graph")
+		}
 	}
 
 	steps := make([]*app.WorkflowStep, 0)

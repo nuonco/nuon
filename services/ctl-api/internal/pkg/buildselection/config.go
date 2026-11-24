@@ -22,6 +22,13 @@ func InstallConfigID(ctx context.Context, db *gorm.DB, install *app.Install, wor
 	if err := db.WithContext(ctx).Where(app.Workflow{ID: workflowID}).First(&flow).Error; err != nil {
 		return "", err
 	}
+	pinned, err := flow.PreparedInstallConfigID(install)
+	if err != nil {
+		return "", err
+	}
+	if pinned != "" {
+		return pinned, nil
+	}
 	if flow.Type == app.WorkflowTypeAppBranchConfigUpdate {
 		if target := generics.FromPtrStr(flow.Metadata["new_app_config_id"]); target != "" {
 			appConfigID = target
