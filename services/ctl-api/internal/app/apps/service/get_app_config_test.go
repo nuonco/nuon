@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -62,4 +63,26 @@ func (s *AppConfigsTestSuite) TestGetAppConfigV2NotFound() {
 		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 	}
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
+}
+
+func (s *AppConfigsTestSuite) TestGetAppConfigRecurseExcludesStoredForeignComponentIDs() {
+	ctx := cctx.SetOrgIDContext(cctx.SetAccountContext(context.Background(), s.testAcc), s.testOrg.ID)
+	otherCtx, _ := s.service.Seeder.EnsureAccount(context.Background(), s.T())
+	otherCtx, _ = s.service.Seeder.EnsureOrg(otherCtx, s.T())
+	otherOrgApp := s.service.Seeder.CreateApp(otherCtx, s.T())
+	otherOrgCfg := s.service.Seeder.CreateBareAppConfig(otherCtx, s.T(), otherOrgApp.ID)
+	foreign := s.service.Seeder.CreateComponent(otherCtx, s.T(), otherOrgApp.ID, app.ComponentTypeHelmChart)
+	s.service.Seeder.CreateHelmComponentConfigConnection(otherCtx, s.T(), foreign.ID, otherOrgCfg.ID)
+
+	s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
+	cfg := s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
+	require.NoError(s.T(), s.service.DB.Model(&app.AppConfig{}).Where("id = ?", cfg.ID).
+		Update("component_ids", pq.StringArray{foreign.ID}).Error)
+
+	rr := s.makeGetRequest(http.MethodGet, fmt.Sprintf("/v1/apps/%s/configs/%s?recurse=true", s.testApp.ID, cfg.ID))
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var response app.AppConfig
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+	assert.Empty(s.T(), response.ComponentConfigConnections)
 }
