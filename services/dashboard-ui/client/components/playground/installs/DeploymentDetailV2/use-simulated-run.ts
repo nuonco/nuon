@@ -4,6 +4,7 @@ import { RUN_SCRIPT } from './run-script'
 import {
   advanceRun,
   initRun,
+  type IRunAttempt,
   toWorkflowSteps,
   workflowStatusOf,
   type TRunAction,
@@ -17,10 +18,13 @@ export interface IUseSimulatedRun {
 export interface ISimulatedRun {
   steps: TWorkflowStep[]
   logs: Record<string, TOTELLog[]>
+  attempts: Record<string, IRunAttempt[]>
   status: string
   isFinished: boolean
   approve: () => void
   deny: () => void
+  retry: () => void
+  skip: () => void
   restart: () => void
 }
 
@@ -51,10 +55,13 @@ export const useSimulatedRun = ({
   return {
     steps,
     logs: state.logs,
+    attempts: state.attempts,
     status: workflowStatusOf(state.phase),
     isFinished,
     approve: () => dispatch({ type: 'approve', now: Date.now() }),
     deny: () => dispatch({ type: 'deny', now: Date.now() }),
+    retry: () => dispatch({ type: 'retry', now: Date.now() }),
+    skip: () => dispatch({ type: 'skip', now: Date.now() }),
     restart: () => setState(initRun(RUN_SCRIPT, Date.now())),
   }
 }

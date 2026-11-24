@@ -13,6 +13,8 @@ type TTestAction =
   | { type: 'tick'; autoApprove?: boolean }
   | { type: 'approve' }
   | { type: 'deny' }
+  | { type: 'retry' }
+  | { type: 'skip' }
 
 const run = (state: IRunState, action: TTestAction) =>
   advanceRun(RUN_SCRIPT, state, { now: 1_000, ...action } as TRunAction)
@@ -57,18 +59,67 @@ describe('advanceRun', () => {
     )
   })
 
-  it('runs to completion when approvals are automatic', () => {
-    const state = tickUntil(
+  const blocked = () =>
+    tickUntil(initRun(RUN_SCRIPT, 0), (s) => s.phase === 'blocked', true)
+
+  it('blocks on a step that needs a manual retry or skip', () => {
+    const state = blocked()
+
+    expect(workflowStatusOf(state.phase)).toBe('failed-pending-retry')
+    expect(state.steps['run-acme-web-apply'].status).toBe(
+      'failed-pending-retry'
+    )
+    expect(state.attempts['run-acme-web-apply']).toHaveLength(2)
+    expect(run(state, { type: 'tick', autoApprove: true })).toBe(state)
+
+    const steps = toWorkflowSteps(RUN_SCRIPT, state)
+    const step = steps.find((item) => item.id === 'run-acme-web-apply')
+    expect(step?.skippable).toBe(true)
+    expect(step?.retryable).toBe(true)
+  })
+
+  it('continues past a manually skipped step', () => {
+    const skipped = run(blocked(), { type: 'skip' })
+    const step = skipped.steps['run-acme-web-apply']
+
+    expect(step.status).toBe('user-skipped')
+    expect(skipped.steps['run-verify'].status).toBe('in-progress')
+
+    const done = tickUntil(skipped, (s) => s.phase === 'done', true)
+    expect(workflowStatusOf(done.phase)).toBe('success')
+    expect(done.steps['run-verify'].status).toBe('success')
+  })
+
+  it('succeeds on a manual retry', () => {
+    const retried = run(blocked(), { type: 'retry' })
+    expect(retried.steps['run-acme-web-apply'].attempt).toBe(4)
+
+    const done = tickUntil(retried, (s) => s.phase === 'done', true)
+    expect(done.steps['run-acme-web-apply'].status).toBe('success')
+    expect(done.attempts['run-acme-web-apply']).toHaveLength(3)
+  })
+
+  it('retries a failing step until it succeeds', () => {
+    const failing = tickUntil(
       initRun(RUN_SCRIPT, 0),
-      (s) => s.phase === 'done',
+      (s) => s.steps['run-acme-worker-apply'].status === 'failed-pending-retry',
       true
     )
+    expect(failing.steps['run-acme-worker-apply'].attempt).toBe(1)
 
-    expect(workflowStatusOf(state.phase)).toBe('success')
-    expect(
-      Object.values(state.steps).every((step) => step.status === 'success')
-    ).toBe(true)
-    expect(state.logs['run-acme-web-apply'].length).toBeGreaterThan(0)
+    const done = tickUntil(
+      failing,
+      (s) => s.steps['run-acme-worker-apply'].status === 'success',
+      true
+    )
+    const step = done.steps['run-acme-worker-apply']
+    expect(step.attempt).toBe(3)
+    expect(done.attempts['run-acme-worker-apply'].map((a) => a.status)).toEqual(
+      ['error', 'error']
+    )
+    expect(done.logs['run-acme-worker-apply'].at(-1)?.body).toBe(
+      'Release upgraded'
+    )
   })
 
   it('stops the run when a plan is denied', () => {

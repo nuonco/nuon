@@ -3,11 +3,23 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
 import type { TWorkflowStep } from '@/types'
+import type { IRunAttempt } from './run-simulation'
 import { getPolicyViolationCounts, getStepBadges } from '@/utils/workflow-utils'
 
 const humanize = (value: string) => {
   const text = value.replace(/[-_]+/g, ' ')
   return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+export const stepStatusLabel = (step: TWorkflowStep) => {
+  const status = step.status?.status ?? 'unknown'
+  if (status === 'pending') return 'Pending'
+  if (status === 'failed-pending-retry')
+    return step.retryable ? 'Needs action' : 'Retrying'
+  if (status === 'user-skipped') return 'Skipped'
+
+  const badges = getStepBadges(step)
+  return String(badges[badges.length - 1]?.children ?? humanize(status))
 }
 
 export const planStepFor = (
@@ -35,14 +47,15 @@ const Section = ({ children }: { children: React.ReactNode }) => (
 export const StepTooltipContent = ({
   step,
   steps,
+  attempts = [],
 }: {
   step: TWorkflowStep
   steps: TWorkflowStep[]
+  attempts?: IRunAttempt[]
 }) => {
   const status = step.status?.status ?? 'unknown'
   const badges = getStepBadges(step)
   const lineage = badges.length > 1 ? badges[0] : undefined
-  const outcome = badges[badges.length - 1]
   const { denyCount, warnCount, skipFindings } = getPolicyViolationCounts(step)
   const plan = planStepFor(step, steps)?.approval
   const hasPolicy = denyCount > 0 || warnCount > 0 || skipFindings.length > 0
@@ -50,9 +63,7 @@ export const StepTooltipContent = ({
   return (
     <div className="flex w-64 flex-col gap-2 py-1 text-left">
       <div className="flex flex-col gap-1">
-        <Status status={status}>
-          {String(outcome?.children ?? humanize(status))}
-        </Status>
+        <Status status={status}>{stepStatusLabel(step)}</Status>
         {step.status?.status_human_description ? (
           <Text variant="subtext" theme="neutral">
             {step.status.status_human_description}
@@ -60,12 +71,19 @@ export const StepTooltipContent = ({
         ) : null}
       </div>
 
-      {lineage ? (
+      {lineage || attempts.length > 1 ? (
         <Section>
           <Text variant="subtext" theme="neutral">
             Retry
           </Text>
-          <Badge {...lineage} size="sm" />
+          {lineage ? <Badge {...lineage} size="sm" /> : null}
+          {attempts.length > 1
+            ? attempts.map((attempt) => (
+                <Status key={attempt.number} status={attempt.status}>
+                  {`Attempt ${attempt.number}`}
+                </Status>
+              ))
+            : null}
         </Section>
       ) : null}
 

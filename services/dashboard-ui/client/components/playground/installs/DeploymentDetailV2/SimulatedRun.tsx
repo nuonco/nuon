@@ -29,9 +29,7 @@ const RunControls = ({
       label="Auto-approve plans"
       onChange={onAutoApproveChange}
     />
-    <Button size="sm" onClick={onRestart}>
-      Restart story
-    </Button>
+    <Button onClick={onRestart}>Restart story</Button>
   </div>
 )
 
@@ -42,12 +40,16 @@ const renderPlan = (step: TWorkflowStep) =>
     <HelmDiff plan={singleImageTagChangePlan} />
   )
 
-const runViewOf = (run: ISimulatedRun) => (
+const runViewOf = (run: ISimulatedRun, autoApprove: boolean) => (
   <RunView
+    autoApprove={autoApprove}
     steps={run.steps}
     logs={run.logs}
+    attempts={run.attempts}
     onApprove={run.approve}
     onDeny={run.deny}
+    onRetry={run.retry}
+    onSkip={run.skip}
     renderPlan={renderPlan}
   />
 )
@@ -63,7 +65,7 @@ export const SimulatedRunView = () => {
         onAutoApproveChange={setAutoApprove}
         onRestart={run.restart}
       />
-      <div className="w-full p-4 md:p-6">{runViewOf(run)}</div>
+      <div className="w-full p-4 md:p-6">{runViewOf(run, autoApprove)}</div>
     </>
   )
 }
@@ -97,7 +99,7 @@ export const SimulatedDeployment = () => {
       <DeploymentDetailV2
         branch={base.branch}
         deployment={deployment}
-        liveView={runViewOf(run)}
+        liveView={runViewOf(run, autoApprove)}
         workflow={workflow}
       />
     </>
