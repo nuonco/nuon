@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -64,12 +65,43 @@ func RunnerInOrg(db *gorm.DB) gin.HandlerFunc {
 
 // WorkflowInOrg rejects requests whose :workflow_id is not in the selected org.
 func WorkflowInOrg(db *gorm.DB) gin.HandlerFunc {
-	return resourceInOrg(db, "workflow_id", "workflow", &app.Workflow{})
+	return workflowInOrg(db, "workflow_id")
 }
 
 // InstallWorkflowInOrg rejects requests whose :install_workflow_id is not in the selected org.
 func InstallWorkflowInOrg(db *gorm.DB) gin.HandlerFunc {
-	return resourceInOrg(db, "install_workflow_id", "workflow", &app.Workflow{})
+	return workflowInOrg(db, "install_workflow_id")
+}
+
+func workflowInOrg(db *gorm.DB, param string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if cctx.IsGlobal(ctx) || cctx.IsPublic(ctx) || ctx.Param(param) == "" {
+			ctx.Next()
+			return
+		}
+		orgID, err := cctx.OrgIDFromContext(ctx)
+		if err != nil {
+			ctx.Error(err)
+			ctx.Abort()
+			return
+		}
+		workflow, err := lookup.Workflow(ctx.Request.Context(), db, orgID, ctx.Param(param))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				cctx.GetLogger(ctx, zap.NewNop()).Info("route authorization denied",
+					zap.String("route", ctx.FullPath()),
+					zap.Error(fmt.Errorf("workflow %s is not in org %s", ctx.Param(param), orgID)),
+				)
+				ctx.Error(stderr.ErrNotFound{Err: errors.New("workflow not found"), Description: "workflow not found"})
+			} else {
+				ctx.Error(fmt.Errorf("unable to authorize workflow: %w", err))
+			}
+			ctx.Abort()
+			return
+		}
+		cctx.SetResolvedWorkflowGinContext(ctx, workflow)
+		ctx.Next()
+	}
 }
 
 func resourceInOrg(db *gorm.DB, param, label string, model any) gin.HandlerFunc {

@@ -29,6 +29,8 @@ import (
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -167,6 +169,16 @@ func (s *InstallsServiceTestSuite) createTestInstall() *app.Install {
 	install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
 	seedInstallQueues(s.T(), s.deps.DB, install)
 	return install
+}
+
+func (s *InstallsServiceTestSuite) workflowMCPContext() context.Context {
+	account := *s.testAcc
+	account.Authority = &permissions.AccountPermissions{
+		Sources: map[string]permissions.PermissionSource{
+			s.testOrg.ID: {Permission: permissions.PermissionAll},
+		},
+	}
+	return cctx.SetAccountContext(s.ctx, &account)
 }
 
 func (s *InstallsServiceTestSuite) connectInstallToBranch(install *app.Install, branch *app.AppBranch) {
