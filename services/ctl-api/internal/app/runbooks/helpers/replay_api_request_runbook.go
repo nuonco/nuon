@@ -49,10 +49,9 @@ func (h *Helpers) ReplayAPIRequestRunbook(ctx context.Context, install *app.Inst
 		return nil, err
 	}
 	dedupe := request.DedupeKey("runbook-run", requestID)
-	resp, _ := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{QueueID: q.ID, Signal: executeflow.NewSignal(workflow.ID), OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe})
-	queueSignalID := ""
-	if resp != nil {
-		queueSignalID = resp.ID
+	resp, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{QueueID: q.ID, Signal: executeflow.NewSignal(workflow.ID), OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe})
+	if err != nil {
+		return nil, fmt.Errorf("enqueue replayed runbook run: %w", err)
 	}
-	return &TriggerRunbookRunResponse{Run: &run, Workflow: &workflow, QueueSignalID: queueSignalID}, nil
+	return &TriggerRunbookRunResponse{Run: &run, Workflow: &workflow, QueueSignalID: resp.ID}, nil
 }

@@ -103,10 +103,10 @@ func (h *Helpers) prepareRunbookTargets(ctx context.Context, tx *gorm.DB, select
 				return nil, err
 			}
 			for _, id := range ids {
-				if targets.InstallComponents[id] == "" {
-					return nil, fmt.Errorf("runbook component %s is not installed in this org", id)
-				}
 				if step.Type == app.RunbookStepTypeComponentTearDown {
+					if targets.InstallComponents[id] == "" {
+						return nil, fmt.Errorf("runbook component %s is not installed in this org", id)
+					}
 					target, err := prepareRunbookTeardownTarget(tx, &install, targets.InstallComponents[id])
 					if err != nil {
 						return nil, err
@@ -136,11 +136,6 @@ func (h *Helpers) prepareRunbookTargets(ctx context.Context, tx *gorm.DB, select
 				targets.ComponentOrder, err = h.appsHelpers.WithDB(tx).GetConfigDefaultComponentOrder(ctx, appCfg)
 				if err != nil {
 					return nil, err
-				}
-				for _, id := range targets.ComponentOrder {
-					if targets.InstallComponents[id] == "" {
-						return nil, fmt.Errorf("runbook component %s is not installed in this org", id)
-					}
 				}
 			}
 		}

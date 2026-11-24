@@ -396,13 +396,6 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 	if err != nil {
 		return nil, err
 	}
-	if targets != nil {
-		for _, id := range componentIDs {
-			if err := targets.CheckComponent(id, installComps[id]); err != nil {
-				return nil, err
-			}
-		}
-	}
 
 	for i, compID := range componentIDs {
 		// Yield to the Temporal scheduler periodically to avoid deadlock detection
@@ -433,6 +426,12 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			}
 			steps = append(steps, skipStep)
 			continue
+		}
+
+		if targets != nil {
+			if err := targets.CheckComponent(compID, installComps[compID]); err != nil {
+				return nil, err
+			}
 		}
 
 		// Dep-aware image-sync prepend.

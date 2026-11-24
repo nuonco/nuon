@@ -243,11 +243,6 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 	if err != nil {
 		return nil, err
 	}
-	if targets != nil {
-		if err := targets.CheckComponent(componentID, installComp); err != nil {
-			return nil, err
-		}
-	}
 
 	var installComponentID string
 	if installComp != nil {
@@ -306,6 +301,12 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 			return nil, err
 		}
 		return append(result, skipStep), nil
+	}
+
+	if targets != nil {
+		if err := targets.CheckComponent(componentID, installComp); err != nil {
+			return nil, err
+		}
 	}
 
 	if component.Type.IsImage() {
