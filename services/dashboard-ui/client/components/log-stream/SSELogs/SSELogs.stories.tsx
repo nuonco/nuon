@@ -3,6 +3,7 @@ export default {
 }
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { SSELogs, LogsSkeleton } from './SSELogs'
 import { LogPanel } from '@/components/log-stream/LogPanel'
 import { LogStreamContext } from '@/providers/log-stream-provider'
@@ -299,6 +300,28 @@ export const Loading = () => {
         handleActiveLog={noop}
         isLoading={true}
         isConnected={false}
+      />
+    </Providers>
+  )
+}
+
+export const WaitingRaw = () => {
+  const [, setSearchParams] = useSearchParams()
+  const filters = useLogFilters([])
+
+  useEffect(() => {
+    setSearchParams({ view: 'raw' }, { replace: true })
+  }, [setSearchParams])
+
+  return (
+    <Providers>
+      <SSELogs
+        filteredLogs={[]}
+        filters={filters}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        isLoading={false}
+        isConnected={true}
       />
     </Providers>
   )

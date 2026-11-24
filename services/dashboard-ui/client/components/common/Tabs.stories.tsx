@@ -462,3 +462,40 @@ export const Controlled = () => {
     </div>
   )
 }
+
+export const LabelNodes = () => (
+  <Tabs
+    naturalHeight
+    tabLabelNodes={{
+      passed: (
+        <span className="flex items-center gap-2">
+          <Icon variant="CheckCircleIcon" theme="success" size={16} />
+          Passed
+        </span>
+      ),
+      failed: (
+        <span className="flex items-center gap-2">
+          <Icon variant="XCircleIcon" theme="error" size={16} />
+          Failed
+        </span>
+      ),
+    }}
+    tabs={{
+      passed: (
+        <div className="py-4">
+          <Text>Passed checks</Text>
+        </div>
+      ),
+      failed: (
+        <div className="py-4">
+          <Text>Failed checks</Text>
+        </div>
+      ),
+      skipped: (
+        <div className="py-4">
+          <Text>Tabs without a label node keep the derived label</Text>
+        </div>
+      ),
+    }}
+  />
+)

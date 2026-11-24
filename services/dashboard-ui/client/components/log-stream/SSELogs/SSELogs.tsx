@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from 'react'
+import { useEffect, useRef, memo, type ReactNode } from 'react'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
@@ -10,6 +10,7 @@ import { LogSeverity } from '../LogSeverity'
 import { LogLineSkeleton } from '../LogLine'
 import { Skeleton } from '@/components/common/Skeleton'
 import { LogFilters } from '../log-filters/LogFilters'
+import { WaitingForLogs } from '../WaitingForLogs'
 import { getSeverityTextClasses } from '@/utils/log-stream-utils'
 
 export const LogsSkeleton = () => {
@@ -186,6 +187,7 @@ const RawLogs = ({
       filters={filters}
       isLoading={isLoading}
       isConnected={isConnected}
+      waitingFallback={<WaitingForLogs />}
     />
 
     {!filteredLogs?.length && isLoading ? <LogsSkeleton /> : null}
@@ -216,11 +218,13 @@ const LogsEmptyStates = ({
   filters,
   isLoading,
   isConnected,
+  waitingFallback,
 }: {
   filteredLogs: TOTELLog[] | undefined
   filters: TLogFiltersProps
   isLoading: boolean
   isConnected: boolean
+  waitingFallback?: ReactNode
 }) => (
   <>
     {!filteredLogs?.length && filters.filterStats.totalCount > 0 ? (
@@ -237,11 +241,13 @@ const LogsEmptyStates = ({
     ) : null}
 
     {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isConnected ? (
-      <EmptyState
-        variant="table"
-        emptyTitle="Waiting for logs"
-        emptyMessage="Logs will appear here once they start coming in."
-      />
+      (waitingFallback ?? (
+        <EmptyState
+          variant="table"
+          emptyTitle="Waiting for logs"
+          emptyMessage="Logs will appear here once they start coming in."
+        />
+      ))
     ) : null}
 
     {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isConnected ? (

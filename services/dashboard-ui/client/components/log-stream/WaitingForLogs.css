@@ -1,0 +1,28 @@
+@keyframes waiting-dot-blink {
+  0%,
+  60%,
+  100% {
+    opacity: 0.15;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+.waiting-dot {
+  animation: waiting-dot-blink 1.2s ease-in-out infinite;
+}
+
+.waiting-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.waiting-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waiting-dot {
+    animation: none;
+  }
+}
