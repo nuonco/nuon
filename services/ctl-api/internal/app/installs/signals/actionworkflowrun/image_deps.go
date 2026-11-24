@@ -55,14 +55,40 @@ func (s *Signal) syncActionImageDeps(
 		return errors.Wrap(err, "unable to get app config")
 	}
 
+	var targets *app.InstallExecutionTargets
+	if run.InstallWorkflow != nil {
+		targets, err = run.InstallWorkflow.ExecutionTargets()
+		if err != nil {
+			return err
+		}
+		if targets != nil {
+			if err := targets.CheckInstall(&run.Install); err != nil {
+				return err
+			}
+			if appCfg.ID != targets.AppConfigID || appCfg.AppID != targets.AppID || appCfg.OrgID != targets.OrgID {
+				return errors.New("action image config does not match prepared targets")
+			}
+		}
+	}
 	cccByComponent := make(map[string]*app.ComponentConfigConnection, len(appCfg.ComponentConfigConnections))
 	for i := range appCfg.ComponentConfigConnections {
 		ccc := &appCfg.ComponentConfigConnections[i]
+		if targets != nil {
+			target, ok := targets.Components[ccc.ComponentID]
+			if !ok || ccc.ID != target.ConfigID || ccc.OrgID != targets.OrgID || ccc.Component.AppID != targets.AppID || ccc.Component.OrgID != targets.OrgID {
+				return errors.New("action image component does not match prepared targets")
+			}
+			ccc.Component.Name = target.Name
+			ccc.Component.Type = ccc.Type
+			if ccc.ComponentID == targets.PrimaryComponentID {
+				ccc.Component.Type = targets.PrimaryType
+			}
+		}
 		cccByComponent[ccc.ComponentID] = ccc
 	}
 
 	loader := &actionDepLoader{
-		InstallDeploys: imagesync.InstallDeploys{InstallID: run.InstallID},
+		InstallDeploys: imagesync.InstallDeploys{InstallID: run.InstallID, Targets: targets},
 		cccByComponent: cccByComponent,
 	}
 
@@ -152,6 +178,9 @@ type actionDepLoader struct {
 }
 
 func (l *actionDepLoader) LatestActiveBuildID(ctx workflow.Context, componentID string) (string, error) {
+	if l.Targets != nil && componentID == l.Targets.PrimaryComponentID {
+		return l.Targets.PrimaryBuildID, nil
+	}
 	ccc, ok := l.cccByComponent[componentID]
 	if !ok || ccc == nil {
 		return "", nil
