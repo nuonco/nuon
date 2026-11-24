@@ -1,10 +1,13 @@
 package v2
 
 import (
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -73,6 +76,24 @@ func (s *stepGroup) installSignalStep(ctx workflow.Context, installID, name stri
 	// Stamp install workflow identity onto the signal so the queue handler can
 	// emit lifecycle events without a separate DB lookup.
 	if s.flw != nil && sig != nil {
+		targets, err := s.flw.ExecutionTargets()
+		if err != nil {
+			return nil, err
+		}
+		if action, ok := sig.(*executeactionworkflow.Signal); ok && targets != nil && action.AdhocActionRunID == "" {
+			found := false
+			for _, target := range targets.Actions {
+				if target.InstallActionWorkflowID == action.InstallActionWorkflowID {
+					action.AppConfigID = targets.AppConfigID
+					action.ActionWorkflowConfigID = target.ConfigID
+					found = true
+					break
+				}
+			}
+			if !found {
+				return nil, fmt.Errorf("action is not in the prepared runbook targets")
+			}
+		}
 		if mlc, ok := sig.(signal.SignalWithMutableLifecycleContext); ok {
 			mlc.SetLifecycleWorkflow(s.flw.ID, string(s.flw.Type))
 		}

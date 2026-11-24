@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type PreviewRunInput struct {
@@ -60,11 +61,15 @@ func (h *Helpers) ResolvePreviewInstallID(
 	if cfg.Mode == app.AppBranchRunPreviewModeBuildOnly {
 		return "", "", nil
 	}
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	query := h.db.WithContext(ctx).Where(&app.Install{AppID: appID, OrgID: orgID}, "AppID", "OrgID")
 
 	if overrideInstallID != nil && *overrideInstallID != "" {
 		var inst app.Install
-		if err := h.db.WithContext(ctx).
-			Where(app.Install{AppID: appID}).
+		if err := query.
 			First(&inst, "id = ?", *overrideInstallID).Error; err != nil {
 			return "", "", stderr.NewInvalidRequest(fmt.Errorf("preview install %q not found", *overrideInstallID))
 		}
@@ -73,8 +78,7 @@ func (h *Helpers) ResolvePreviewInstallID(
 
 	if cfg.InstallID != nil && *cfg.InstallID != "" {
 		var inst app.Install
-		if err := h.db.WithContext(ctx).
-			Where(app.Install{AppID: appID}).
+		if err := query.
 			First(&inst, "id = ?", *cfg.InstallID).Error; err != nil {
 			return "", "", stderr.NewInvalidRequest(fmt.Errorf("preview install_id %q not found", *cfg.InstallID))
 		}
@@ -83,8 +87,8 @@ func (h *Helpers) ResolvePreviewInstallID(
 
 	if cfg.InstallName != nil && *cfg.InstallName != "" {
 		var inst app.Install
-		if err := h.db.WithContext(ctx).
-			Where(app.Install{AppID: appID, Name: *cfg.InstallName}).
+		if err := query.
+			Where(app.Install{Name: *cfg.InstallName}).
 			First(&inst).Error; err != nil {
 			return "", "", stderr.NewInvalidRequest(fmt.Errorf("preview install_name %q not found", *cfg.InstallName))
 		}
