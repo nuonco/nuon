@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -54,15 +53,15 @@ func (s *service) RemoveAppActionLabels(ctx *gin.Context) {
 		return
 	}
 
-	var action app.ActionWorkflow
-	if err := s.db.WithContext(ctx).First(&action, "id = ?", actionID).Error; err != nil {
+	action, err := s.findAppLabelAction(ctx, actionID)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action %s: %w", actionID, err))
 		return
 	}
 
 	action.Labels.RemoveKeys(req.Keys)
 
-	if err := s.db.WithContext(ctx).Model(&action).Select("labels").Updates(&action).Error; err != nil {
+	if err := s.db.WithContext(ctx).Model(action).Select("labels").Updates(action).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update action labels: %w", err))
 		return
 	}

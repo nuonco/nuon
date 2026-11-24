@@ -11,9 +11,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -112,7 +114,24 @@ func (s *service) UpdateAppConfigInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
-func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigID string, req *UpdateAppConfigInstallsRequest) error {
+func (s *service) updateAppConfigInstalls(ctx context.Context, appRef, appConfigID string, req *UpdateAppConfigInstallsRequest) error {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	currentApp, err := applookup.ByRef(ctx, s.db, orgID, appRef)
+	if err != nil {
+		return fmt.Errorf("unable to get app: %w", err)
+	}
+	appID := currentApp.ID
+
+	var appConfig app.AppConfig
+	if err := s.db.WithContext(ctx).
+		Where(&app.AppConfig{ID: appConfigID, AppID: appID, OrgID: orgID}, "ID", "AppID", "OrgID").
+		First(&appConfig).Error; err != nil {
+		return fmt.Errorf("unable to find app config: %w", err)
+	}
+
 	var affectedInstalls []app.Install
 	query := s.db.WithContext(ctx).
 		Model(&app.Install{}).

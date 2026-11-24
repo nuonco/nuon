@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -184,6 +185,9 @@ func (s *service) updateAppConfig(ctx context.Context, orgID, appID, appConfigID
 	}
 
 	if len(req.ComponentIDs) > 0 {
+		if err := s.validateAppConfigComponentIDs(ctx, &cfg, req.ComponentIDs); err != nil {
+			return nil, err
+		}
 		appConfig.ComponentIDs = req.ComponentIDs
 	}
 
@@ -209,6 +213,22 @@ func (s *service) updateAppConfig(ctx context.Context, orgID, appID, appConfigID
 	}
 
 	return &cfg, nil
+}
+
+func (s *service) validateAppConfigComponentIDs(ctx context.Context, cfg *app.AppConfig, componentIDs []string) error {
+	unique := generics.UniqueSlice(componentIDs)
+	var count int64
+	if err := s.db.WithContext(ctx).Unscoped().
+		Model(&app.Component{}).
+		Where(&app.Component{AppID: cfg.AppID, OrgID: cfg.OrgID}, "AppID", "OrgID").
+		Where("id IN ?", unique).
+		Count(&count).Error; err != nil {
+		return fmt.Errorf("unable to validate component ids: %w", err)
+	}
+	if count != int64(len(unique)) {
+		return stderr.NewInvalidRequest(fmt.Errorf("component_ids must belong to app %s", cfg.AppID))
+	}
+	return nil
 }
 
 func (s *service) syncTriggersForAppConfig(ctx context.Context, db *gorm.DB, appConfig *app.AppConfig) error {
