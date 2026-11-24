@@ -16,8 +16,9 @@ type configFetchedMsg struct {
 }
 
 type inputsUpdatedMsg struct {
-	inputs *models.AppInstallInputs
-	err    error
+	inputs    *models.AppInstallInputs
+	unchanged bool
+	err       error
 }
 
 type autoExitMsg struct{}
