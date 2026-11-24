@@ -123,7 +123,8 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	if err := installshelpers.CheckObservedCloudAccount(&install, req, s.cfg.PhoneHomeAuthRequired); err != nil {
+	required := s.cfg.PhoneHomeAuthRequired || installshelpers.ExpectsCloudAccount(&install)
+	if err := installshelpers.CheckObservedCloudAccount(&install, req, required); err != nil {
 		s.l.Warn("rejected stack phone home",
 			zap.String("install_id", install.ID),
 			zap.String("org_id", install.OrgID),
@@ -149,6 +150,13 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 			return
 		}
 		ctx.Error(fmt.Errorf("load install stack version: %w", res.Error))
+		return
+	}
+	if version.Status.Status == app.InstallStackVersionStatusExpired || version.Status.Status == app.InstallStackVersionStatusOutdated {
+		ctx.Error(stderr.ErrConflict{
+			Err:         fmt.Errorf("install stack version %s is %s", version.ID, version.Status.Status),
+			Description: "this install stack version is no longer current and needs to be reprovisioned",
+		})
 		return
 	}
 

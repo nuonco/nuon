@@ -23,16 +23,7 @@ var (
 // different one, and neither should be allowed to overwrite stack outputs.
 func CheckObservedCloudAccount(install *app.Install, props map[string]any, required bool) error {
 	if required {
-		var payloadKey, expected string
-		switch install.CloudPlatform {
-		case app.CloudPlatformAWS:
-			payloadKey, expected = "account_id", install.ExpectedAccountID
-		case app.CloudPlatformAzure:
-			payloadKey, expected = "subscription_id", install.ExpectedSubscriptionID
-		case app.CloudPlatformGCP:
-			payloadKey, expected = "project_id", install.ExpectedProjectID
-		}
-
+		payloadKey, expected := expectedCloudAccount(install)
 		observed, _ := props[payloadKey].(string)
 		if payloadKey == "" || observed == "" || expected == "" {
 			return fmt.Errorf("%w: %s install %s", ErrMissingCloudAccount, install.CloudPlatform, install.ID)
@@ -62,7 +53,46 @@ func CheckObservedCloudAccount(install *app.Install, props map[string]any, requi
 			ErrCloudAccountMismatch, field.payloadKey, observed)
 	}
 
+	if install.ExpectedAccountID != "" {
+		for _, key := range awsRunnerRoleARNKeys {
+			value, ok := props[key]
+			if !ok || value == nil || value == "" {
+				continue
+			}
+			arn, isString := value.(string)
+			parts := strings.Split(arn, ":")
+			if !isString || len(parts) < 6 || parts[0] != "arn" || parts[2] != "iam" || !strings.EqualFold(parts[4], install.ExpectedAccountID) {
+				return fmt.Errorf("%w: payload %s is not a role in the account expected for this install",
+					ErrCloudAccountMismatch, key)
+			}
+		}
+	}
+
 	return nil
+}
+
+var awsRunnerRoleARNKeys = []string{
+	"runner_iam_role_arn",
+	"provision_iam_role_arn",
+	"maintenance_iam_role_arn",
+	"deprovision_iam_role_arn",
+}
+
+func ExpectsCloudAccount(install *app.Install) bool {
+	_, expected := expectedCloudAccount(install)
+	return expected != ""
+}
+
+func expectedCloudAccount(install *app.Install) (payloadKey, expected string) {
+	switch install.CloudPlatform {
+	case app.CloudPlatformAWS:
+		return "account_id", install.ExpectedAccountID
+	case app.CloudPlatformAzure:
+		return "subscription_id", install.ExpectedSubscriptionID
+	case app.CloudPlatformGCP:
+		return "project_id", install.ExpectedProjectID
+	}
+	return "", ""
 }
 
 func checkGCPServiceAccountProjects(projectID string, props map[string]any) error {
