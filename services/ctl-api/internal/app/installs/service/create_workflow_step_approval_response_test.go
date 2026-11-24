@@ -7,8 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 func (s *InstallsServiceTestSuite) TestCreateApprovalResponseSuccess() {
@@ -99,4 +101,27 @@ func (s *InstallsServiceTestSuite) TestCreateApprovalResponseRejectsApprovalFrom
 		Where(app.WorkflowStepApprovalResponse{InstallWorkflowStepApprovalID: approval.ID}).
 		Count(&responseCount).Error)
 	assert.Zero(s.T(), responseCount)
+}
+
+func (s *InstallsServiceTestSuite) TestApprovalResponseRejectsOtherOrg() {
+	foreignCtx, _ := s.deps.Seeder.EnsureOrg(s.ctx, s.T())
+	foreignApp := s.deps.Seeder.CreateApp(foreignCtx, s.T())
+	workflow := s.deps.Seeder.CreateWorkflow(foreignCtx, s.T(), foreignApp.ID, app.WorkflowTypeAppConfigBuild,
+		testseed.WithWorkflowOwnerType("apps"))
+	step := s.deps.Seeder.CreateWorkflowStep(foreignCtx, s.T(), workflow.ID)
+	approval := s.deps.Seeder.CreateWorkflowStepApproval(foreignCtx, s.T(), step.ID, app.AppBranchPlanApprovalType, "")
+
+	rr := s.makeRequest(http.MethodPost,
+		fmt.Sprintf("/v1/workflows/%s/steps/%s/approvals/%s/response", workflow.ID, step.ID, approval.ID),
+		CreateWorkflowStepApprovalResponseRequest{ResponseType: app.WorkflowStepApprovalResponseTypeApprove})
+	require.Equal(s.T(), http.StatusNotFound, rr.Code, "body: %s", rr.Body.String())
+	_, _, err := s.installsService.mcpApproveStep(s.workflowMCPContext(), nil, mcpApproveStepInput{ApprovalID: approval.ID})
+	require.ErrorIs(s.T(), err, gorm.ErrRecordNotFound)
+	_, _, err = s.installsService.mcpRejectStep(s.workflowMCPContext(), nil, mcpRejectStepInput{ApprovalID: approval.ID})
+	require.ErrorIs(s.T(), err, gorm.ErrRecordNotFound)
+
+	var count int64
+	require.NoError(s.T(), s.deps.DB.Unscoped().Model(&app.WorkflowStepApprovalResponse{}).
+		Where(app.WorkflowStepApprovalResponse{InstallWorkflowStepApprovalID: approval.ID}).Count(&count).Error)
+	require.Zero(s.T(), count)
 }
