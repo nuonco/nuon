@@ -45,12 +45,28 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		if offsetParam := ctx.Query("offset"); offsetParam != "" {
 			if parsedOffset, err := strconv.Atoi(offsetParam); err == nil {
+				if parsedOffset < 0 {
+					ctx.Error(stderr.ErrUser{
+						Err:         fmt.Errorf("offset %d must not be negative", parsedOffset),
+						Description: "the offset query parameter cannot be negative",
+					})
+					ctx.Abort()
+					return
+				}
 				offset = parsedOffset
 			}
 		}
 
 		if limitParam := ctx.Query("limit"); limitParam != "" {
 			if parsedLimit, err := strconv.Atoi(limitParam); err == nil {
+				if parsedLimit < 0 {
+					ctx.Error(stderr.ErrUser{
+						Err:         fmt.Errorf("limit %d must not be negative", parsedLimit),
+						Description: "the limit query parameter cannot be negative",
+					})
+					ctx.Abort()
+					return
+				}
 				if parsedLimit > maxLimit {
 					ctx.Error(stderr.ErrUser{
 						Err:         fmt.Errorf("limit %d exceeds the maximum allowed limit of %d", parsedLimit, maxLimit),
@@ -65,6 +81,14 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		if pageParam := ctx.Query("page"); pageParam != "" {
 			if parsedPage, err := strconv.Atoi(pageParam); err == nil {
+				if parsedPage < 0 {
+					ctx.Error(stderr.ErrUser{
+						Err:         fmt.Errorf("page %d must not be negative", parsedPage),
+						Description: "the page query parameter cannot be negative",
+					})
+					ctx.Abort()
+					return
+				}
 				page = parsedPage
 			}
 		}
