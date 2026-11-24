@@ -9,7 +9,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -55,18 +57,37 @@ func (s *service) AddAppComponentLabels(ctx *gin.Context) {
 		return
 	}
 
-	var component app.Component
-	if err := s.db.WithContext(ctx).First(&component, "id = ?", componentID).Error; err != nil {
+	component, err := s.findAppLabelComponent(ctx, componentID)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, err))
 		return
 	}
 
 	component.Labels.Merge(labels.Labels(req.Labels))
 
-	if err := s.db.WithContext(ctx).Model(&component).Select("labels").Updates(&component).Error; err != nil {
+	if err := s.db.WithContext(ctx).Model(component).Select("labels").Updates(component).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update component labels: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, component)
+}
+
+func (s *service) findAppLabelComponent(ctx *gin.Context, componentID string) (*app.Component, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	currentApp, err := applookup.ByRef(ctx, s.db, orgID, ctx.Param("app_id"))
+	if err != nil {
+		return nil, err
+	}
+
+	var component app.Component
+	if err := s.db.WithContext(ctx).
+		Where(&app.Component{ID: componentID, AppID: currentApp.ID, OrgID: orgID}, "ID", "AppID", "OrgID").
+		First(&component).Error; err != nil {
+		return nil, err
+	}
+	return &component, nil
 }
