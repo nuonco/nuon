@@ -164,9 +164,10 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 	}
 
 	// Copy TemplateURL to Contents for go-getter to fetch template content.
+	// gcp-terraform template URLs are module addresses, not files to fetch.
 	if appCfg.Stack != nil {
 		for i := range appCfg.Stack.CustomNestedStacks {
-			if getSource == nil || appCfg.Stack.Type != "gcp-terraform" {
+			if appCfg.Stack.Type != "gcp-terraform" {
 				appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
 			}
 		}
