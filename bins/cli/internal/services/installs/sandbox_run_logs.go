@@ -20,7 +20,7 @@ func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, a
 		return ui.PrintError(fmt.Errorf("couldn't get cli config: %w", err))
 	}
 
-	url := fmt.Sprintf("%s/%s/installs/%s/runs/%s", cfg.DashboardURL, s.cfg.OrgID, installID, runID)
+	url := fmt.Sprintf("%s/%s/installs/%s/sandbox/runs/%s", cfg.DashboardURL, s.cfg.OrgID, installID, runID)
 	browser.OpenURL(url)
 	return nil
 }
