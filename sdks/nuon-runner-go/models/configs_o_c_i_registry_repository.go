@@ -31,6 +31,10 @@ type ConfigsOCIRegistryRepository struct {
 	// login server
 	LoginServer string `json:"loginServer,omitempty"`
 
+	// ManagedCredential means the plan carries no credential; the runner mints
+	// one per job through the runner API.
+	ManagedCredential bool `json:"managedCredential,omitempty"`
+
 	// ociauth
 	Ociauth *ConfigsOCIRegistryAuth `json:"ociauth,omitempty"`
 

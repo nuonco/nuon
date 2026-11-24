@@ -59,7 +59,7 @@ func (m *Middleware) JobHandler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-		if isJobWrite(method, path) {
+		if isJobWrite(method, path) || isJobCredentialMint(method, path) {
 			jobID := jobIDFromPath(ctx)
 			if !jobAccount || acct.Subject != jobID {
 				deny(ctx, "job writes require the job token")
@@ -342,6 +342,10 @@ func jobIDFromPath(ctx *gin.Context) string {
 
 func isJobTokenExchange(method, path string) bool {
 	return method == http.MethodPost && path == "/v1/runners/:runner_id/jobs/:job_id/token"
+}
+
+func isJobCredentialMint(method, path string) bool {
+	return method == http.MethodPost && path == "/v1/runner-jobs/:runner_job_id/registry-credentials"
 }
 
 func isJobWrite(method, path string) bool {

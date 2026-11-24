@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/managedregistry"
+
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -197,6 +199,10 @@ func (h *handler) actionImagePullAuth(ctx context.Context) (username, password s
 
 	if plan.ImageRegistry == nil {
 		return "", "", errors.New("image-backed action plan has no image registry")
+	}
+
+	if err := managedregistry.Resolve(ctx, h.apiClient, h.state.jobID, plan.ImageRegistry); err != nil {
+		return "", "", err
 	}
 
 	accessInfo, err := oci.FetchAccessInfo(ctx, plan.ImageRegistry)

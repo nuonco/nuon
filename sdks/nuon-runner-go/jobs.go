@@ -85,6 +85,18 @@ func (c *client) GetJobCompositePlan(ctx context.Context, jobID string) (*models
 	return resp.Payload, nil
 }
 
+func (c *client) CreateJobRegistryCredentials(ctx context.Context, jobID string) (*models.ServiceCreateRunnerJobRegistryCredentialsResponse, error) {
+	resp, err := c.genClient.Operations.CreateRunnerJobRegistryCredentials(&operations.CreateRunnerJobRegistryCredentialsParams{
+		RunnerJobID: jobID,
+		Context:     ctx,
+	}, c.getAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 // Deprecated: use GetJobCompositePlan, which reads the composite plan from blob
 // storage. This returns the legacy plan_json column.
 func (c *client) GetJobPlanJSON(ctx context.Context, jobID string) (string, error) {
