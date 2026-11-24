@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -190,4 +192,27 @@ func (s *ComponentsServiceTestSuite) setAppConfigStatus(appConfigID string, stat
 			"status":    status,
 			"status_v2": app.NewCompositeStatus(s.ctx, app.Status(status)),
 		}).Error)
+}
+
+func (s *ComponentsServiceTestSuite) TestGetAppComponentsExcludesStoredForeignComponentIDs() {
+	otherCtx, _ := s.deps.Seeder.EnsureAccount(context.Background(), s.T())
+	otherCtx, _ = s.deps.Seeder.EnsureOrg(otherCtx, s.T())
+	otherOrgApp := s.deps.Seeder.CreateApp(otherCtx, s.T())
+	foreign := s.deps.Seeder.CreateComponent(otherCtx, s.T(), otherOrgApp.ID, app.ComponentTypeHelmChart)
+
+	own := s.testAppConfig.ComponentConfigConnections[0].ComponentID
+	latest := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+	require.NoError(s.T(), s.deps.DB.Model(&app.AppConfig{}).Where("id = ?", latest.ID).
+		Update("component_ids", pq.StringArray{own, foreign.ID}).Error)
+
+	rr := s.makeRequest(http.MethodGet, fmt.Sprintf("/v1/apps/%s/components", s.testApp.ID), nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var components []app.Component
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &components))
+	ids := make([]string, 0, len(components))
+	for _, c := range components {
+		ids = append(ids, c.ID)
+	}
+	assert.Equal(s.T(), []string{own}, ids)
 }
