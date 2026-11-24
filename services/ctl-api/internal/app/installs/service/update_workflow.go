@@ -114,10 +114,8 @@ func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req
 		return nil, err
 	}
 
-	var currentWorkflow app.Workflow
-	if err := s.db.WithContext(ctx).
-		Where(&app.Workflow{ID: installWorkflowID, OrgID: orgID}).
-		First(&currentWorkflow).Error; err != nil {
+	currentWorkflow, err := s.resolveWorkflow(ctx, orgID, installWorkflowID)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, stderr.ErrNotFound{
 				Err:         fmt.Errorf("workflow %s not found", installWorkflowID),
@@ -128,7 +126,7 @@ func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req
 	}
 
 	res := s.db.WithContext(ctx).
-		Model(&currentWorkflow).
+		Model(currentWorkflow).
 		Updates(req)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install workflow: %w", res.Error)
@@ -139,39 +137,39 @@ func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req
 
 	// Label the approval source and release steps already waiting when approve-all is set.
 	if req.ApprovalOption != nil && *req.ApprovalOption == app.InstallApprovalOptionApproveAll {
-		s.markWorkflowApproveAll(ctx, installWorkflowID)
+		s.markWorkflowApproveAll(ctx, currentWorkflow)
 		s.logFlowAPIAction(ctx, "workflow.approve_all_requested",
 			zap.String("workflow_id", installWorkflowID),
 		)
 	}
 
-	return &currentWorkflow, nil
+	return currentWorkflow, nil
 }
 
 // markWorkflowApproveAll records that this workflow was switched to approve-all
 // and approves steps already waiting. Later plans in the workflow auto-approve.
-func (s *service) markWorkflowApproveAll(ctx context.Context, workflowID string) {
+func (s *service) markWorkflowApproveAll(ctx context.Context, workflow *app.Workflow) {
 	s.db.WithContext(ctx).Exec(
 		`UPDATE install_workflows SET metadata = COALESCE(metadata, ''::hstore) || hstore('approval_type', 'approve-workflow') WHERE id = ?`,
-		workflowID,
+		workflow.ID,
 	)
 	s.db.WithContext(ctx).Exec(
 		`UPDATE install_workflows SET status = jsonb_set(COALESCE(status::jsonb, '{}'::jsonb), '{metadata,approval_type}', '"approve-workflow"'::jsonb) WHERE id = ?`,
-		workflowID,
+		workflow.ID,
 	)
-	s.approveStuckSteps(ctx, workflowID)
+	s.approveStuckSteps(ctx, workflow)
 }
 
 // approveStuckSteps finds workflow steps in awaiting-approval status that have
 // an approval without a response, and auto-approves them so the workflow can
 // proceed immediately when approve-all is set.
-func (s *service) approveStuckSteps(ctx context.Context, workflowID string) {
+func (s *service) approveStuckSteps(ctx context.Context, workflow *app.Workflow) {
 	var steps []app.WorkflowStep
 	res := s.db.WithContext(ctx).
-		Where("install_workflow_id = ?", workflowID).
+		Where(&app.WorkflowStep{InstallWorkflowID: workflow.ID, OrgID: workflow.OrgID}, "InstallWorkflowID", "OrgID").
 		Where("status->>'status' IN ?", []string{string(app.AwaitingApproval), "awaiting-approval"}).
 		Preload("Approval", func(db *gorm.DB) *gorm.DB {
-			return db.Omit("contents")
+			return db.Where(&app.WorkflowStepApproval{OrgID: workflow.OrgID}, "OrgID").Omit("contents")
 		}).
 		Preload("Approval.Response").
 		Find(&steps)
@@ -185,7 +183,7 @@ func (s *service) approveStuckSteps(ctx context.Context, workflowID string) {
 			continue
 		}
 
-		resp, err := s.createWorkflowStepApprovalResponse(ctx, step.Approval.ID, &CreateWorkflowStepApprovalResponseRequest{
+		resp, err := s.createWorkflowStepApprovalResponse(ctx, step.Approval, &CreateWorkflowStepApprovalResponseRequest{
 			ResponseType: app.WorkflowStepApprovalResponseTypeApprove,
 			Note:         "auto-approved (approve-all)",
 		})
@@ -196,7 +194,8 @@ func (s *service) approveStuckSteps(ctx context.Context, workflowID string) {
 			continue
 		}
 
-		if err := s.dispatchApprovalResponseSignal(ctx, workflowID, step.ID, step.Approval.ID, resp.ID, app.WorkflowStepApprovalResponseTypeApprove); err != nil {
+		target := &workflowApprovalTarget{workflow: workflow, step: &step, approval: step.Approval}
+		if err := s.dispatchApprovalResponseSignal(ctx, target, resp); err != nil {
 			s.l.Warn("failed to dispatch approval response signal for stuck step",
 				zap.String("step_id", step.ID),
 				zap.Error(err))

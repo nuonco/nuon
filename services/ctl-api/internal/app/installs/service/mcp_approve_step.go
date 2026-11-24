@@ -26,34 +26,29 @@ func (s *service) mcpApproveStep(ctx context.Context, _ *mcp.CallToolRequest, in
 		return nil, nil, fmt.Errorf("approval_id is required")
 	}
 
-	var approval app.WorkflowStepApproval
-	err = s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", in.ApprovalID, orgID).
-		Preload("InstallWorkflowStep").
-		Preload("Response").
-		First(&approval).Error
+	target, err := s.resolveWorkflowApproval(ctx, orgID, in.ApprovalID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find approval %q: %w", in.ApprovalID, err)
 	}
+	approval := target.approval
 
 	if approval.Response != nil {
 		return nil, nil, fmt.Errorf("approval already has a response")
 	}
 
-	response := app.WorkflowStepApprovalResponse{
-		InstallWorkflowStepApprovalID: approval.ID,
-		Type:                          app.WorkflowStepApprovalResponseTypeApprove,
-		Note:                          in.Note,
-	}
-	if err := s.db.WithContext(ctx).Create(&response).Error; err != nil {
+	response, err := s.createWorkflowStepApprovalResponse(ctx, approval, &CreateWorkflowStepApprovalResponseRequest{
+		ResponseType: app.WorkflowStepApprovalResponseTypeApprove,
+		Note:         in.Note,
+	})
+	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create approval response: %w", err)
 	}
 
-	if err := s.notifyWorkflowOfApprovalResponse(ctx, approval, &response); err != nil {
+	if err := s.notifyWorkflowOfApprovalResponse(ctx, target, response); err != nil {
 		return nil, nil, err
 	}
 
-	workflowID := approval.InstallWorkflowStep.InstallWorkflowID
+	workflowID := target.workflow.ID
 	out := map[string]any{
 		"status":      "approved",
 		"approval_id": approval.ID,
@@ -66,21 +61,8 @@ func (s *service) mcpApproveStep(ctx context.Context, _ *mcp.CallToolRequest, in
 	return apiPkg.MCPJSONResult(out)
 }
 
-func (s *service) notifyWorkflowOfApprovalResponse(ctx context.Context, approval app.WorkflowStepApproval, response *app.WorkflowStepApprovalResponse) error {
-	workflowID := approval.InstallWorkflowStep.InstallWorkflowID
-	stepID := approval.InstallWorkflowStepID
-	if workflowID == "" && stepID != "" {
-		var step app.WorkflowStep
-		if err := s.db.WithContext(ctx).Select("install_workflow_id").First(&step, "id = ?", stepID).Error; err != nil {
-			return s.abandonApprovalResponse(ctx, response, fmt.Errorf("unable to find step: %w", err))
-		}
-		workflowID = step.InstallWorkflowID
-	}
-	if workflowID == "" {
-		return s.abandonApprovalResponse(ctx, response, fmt.Errorf("step %s has no workflow", stepID))
-	}
-
-	if err := s.dispatchApprovalResponseSignal(ctx, workflowID, stepID, approval.ID, response.ID, response.Type); err != nil {
+func (s *service) notifyWorkflowOfApprovalResponse(ctx context.Context, target *workflowApprovalTarget, response *app.WorkflowStepApprovalResponse) error {
+	if err := s.dispatchApprovalResponseSignal(ctx, target, response); err != nil {
 		return s.abandonApprovalResponse(ctx, response, err)
 	}
 	return nil
