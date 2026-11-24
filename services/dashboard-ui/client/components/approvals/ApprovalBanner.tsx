@@ -13,7 +13,7 @@ import { ApprovePlanButton } from './ApprovePlan'
 import { DenyPlanButton } from './DenyPlan'
 import { RetryPlanButton } from './RetryPlan'
 
-const APPROVAL_BANNER_COPY: Record<
+export const APPROVAL_BANNER_COPY: Record<
   Exclude<TWorkflowStepApprovalType, 'approve-all' | 'noop'>,
   { title: string; message: string }
 > = {
