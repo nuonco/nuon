@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -131,4 +132,32 @@ func (s *ComponentsServiceTestSuite) TestAddComponentLabelsNotFound() {
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/labels", s.testApp.ID, "cmp_nonexistent00000000000")
 	rr := s.makeRequest(http.MethodPost, path, reqBody)
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
+}
+
+func (s *ComponentsServiceTestSuite) TestComponentLabelsRejectComponentsOutsideApp() {
+	otherCtx, _ := s.deps.Seeder.EnsureAccount(context.Background(), s.T())
+	otherCtx, _ = s.deps.Seeder.EnsureOrg(otherCtx, s.T())
+	otherOrgApp := s.deps.Seeder.CreateApp(otherCtx, s.T())
+	sameOrgApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
+
+	targets := map[string]string{
+		"other org":          s.deps.Seeder.CreateComponent(otherCtx, s.T(), otherOrgApp.ID, app.ComponentTypeHelmChart).ID,
+		"same org other app": s.deps.Seeder.CreateComponent(s.ctx, s.T(), sameOrgApp.ID, app.ComponentTypeHelmChart).ID,
+	}
+	for name, componentID := range targets {
+		s.Run(name, func() {
+			require.NoError(s.T(), s.deps.DB.Model(&app.Component{}).Where("id = ?", componentID).
+				Update("labels", labels.Labels{"env": "prod"}).Error)
+			path := fmt.Sprintf("/v1/apps/%s/components/%s/labels", s.testApp.ID, componentID)
+
+			rr := s.makeRequest(http.MethodPost, path, AddComponentLabelsRequest{Labels: map[string]string{"owner": "acme"}})
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
+			rr = s.makeRequest(http.MethodDelete, path, RemoveComponentLabelsRequest{Keys: []string{"env"}})
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
+
+			var stored app.Component
+			require.NoError(s.T(), s.deps.DB.First(&stored, "id = ?", componentID).Error)
+			assert.Equal(s.T(), labels.Labels{"env": "prod"}, stored.Labels)
+		})
+	}
 }
