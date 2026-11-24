@@ -81,7 +81,7 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 	}
 
 	workflow, err := s.helpers.CreateWorkflow(ctx,
-		installID,
+		install.ID,
 		app.WorkflowTypeSyncSecrets,
 		map[string]string{},
 		req.PlanOnly,
@@ -92,7 +92,7 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 		return
 	}
 
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
 		return

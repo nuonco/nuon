@@ -19,6 +19,7 @@ import (
 )
 
 type TriggerRunbookRunRequest struct {
+	Install                                          *app.Install
 	InstallRunbookID, RunbookConfigID, TriggeredByID string
 	Inputs                                           map[string]string
 	StepSelections                                   []app.RunbookStepSelection
@@ -106,6 +107,9 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 				return err
 			}
 			if err == nil {
+				if req.Install != nil {
+					return errAPIRequestRunbookExists
+				}
 				if err := request.Check(existing.Request, req.RequestHash, installRunbook.Install.AppConfigID); err != nil {
 					return err
 				}
@@ -119,10 +123,18 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			}
 		}
 		var runbookConfig app.RunbookConfig
-		if err := tx.Preload("Inputs").Where(app.RunbookConfig{
+		if err := tx.Preload("Inputs").Preload("Steps").Where(app.RunbookConfig{
 			ID: req.RunbookConfigID, OrgID: installRunbook.OrgID, RunbookID: installRunbook.RunbookID,
 		}).First(&runbookConfig).Error; err != nil {
 			return err
+		}
+		var prepared *app.InstallExecutionTargets
+		if req.Install != nil {
+			var err error
+			prepared, err = h.prepareRunbookTargets(ctx, tx, req.Install, &installRunbook, &runbookConfig, req.StepSelections)
+			if err != nil {
+				return err
+			}
 		}
 		supplied := make(map[string]*string, len(req.Inputs))
 		for name, value := range req.Inputs {
@@ -182,6 +194,13 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			return errors.New("trigger dispatch already triggered a different runbook snapshot")
 		}
 		metadata := map[string]string{"install_runbook_id": installRunbook.ID, "install_runbook_run_id": run.ID, "runbook_name": installRunbook.Runbook.Name, "runbook_config_id": req.RunbookConfigID, "install_id": installRunbook.InstallID}
+		if prepared != nil {
+			blob, err := json.Marshal(prepared)
+			if err != nil {
+				return err
+			}
+			metadata[app.RunbookTargetsMetadataKey] = string(blob)
+		}
 		if run.CreatedByID != "" {
 			metadata[app.WorkflowMetadataKeyTriggeredByID] = run.CreatedByID
 		}
@@ -274,6 +293,9 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 		queueSignalID = resp.ID
 		return nil
 	})
+	if errors.Is(err, errAPIRequestRunbookExists) {
+		return h.ReplayAPIRequestRunbook(ctx, req.Install, req.RequestID, req.RequestHash)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("trigger runbook run: %w", err)
 	}
@@ -282,6 +304,13 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 }
 
 func (h *Helpers) replayAPIRequestRunbook(ctx context.Context, req TriggerRunbookRunRequest) (*TriggerRunbookRunResponse, error) {
+	if req.Install != nil {
+		resp, err := h.ReplayAPIRequestRunbook(ctx, req.Install, req.RequestID, req.RequestHash)
+		if resp == nil && err == nil {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return resp, err
+	}
 	var installRunbook app.InstallRunbook
 	if err := h.db.WithContext(ctx).Preload("Install").Where(app.InstallRunbook{ID: req.InstallRunbookID}).First(&installRunbook).Error; err != nil {
 		return nil, err

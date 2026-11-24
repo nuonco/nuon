@@ -203,21 +203,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		}
 	}
 
-	// Validate app_config_id if provided
-	if req.AppConfigID != "" {
-		var appCfg app.AppConfig
-		res = s.db.WithContext(ctx).
-			Where(app.AppConfig{
-				AppID: appID,
-				OrgID: org.ID,
-			}).
-			First(&appCfg, "id = ?", req.AppConfigID)
-		if res.Error != nil {
-			ctx.Error(fmt.Errorf("unable to find app config: %w", res.Error))
-			return
-		}
-	}
-
 	// Load config (by ID or latest)
 	var config app.AppBranchConfig
 	if req.ConfigID != "" {

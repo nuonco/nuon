@@ -78,7 +78,7 @@ func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID 
 	}
 
 	workflow, err := s.installHelpers.CreateWorkflowWithRole(ctx,
-		prepared.InstallID,
+		prepared.Install.ID,
 		app.WorkflowTypeActionWorkflowRun,
 		prepared.Metadata,
 		false,
@@ -88,7 +88,7 @@ func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID 
 		return nil, err
 	}
 
-	queueID, err := s.getInstallActionWorkflowsQueueID(ctx, prepared.InstallID)
+	queueID, err := s.getInstallActionWorkflowsQueueID(ctx, prepared.Install.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err)
 	}
@@ -98,16 +98,16 @@ func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID 
 
 	return &createInstallActionWorkflowRunResult{
 		WorkflowID:             workflow.ID,
-		ActionWorkflowID:       prepared.ActionWorkflowID,
-		ActionWorkflowConfigID: prepared.ActionWorkflowConfigID,
+		ActionWorkflowID:       prepared.Config.ActionWorkflowID,
+		ActionWorkflowConfigID: prepared.Config.ID,
 	}, nil
 }
 
 type preparedInstallActionWorkflowRun struct {
-	InstallID              string
-	Metadata               map[string]string
-	ActionWorkflowID       string
-	ActionWorkflowConfigID string
+	Install               *app.Install
+	Config                *app.ActionWorkflowConfig
+	InstallActionWorkflow *app.InstallActionWorkflow
+	Metadata              map[string]string
 }
 
 func (s *service) createIdempotentInstallActionWorkflowRun(ctx context.Context, installID string, req CreateInstallActionWorkflowRunRequest) (*createInstallActionWorkflowRunResult, error) {
@@ -128,14 +128,15 @@ func (s *service) createIdempotentInstallActionWorkflowRun(ctx context.Context, 
 		Operation:    "actions-runs",
 		QueueName:    installhelpers.InstallActionWorkflowsQueueName,
 	}, &installhelpers.IdempotentInstallWorkflowHooks{
-		Prepare: func(_ *gorm.DB) (map[string]string, error) {
-			p, err := s.prepareInstallActionWorkflowRun(ctx, installID, req)
+		Prepare: func(tx *gorm.DB) (map[string]string, error) {
+			scoped := *s
+			scoped.db = tx
+			scoped.actionsHelpers = s.actionsHelpers.WithDB(tx)
+			p, err := scoped.prepareInstallActionWorkflowRun(ctx, installID, req)
 			if err != nil {
 				return nil, err
 			}
 			prepared = p
-			p.Metadata["action_workflow_id"] = p.ActionWorkflowID
-			p.Metadata["action_workflow_config_id"] = p.ActionWorkflowConfigID
 			return p.Metadata, nil
 		},
 	})
@@ -145,8 +146,8 @@ func (s *service) createIdempotentInstallActionWorkflowRun(ctx context.Context, 
 	if prepared != nil {
 		return &createInstallActionWorkflowRunResult{
 			WorkflowID:             workflow.ID,
-			ActionWorkflowID:       prepared.ActionWorkflowID,
-			ActionWorkflowConfigID: prepared.ActionWorkflowConfigID,
+			ActionWorkflowID:       prepared.Config.ActionWorkflowID,
+			ActionWorkflowConfigID: prepared.Config.ID,
 		}, nil
 	}
 	return &createInstallActionWorkflowRunResult{
@@ -165,6 +166,9 @@ func (s *service) prepareInstallActionWorkflowRun(ctx context.Context, installID
 	awc, err := s.actionsHelpers.GetActionWorkflowConfigByID(ctx, req.ActionWorkFlowConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get action workflow config: %w", err)
+	}
+	if awc.OrgID != install.OrgID {
+		return nil, stderr.NewInvalidRequest(fmt.Errorf("action config does not belong to the install's org"))
 	}
 
 	// Callers pass whichever config they last read, usually the app's newest rather
@@ -187,7 +191,7 @@ func (s *service) prepareInstallActionWorkflowRun(ctx context.Context, installID
 		}
 	}
 
-	installActionWorkflow, err := s.getInstallActionWorkflow(ctx, installID, awc.ActionWorkflowID)
+	installActionWorkflow, err := s.actionsHelpers.GetInstallActionWorkflowForConfig(ctx, install, awc)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install action workflow")
 	}
@@ -197,6 +201,9 @@ func (s *service) prepareInstallActionWorkflowRun(ctx context.Context, installID
 	workflowMetadata := make(map[string]string)
 	workflowMetadata["install_action_workflow_id"] = installActionWorkflow.ID
 	workflowMetadata["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
+	workflowMetadata["manual_action_app_config_id"] = install.AppConfigID
+	workflowMetadata["action_workflow_id"] = awc.ActionWorkflowID
+	workflowMetadata["action_workflow_config_id"] = awc.ID
 
 	accountID := keys.CreatedByIDFromContext(ctx)
 	if accountID == "" {
@@ -213,10 +220,10 @@ func (s *service) prepareInstallActionWorkflowRun(ctx context.Context, installID
 	}
 
 	return &preparedInstallActionWorkflowRun{
-		InstallID:              install.ID,
-		Metadata:               workflowMetadata,
-		ActionWorkflowID:       awc.ActionWorkflowID,
-		ActionWorkflowConfigID: awc.ID,
+		Install:               install,
+		Config:                awc,
+		InstallActionWorkflow: installActionWorkflow,
+		Metadata:              workflowMetadata,
 	}, nil
 }
 
