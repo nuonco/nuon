@@ -10,10 +10,12 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -85,6 +87,11 @@ func (s *service) UpdateRunnerSettings(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.checkRunnerAPIURLPolicy(req.RunnerAPIURL); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	settings, err := s.updateRunnerSettings(ctx, runnerID, org.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update settings: %w", err))
@@ -92,6 +99,16 @@ func (s *service) UpdateRunnerSettings(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, settings)
+}
+
+// checkRunnerAPIURLPolicy holds a runner_api_url set through the API to the same
+// allowlist as one set in app config: the runner sends its token to this URL.
+func (s *service) checkRunnerAPIURLPolicy(runnerAPIURL string) error {
+	var violations urlpolicy.Violations
+	if violation := s.cfg.URLPolicy.Check(urlpolicy.CategoryRunnerAPI, "runner_api_url", runnerAPIURL); violation != nil {
+		violations = append(violations, *violation)
+	}
+	return validation.CheckURLPolicy(s.cfg.URLPolicy, violations)
 }
 
 func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID string, req *UpdateRunnerSettingsRequest) (*app.RunnerGroupSettings, error) {
