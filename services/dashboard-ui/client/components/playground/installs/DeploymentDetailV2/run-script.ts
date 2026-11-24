@@ -13,6 +13,7 @@ export interface IScriptStep {
   approval?: 'terraform_plan' | 'helm_approval'
   prompt?: boolean
   changes?: { create: number; update: number; delete: number; noop: number }
+  policy?: { warnings?: string[]; skipped?: string[] }
   lines: IScriptLine[]
 }
 
@@ -22,7 +23,8 @@ const warn = (text: string): IScriptLine => ({ level: 'warn', text })
 const helmPlan = (
   name: string,
   changes: NonNullable<IScriptStep['changes']>,
-  prompt = false
+  prompt = false,
+  policy?: IScriptStep['policy']
 ): IScriptStep => ({
   id: `run-${name}-plan`,
   name: `plan ${name}`,
@@ -30,6 +32,7 @@ const helmPlan = (
   approval: 'helm_approval',
   prompt,
   changes,
+  policy,
   lines: [
     info(`Rendering chart values for ${name}`),
     info('Running helm diff against the live release'),
@@ -72,6 +75,9 @@ export const RUN_SCRIPT: IScriptStep[] = [
     approval: 'terraform_plan',
     prompt: true,
     changes: { create: 2, update: 3, delete: 0, noop: 8 },
+    policy: {
+      warnings: ['S3 bucket should enable versioning'],
+    },
     lines: [
       info('Initializing terraform'),
       info('Refreshing state'),
@@ -93,7 +99,13 @@ export const RUN_SCRIPT: IScriptStep[] = [
       info('Apply complete: 2 added, 3 changed, 0 destroyed'),
     ],
   },
-  helmPlan('acme-api', { create: 0, update: 2, delete: 0, noop: 5 }),
+  helmPlan('acme-api', { create: 0, update: 2, delete: 0, noop: 5 }, false, {
+    warnings: [
+      'Container image should not use the latest tag',
+      'Deployment should define CPU limits',
+    ],
+    skipped: ['Pod security policy check was skipped'],
+  }),
   helmApply('acme-api'),
   helmPlan('acme-worker', { create: 0, update: 1, delete: 0, noop: 4 }, true),
   helmApply('acme-worker'),

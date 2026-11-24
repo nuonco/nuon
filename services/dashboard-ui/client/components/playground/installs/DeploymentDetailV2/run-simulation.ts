@@ -192,7 +192,29 @@ export const toWorkflowSteps = (
       finished,
       started_at: run.startedAt,
       execution_time: run.executionNs,
-      status: { status: run.status },
+      status: {
+        status: run.status,
+        metadata:
+          step.policy && (reviewed || run.status === 'approval-denied')
+            ? {
+                deny_violations: [],
+                warn_violations: (step.policy.warnings ?? []).map(
+                  (message, idx) => ({
+                    policy_id: `${step.id}-warn-${idx}`,
+                    message,
+                    severity: 'warn',
+                  })
+                ),
+                skip_findings: (step.policy.skipped ?? []).map(
+                  (message, idx) => ({
+                    policy_id: `${step.id}-skip-${idx}`,
+                    message,
+                  })
+                ),
+                passed_policy_ids: [],
+              }
+            : undefined,
+      },
       metadata: step.componentName
         ? { component_name: step.componentName }
         : {},
