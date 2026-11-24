@@ -7,6 +7,9 @@ import (
 )
 
 func failIfPinnedAppConfigMoved(install *app.Install, flw *app.Workflow) error {
+	if _, err := flw.PreparedInstallConfigID(install); err != nil {
+		return err
+	}
 	stored := flw.Request
 	if stored != nil && stored.DriftResolution != nil {
 		return nil

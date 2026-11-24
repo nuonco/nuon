@@ -84,26 +84,12 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 
 func (s *service) createRunbookRun(ctx context.Context, accountID string, install *app.Install, runbookRef string, req CreateRunbookRunRequest) (*runbookshelpers.TriggerRunbookRunResponse, error) {
 	orgID := install.OrgID
-	var runbook app.Runbook
-	err := s.db.WithContext(ctx).
-		Where(app.Runbook{OrgID: orgID, AppID: install.AppID}).
-		Where(s.db.Where(app.Runbook{ID: runbookRef}).Or(app.Runbook{Name: runbookRef})).
-		First(&runbook).Error
-	if err != nil {
-		return nil, fmt.Errorf("unable to get runbook: %w", err)
-	}
-
-	var installRunbook app.InstallRunbook
-	err = s.db.WithContext(ctx).
-		Preload("Runbook").
-		Where(app.InstallRunbook{OrgID: orgID, InstallID: install.ID, RunbookID: runbook.ID}).
-		First(&installRunbook).Error
-	if err != nil {
-		return nil, fmt.Errorf("unable to get install runbook: %w", err)
-	}
-
 	requestHash := ""
+	var err error
 	if req.RequestID != "" {
+		if err := request.ValidateRequestID(req.RequestID); err != nil {
+			return nil, err
+		}
 		requestHash, err = request.Hash(struct {
 			Runbook string                          `json:"runbook"`
 			Inputs  map[string]*string              `json:"inputs,omitempty"`
@@ -113,20 +99,25 @@ func (s *service) createRunbookRun(ctx context.Context, accountID string, instal
 		if err != nil {
 			return nil, err
 		}
-		var existing app.Workflow
-		err = s.db.WithContext(ctx).Where(app.Workflow{
-			OrgID:     orgID,
-			OwnerID:   install.ID,
-			OwnerType: "installs",
-			Type:      app.WorkflowTypeRunbookRun,
-		}).Where("request->>'request_id' = ?", req.RequestID).First(&existing).Error
-		if err == nil {
-			if err := request.Check(existing.Request, requestHash, install.AppConfigID); err != nil {
-				return nil, err
-			}
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+		replayed, err := s.helpers.ReplayAPIRequestRunbook(ctx, install, req.RequestID, requestHash)
+		if err != nil || replayed != nil {
+			return replayed, err
 		}
+	}
+
+	var runbook app.Runbook
+	if err := s.db.WithContext(ctx).
+		Where(app.Runbook{OrgID: orgID, AppID: install.AppID}).
+		Where(s.db.Where(app.Runbook{ID: runbookRef}).Or(app.Runbook{Name: runbookRef})).
+		First(&runbook).Error; err != nil {
+		return nil, fmt.Errorf("unable to get runbook: %w", err)
+	}
+
+	var installRunbook app.InstallRunbook
+	if err := s.db.WithContext(ctx).
+		Where(app.InstallRunbook{OrgID: orgID, InstallID: install.ID, RunbookID: runbook.ID}).
+		First(&installRunbook).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install runbook: %w", err)
 	}
 
 	var runbookConfig app.RunbookConfig
@@ -170,7 +161,7 @@ func (s *service) createRunbookRun(ctx context.Context, accountID string, instal
 			inputs[name] = *value
 		}
 	}
-	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: accountID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role, RequestID: req.RequestID, RequestHash: requestHash})
+	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{Install: install, InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: accountID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role, RequestID: req.RequestID, RequestHash: requestHash})
 	if err != nil {
 		return nil, err
 	}

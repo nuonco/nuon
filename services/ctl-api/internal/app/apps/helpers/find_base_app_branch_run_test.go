@@ -187,8 +187,9 @@ func (s *FindBaseAppBranchRunTestSuite) TestComparisonBaselineIsFrozenAtRunCreat
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
 	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
 	testApp := s.deps.Seed.CreateApp(ctx, s.T())
-	s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	configA := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
 	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+	configB := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
 
 	branch := &app.AppBranch{AppID: testApp.ID, Name: "main"}
 	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(branch).Error)
@@ -198,7 +199,7 @@ func (s *FindBaseAppBranchRunTestSuite) TestComparisonBaselineIsFrozenAtRunCreat
 	runA, err := s.deps.Helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
 		AppBranchID:       branch.ID,
 		AppBranchConfigID: branchConfig.ID,
-		AppConfigID:       "appruna00000000000000000000",
+		AppConfigID:       configA.ID,
 		RunType:           app.AppBranchRunTypeGit,
 	})
 	s.Require().NoError(err)
@@ -219,7 +220,7 @@ func (s *FindBaseAppBranchRunTestSuite) TestComparisonBaselineIsFrozenAtRunCreat
 	runB, err := s.deps.Helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
 		AppBranchID:       branch.ID,
 		AppBranchConfigID: branchConfig.ID,
-		AppConfigID:       "apprunb00000000000000000000",
+		AppConfigID:       configB.ID,
 		RunType:           app.AppBranchRunTypeGit,
 	})
 	s.Require().NoError(err)
