@@ -43,11 +43,11 @@ func (s *service) ForgetInstall(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.addForgottenByLabels(ctx, installID); err != nil {
+	if err := s.addForgottenByLabels(ctx, install.ID); err != nil {
 		s.l.Warn("unable to add forgotten-by labels", zap.Error(err))
 	}
 
-	err = s.forgetInstall(ctx, installID)
+	err = s.forgetInstall(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
 		return

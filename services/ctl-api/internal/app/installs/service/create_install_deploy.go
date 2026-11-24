@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
@@ -17,6 +18,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -106,51 +109,11 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 		return
 	}
 
-	deploy, err := s.createInstallDeploy(ctx, installID, &req)
+	deploy, err := s.createInstallDeploy(ctx, installID, &req, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
-
-	deploy, err = s.getInstallDeploy(ctx, installID, deploy.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get newly created deploy %s:  %w", deploy.ID, err))
-		return
-	}
-
-	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
-		installID,
-		app.WorkflowTypeManualDeploy,
-		map[string]string{
-			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.ComponentName,
-			"install_deploy_id":                       deploy.ID,
-			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
-			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
-		},
-		req.PlanOnly,
-		req.Role,
-	)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	if err := s.helpers.UpdateDeployWithWorkflowID(ctx, deploy.ID, workflow.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to update install deploy with workflow ID: %w", err))
-		return
-	}
-
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-		return
-	}
-
-	deploy.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusCreated, deploy)
 }
 
@@ -209,51 +172,11 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
-	deploy, err := s.createInstallDeploy(ctx, installID, &req)
+	deploy, err := s.createInstallDeploy(ctx, installID, &req, "")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
-
-	deploy, err = s.getInstallDeploy(ctx, installID, deploy.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get newly created deploy %s:  %w", deploy.ID, err))
-		return
-	}
-
-	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
-		installID,
-		app.WorkflowTypeManualDeploy,
-		map[string]string{
-			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.ComponentName,
-			"install_deploy_id":                       deploy.ID,
-			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
-			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
-		},
-		req.PlanOnly,
-		req.Role,
-	)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	if err := s.helpers.UpdateDeployWithWorkflowID(ctx, deploy.ID, workflow.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to update install deploy with workflow ID: %w", err))
-		return
-	}
-
-	queueID2, err := s.getInstallWorkflowsQueueID(ctx, installID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.enqueueInstallSignal(ctx, queueID2, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-		return
-	}
-
-	deploy.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusCreated, deploy)
 }
 
@@ -286,6 +209,7 @@ func (s *service) createIdempotentInstallDeploy(
 	var createdDeploy *app.InstallDeploy
 	var createdComponentID string
 	var createdInstallComponentID string
+	var preparedConfigID string
 	workflow, created, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
 		InstallID:    installID,
 		WorkflowType: app.WorkflowTypeManualDeploy,
@@ -297,27 +221,30 @@ func (s *service) createIdempotentInstallDeploy(
 		QueueName:    installhelpers.InstallWorkflowsQueueName,
 	}, &installhelpers.IdempotentInstallWorkflowHooks{
 		Prepare: func(tx *gorm.DB) (map[string]string, error) {
-			deploy, componentID, componentName, installComponentID, err := s.insertInstallDeploy(ctx, tx, installID, req)
+			target, err := s.prepareInstallDeploy(ctx, tx, installID, req, pathComponentID)
+			if err != nil {
+				return nil, err
+			}
+			deploy, err := s.insertInstallDeploy(ctx, tx, target, req)
 			if err != nil {
 				return nil, err
 			}
 			createdDeploy = deploy
-			createdComponentID = componentID
-			createdInstallComponentID = installComponentID
+			preparedConfigID = target.Install.AppConfigID
+			createdComponentID = target.InstallComponent.ComponentID
+			createdInstallComponentID = target.InstallComponent.ID
 			nameSuffix := componentNameHint
 			if nameSuffix == "" {
-				nameSuffix = componentName
+				nameSuffix = target.Build.ComponentConfigConnection.Component.Name
 			}
-			return map[string]string{
-				app.WorkflowMetadataKeyWorkflowNameSuffix: nameSuffix,
-				"install_deploy_id":                       deploy.ID,
-				"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
-				"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
-			}, nil
+			return manualDeployMetadata(target, deploy, req, nameSuffix)
 		},
 		AfterCreate: func(tx *gorm.DB, wf *app.Workflow) error {
 			if createdDeploy == nil {
 				return fmt.Errorf("install deploy was not created")
+			}
+			if wf.Request.PinnedAppConfigID != preparedConfigID {
+				return stderr.ErrConflict{Err: fmt.Errorf("install app config changed during preparation"), Description: "Install app config changed; start a new deploy."}
 			}
 			return tx.WithContext(ctx).Model(&app.InstallDeploy{}).
 				Where("id = ?", createdDeploy.ID).
@@ -347,42 +274,117 @@ func (s *service) createIdempotentInstallDeploy(
 	return deploy, nil
 }
 
-func (s *service) createInstallDeploy(ctx context.Context, installID string, req *CreateInstallDeployRequest) (*app.InstallDeploy, error) {
-	deploy, componentID, _, installComponentID, err := s.insertInstallDeploy(ctx, s.db, installID, req)
+func (s *service) createInstallDeploy(ctx context.Context, installID string, req *CreateInstallDeployRequest, pathComponentID string) (*app.InstallDeploy, error) {
+	var target *preparedInstallDeploy
+	var deploy *app.InstallDeploy
+	var workflow *app.Workflow
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var err error
+		target, err = s.prepareInstallDeploy(ctx, tx, installID, req, pathComponentID)
+		if err != nil {
+			return err
+		}
+		deploy, err = s.insertInstallDeploy(ctx, tx, target, req)
+		if err != nil {
+			return err
+		}
+		metadata, err := manualDeployMetadata(target, deploy, req, target.Build.ComponentConfigConnection.Component.Name)
+		if err != nil {
+			return err
+		}
+		workflow, err = s.helpers.WithDB(tx).CreateWorkflowWithRole(ctx, target.Install.ID, app.WorkflowTypeManualDeploy, metadata, req.PlanOnly, req.Role)
+		if err != nil {
+			return err
+		}
+		return s.helpers.WithDB(tx).UpdateDeployWithWorkflowID(ctx, deploy.ID, workflow.ID)
+	})
 	if err != nil {
 		return nil, err
 	}
-	s.emitInstallDeployAudit(ctx, installID, deploy.ID, req.BuildID, componentID, installComponentID, deploy.Type)
+	s.emitInstallDeployAudit(ctx, target.Install.ID, deploy.ID, target.Build.ID, target.InstallComponent.ComponentID, target.InstallComponent.ID, deploy.Type)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, target.Install.ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
+		return nil, fmt.Errorf("enqueue signal: %w", err)
+	}
+	deploy, err = s.getInstallDeploy(ctx, target.Install.ID, deploy.ID)
+	if err != nil {
+		return nil, err
+	}
+	deploy.WorkflowID = &workflow.ID
 	return deploy, nil
 }
 
-func (s *service) insertInstallDeploy(
+type preparedInstallDeploy struct {
+	Install          app.Install
+	Build            app.ComponentBuild
+	InstallComponent app.InstallComponent
+	Targets          *app.InstallExecutionTargets
+}
+
+func (s *service) prepareInstallDeploy(
 	ctx context.Context,
 	db *gorm.DB,
 	installID string,
 	req *CreateInstallDeployRequest,
-) (*app.InstallDeploy, string, string, string, error) {
+	pathComponentID string,
+) (*preparedInstallDeploy, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var install app.Install
-	if err := db.WithContext(ctx).Preload("AppConfig").Where(app.Install{ID: installID}).First(&install).Error; err != nil {
-		return nil, "", "", "", err
+	if err := db.WithContext(ctx).Scopes(scopes.WithDisableViews).Clauses(clause.Locking{Strength: "SHARE"}).Preload("App").Preload("AppConfig").
+		Where(&app.Install{ID: installID, OrgID: orgID}, "ID", "OrgID").First(&install).Error; err != nil {
+		return nil, err
+	}
+	if install.App.ID == "" || install.App.OrgID != orgID || install.AppConfig.ID == "" ||
+		install.AppConfig.AppID != install.AppID || install.AppConfig.OrgID != orgID {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("install app configuration does not belong to its app and org"),
+			Description: "The install must have a valid app configuration before deploying.",
+		}
 	}
 	var build app.ComponentBuild
 	res := db.WithContext(ctx).
 		Preload("AppBranchRun.Preview").
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
-		First(&build, "id = ?", req.BuildID)
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnection.HelmComponentConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
+		Preload("ComponentConfigConnection.JobComponentConfig").
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig").
+		Where(&app.ComponentBuild{ID: req.BuildID, OrgID: orgID}, "ID", "OrgID").First(&build)
 	if res.Error != nil {
-		return nil, "", "", "", fmt.Errorf("unable to get build %s: %w", req.BuildID, res.Error)
+		return nil, fmt.Errorf("unable to get build %s: %w", req.BuildID, res.Error)
+	}
+	componentConfig := &build.ComponentConfigConnection
+	component := &componentConfig.Component
+	if componentConfig.ID == "" || componentConfig.OrgID != orgID || component.ID == "" ||
+		component.OrgID != orgID || component.AppID != install.AppID {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("build component does not belong to the install's app and org"),
+			Description: "The build must belong to a component in this install's app.",
+		}
+	}
+	if pathComponentID != "" && pathComponentID != component.ID {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("build does not belong to the requested component"),
+			Description: "The build must belong to the component in the request path.",
+		}
 	}
 
 	if install.AppConfig.BuildsPinned && !buildselection.OnPinnedBranch(&build, install.AppConfig.AppBranchID.String) {
 		enabled, err := s.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureManualBuildSelection)
 		if err != nil {
-			return nil, "", "", "", fmt.Errorf("unable to check manual build selection feature: %w", err)
+			return nil, fmt.Errorf("unable to check manual build selection feature: %w", err)
 		}
 		if !enabled {
-			return nil, "", "", "", stderr.ErrUser{
+			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("manual build selection is not supported for branch-run app configs"),
 				Description: "Use an app branch run to deploy changes to this install.",
 			}
@@ -390,34 +392,44 @@ func (s *service) insertInstallDeploy(
 	}
 
 	componentID := build.ComponentConfigConnection.ComponentID
-	componentName := build.ComponentConfigConnection.Component.Name
 
 	var installCmp app.InstallComponent
 	res = db.WithContext(ctx).Where(app.InstallComponent{
-		InstallID:   installID,
+		OrgID:       orgID,
+		InstallID:   install.ID,
 		ComponentID: componentID,
 	}).First(&installCmp)
 	if res.Error != nil {
-		return nil, "", "", "", fmt.Errorf("unable to create install component: %w", res.Error)
+		return nil, fmt.Errorf("unable to create install component: %w", res.Error)
 	}
 
+	target := &preparedInstallDeploy{Install: install, Build: build, InstallComponent: installCmp}
+	target.Targets, err = s.prepareManualDeployTargets(ctx, db, target, req)
+	if err != nil {
+		return nil, err
+	}
+	return target, nil
+}
+
+func (s *service) insertInstallDeploy(ctx context.Context, db *gorm.DB, target *preparedInstallDeploy, req *CreateInstallDeployRequest) (*app.InstallDeploy, error) {
 	typ := app.InstallDeployTypeApply
 	deploy := app.InstallDeploy{
+		OrgID:              target.Install.OrgID,
 		Status:             "queued",
 		StatusDescription:  "waiting to be deployed to install",
-		ComponentBuildID:   req.BuildID,
-		AppConfigID:        install.AppConfigID,
-		InstallComponentID: installCmp.ID,
+		ComponentBuildID:   target.Build.ID,
+		AppConfigID:        target.Install.AppConfigID,
+		InstallComponentID: target.InstallComponent.ID,
 		Type:               typ,
 		Role:               req.Role,
 	}
 
-	res = db.WithContext(ctx).Create(&deploy)
+	res := db.WithContext(ctx).Create(&deploy)
 	if res.Error != nil {
-		return nil, "", "", "", fmt.Errorf("unable to create install deploy: %w", res.Error)
+		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
-	return &deploy, componentID, componentName, installCmp.ID, nil
+	return &deploy, nil
 }
 
 func (s *service) emitInstallDeployAudit(
