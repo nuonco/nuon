@@ -225,3 +225,7 @@ func wrapAWSErr(op string, err error) error {
 	}
 	return fmt.Errorf("%s: %w", op, err)
 }
+
+func (r *ECRRepository) RepositoryURL() string {
+	return r.URL
+}

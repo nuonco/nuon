@@ -44,7 +44,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	plan := h.state.plan
 
-	repo, err := prune.NewECRRepository(ctx, plan.Registry)
+	repo, err := h.openRegistry(ctx, plan.Registry)
 	if err != nil {
 		h.writeErrorResult(ctx, "connect to registry", err)
 		return err
@@ -62,9 +62,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		h.writeErrorResult(ctx, "list registry", err)
 		return err
 	}
-	l.Info("listed registry", zap.String("repository", repo.URL), zap.Int("manifests", len(manifests)))
+	l.Info("listed registry", zap.String("repository", repo.RepositoryURL()), zap.Int("manifests", len(manifests)))
 
-	inUse, err := prune.ScanCluster(ctx, plan.ClusterInfo, repo.URL)
+	inUse, err := h.scanCluster(ctx, plan.ClusterInfo, repo.RepositoryURL())
 	if err != nil {
 		h.writeErrorResult(ctx, "scan cluster", err)
 		return err

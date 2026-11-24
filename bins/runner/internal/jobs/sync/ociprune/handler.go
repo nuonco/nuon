@@ -13,6 +13,7 @@ import (
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	"github.com/nuonco/nuon/pkg/runner/oci/prune"
 )
 
 type handler struct {
@@ -20,6 +21,9 @@ type handler struct {
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
 	cfg         *runnerconfig.Config
+
+	openRegistry openRegistryFn
+	scanCluster  scanClusterFn
 
 	state *handlerState
 }
@@ -41,6 +45,9 @@ func New(params HandlerParams) (*handler, error) {
 		apiClient:   params.APIClient,
 		errRecorder: params.ErrRecorder,
 		cfg:         params.Config,
+
+		openRegistry: openECRRegistry,
+		scanCluster:  prune.ScanCluster,
 	}, nil
 }
 
