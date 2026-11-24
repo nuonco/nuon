@@ -88,7 +88,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 // cancelSingleWorkflow validates, cancels, and signals a single workflow.
 // It returns an error suitable for ctx.Error().
 func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID string) error {
-	wf, err := s.getWorkflow(ctx, orgID, workflowID)
+	wf, err := s.resolveWorkflow(ctx, orgID, workflowID)
 	if err != nil {
 		return fmt.Errorf("unable to get workflow: %w", err)
 	}
@@ -112,7 +112,7 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 	// If the workflow hasn't started yet, cancel it directly in the DB —
 	// there is no signal to cancel.
 	if wf.Status.Status == app.StatusPending {
-		if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
+		if err := s.cancelWorkflow(ctx, wf); err != nil {
 			return fmt.Errorf("unable to cancel workflow: %w", err)
 		}
 		return nil
@@ -126,7 +126,7 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 		// handler finished. There is nothing to signal, so flip the row
 		// directly in the DB rather than leaving it stuck in-progress forever.
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if dbErr := s.cancelWorkflow(ctx, wf.ID); dbErr != nil {
+			if dbErr := s.cancelWorkflow(ctx, wf); dbErr != nil {
 				return fmt.Errorf("unable to cancel orphaned workflow: %w", dbErr)
 			}
 			return nil
@@ -148,18 +148,14 @@ func (s *service) findCancelableStep(wf *app.Workflow) *app.WorkflowStep {
 	return nil
 }
 
-func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) error {
-	// Load-then-Save so Workflow.BeforeSave sees Type/Metadata and can
-	// recompute name to the past-tense title.
-	var obj app.Workflow
-	if err := s.db.WithContext(ctx).Where("id = ?", installWorkflowID).Take(&obj).Error; err != nil {
-		return pkgerrors.Wrap(err, "unable to load workflow")
-	}
-
+func (s *service) cancelWorkflow(ctx context.Context, obj *app.Workflow) error {
 	obj.Status = app.NewCompositeStatus(ctx, app.StatusCancelled)
 	obj.FinishedAt = time.Now()
 
-	res := s.db.WithContext(ctx).Save(&obj)
+	res := s.db.WithContext(ctx).Model(obj).
+		Where(&app.Workflow{OrgID: obj.OrgID}, "OrgID").
+		Select("status", "finished_at", "name").
+		Updates(obj)
 	if res.Error != nil {
 		return pkgerrors.Wrap(res.Error, "unable to update")
 	}
