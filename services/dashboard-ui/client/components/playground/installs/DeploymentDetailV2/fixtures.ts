@@ -173,7 +173,10 @@ const WORKFLOW_STATUS: Record<
 > = {
   active: { status: 'in-progress', description: 'Deploying components' },
   finished: { status: 'success', description: 'Deployment finished' },
-  failed: { status: 'error', description: 'Helm upgrade failed for acme-worker' },
+  failed: {
+    status: 'error',
+    description: 'Helm upgrade failed for acme-worker',
+  },
 }
 
 export const DEPLOYMENT_PATH = '/deployments/wf-deploy-v2'

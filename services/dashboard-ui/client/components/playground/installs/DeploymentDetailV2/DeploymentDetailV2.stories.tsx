@@ -4,12 +4,11 @@ export default {
 
 import { DeploymentDetailV2 } from './DeploymentDetailV2'
 import { deploymentScenario } from './fixtures'
+import { SimulatedDeployment } from './SimulatedRun'
 
 export const Loading = () => <DeploymentDetailV2 isLoading />
 
-export const Active = () => (
-  <DeploymentDetailV2 {...deploymentScenario('active')} />
-)
+export const Active = () => <SimulatedDeployment />
 
 export const Finished = () => (
   <DeploymentDetailV2 {...deploymentScenario('finished')} />
