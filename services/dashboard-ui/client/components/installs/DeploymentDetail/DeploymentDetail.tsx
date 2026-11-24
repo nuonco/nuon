@@ -30,6 +30,7 @@ interface IDeploymentDetail {
   deployment?: TInstallDeploymentRecord
   search?: string
   tabOrder?: TDeploymentTab[]
+  tabs?: TNavLink[]
   variant?: TDetailPageVariant
   workflow: TWorkflow
 }
@@ -43,6 +44,7 @@ export const DeploymentDetail = ({
   deployment,
   search = '',
   tabOrder,
+  tabs,
   variant = 'section',
   workflow,
 }: IDeploymentDetail) => {
@@ -92,11 +94,16 @@ export const DeploymentDetail = ({
       tabNav={{
         activeIndex: activeTabIndex,
         basePath,
-        tabs: (tabOrder ?? deploymentTabOrder(workflow?.type)).map((key) => ({
-          ...DEPLOYMENT_TABS[key],
+        tabs: (
+          tabs ??
+          (tabOrder ?? deploymentTabOrder(workflow?.type)).map(
+            (key) => DEPLOYMENT_TABS[key]
+          )
+        ).map((tab) => ({
+          ...tab,
           path: search
-            ? `${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`
-            : DEPLOYMENT_TABS[key].path,
+            ? `${tab.path === '/' ? '' : tab.path}${search}`
+            : tab.path,
         })),
       }}
     >

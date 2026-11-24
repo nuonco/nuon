@@ -6,7 +6,6 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -29,18 +28,9 @@ func (s *service) mcpSkipStep(ctx context.Context, _ *mcp.CallToolRequest, in mc
 		return nil, nil, fmt.Errorf("step_id is required")
 	}
 
-	var workflow app.Workflow
-	if err := s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", in.WorkflowID, orgID).
-		First(&workflow).Error; err != nil {
-		return nil, nil, fmt.Errorf("unable to find workflow %q: %w", in.WorkflowID, err)
-	}
-
-	var step app.WorkflowStep
-	if err := s.db.WithContext(ctx).
-		Where("id = ? AND install_workflow_id = ? AND org_id = ?", in.StepID, workflow.ID, orgID).
-		First(&step).Error; err != nil {
-		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
+	workflow, step, err := s.resolveWorkflowStep(ctx, orgID, in.WorkflowID, in.StepID)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	resp, err := s.flowsClient.SkipStep(ctx, &flowclient.SkipStepRequest{
