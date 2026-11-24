@@ -54,9 +54,7 @@ type AppBranchConfig struct {
 	InstallUpdatePolicy string `json:"install_update_policy,omitempty" temporaljson:"install_update_policy,omitzero,omitempty"`
 
 	PreviewConfig *AppBranchPreviewConfig `json:"preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"preview_config,omitzero,omitempty"`
-	// paths and paths_ignore are mutually exclusive, and neither list accepts a
-	// pattern starting with "!". AutoMigrate creates the check; it is not a migration.
-	RunConfig *AppBranchRunConfig `json:"run_config,omitempty" gorm:"type:jsonb;serializer:json;default:null;check:chk_app_branch_configs_run_config_paths,NOT (jsonb_path_exists(run_config, '$.paths[0]') AND jsonb_path_exists(run_config, '$.paths_ignore[0]')) AND NOT jsonb_path_exists(run_config, '$.paths[*] ? (@ starts with \"!\")') AND NOT jsonb_path_exists(run_config, '$.paths_ignore[*] ? (@ starts with \"!\")')" temporaljson:"run_config,omitzero,omitempty"`
+	RunConfig     *AppBranchRunConfig     `json:"run_config,omitempty" gorm:"type:jsonb;serializer:json;default:null;check:chk_app_branch_configs_run_config_paths,NOT (jsonb_path_exists(run_config, '$.paths[0]') AND jsonb_path_exists(run_config, '$.paths_ignore[0]')) AND NOT jsonb_path_exists(run_config, '$.paths[*] ? (@ starts with \"!\")') AND NOT jsonb_path_exists(run_config, '$.paths_ignore[*] ? (@ starts with \"!\")')" temporaljson:"run_config,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 

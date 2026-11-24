@@ -23,7 +23,7 @@ func (a *Activities) compileRootTemplate(ctx context.Context, cfg *app.AppConfig
 		return nil, "", nil, fmt.Errorf("render app config for stack compile: %w", err)
 	}
 
-	phoneHomeScript, err := installsactivities.FetchPhoneHomeScriptRaw(ctx, cfg.RunnerConfig.PhoneHomeScriptURL, a.cfg.PhoneHomeScriptURL)
+	phoneHomeScript, err := installsactivities.FetchPhoneHomeScriptRaw(installsactivities.WithPhoneHomeRedirectCheck(ctx, a.cfg.URLPolicy, cfg.RunnerConfig.PhoneHomeScriptURL), cfg.RunnerConfig.PhoneHomeScriptURL, a.cfg.PhoneHomeScriptURL)
 	if err != nil {
 		return nil, "", nil, err
 	}

@@ -83,7 +83,8 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 		return nil, err
 	}
 
-	appRunnerConfig := build.RunnerConfig(build.RunnerInput{
+	appRunnerConfig, err := build.RunnerConfig(build.RunnerInput{
+		URLPolicy:     s.cfg.URLPolicy,
 		AppID:         appID,
 		AppConfigID:   req.AppConfigID,
 		Type:          string(req.Type),
@@ -99,6 +100,9 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 
 		PhoneHomeScriptURL: req.PhoneHomeScriptURL,
 	})
+	if err != nil {
+		return nil, err
+	}
 	res := s.db.WithContext(ctx).
 		Create(appRunnerConfig)
 	if res.Error != nil {

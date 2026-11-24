@@ -416,6 +416,8 @@ type ClientService interface {
 
 	GetAppActions(params *GetAppActionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppActionsOK, error)
 
+	GetAppAllowedHosts(params *GetAppAllowedHostsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppAllowedHostsOK, error)
+
 	GetAppBranch(params *GetAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchOK, error)
 
 	GetAppBranchAppConfigs(params *GetAppBranchAppConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchAppConfigsOK, error)
@@ -479,6 +481,10 @@ type ClientService interface {
 	GetAppConfigs(params *GetAppConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigsOK, error)
 
 	GetAppConflgV2(params *GetAppConflgV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConflgV2OK, error)
+
+	GetAppFleet(params *GetAppFleetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetOK, error)
+
+	GetAppFleetInstalls(params *GetAppFleetInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetInstallsOK, error)
 
 	GetAppInputConfig(params *GetAppInputConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInputConfigOK, error)
 
@@ -8140,6 +8146,54 @@ func (a *Client) GetAppActions(params *GetAppActionsParams, authInfo runtime.Cli
 }
 
 /*
+	GetAppAllowedHosts gets the allowed hosts for an app
+
+	Return the allowed hosts that apply to an app's config.
+
+The control plane operator can restrict where URLs in an app config may point, such as the runner API URL, the runner init script, and stack template URLs. Each category is either unrestricted or carries a list of allowed URL prefixes. A sync that sets a URL outside a restricted category is rejected, or only reported when the mode is `warn`.
+*/
+func (a *Client) GetAppAllowedHosts(params *GetAppAllowedHostsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppAllowedHostsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppAllowedHostsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppAllowedHosts",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/allowed-hosts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppAllowedHostsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppAllowedHostsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppAllowedHosts: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetAppBranch gets an app branch
 
 Get an app branch by ID. Use `latest_config=true` query parameter to include only the most recent config with its VCS settings and install groups.
@@ -9612,6 +9666,98 @@ func (a *Client) GetAppConflgV2(params *GetAppConflgV2Params, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppConflgV2: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppFleet apps fleet summary branches and install groups
+
+Returns the app's installs grouped by app branch and install group, with counts per lane and the first installs of each group. Filters apply to counts and to the returned installs. Rollout compares each install's applied app config against the target run of its branch.
+*/
+func (a *Client) GetAppFleet(params *GetAppFleetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppFleetParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppFleet",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/fleet",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppFleetReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppFleetOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppFleet: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppFleetInstalls paginateds installs for an app fleet
+
+Returns the app's installs matching the fleet filters, ordered by rollout, health severity, then name. Pass app_branch_id and app_branch_group to page through one install group, for example when a lane card's panel is opened.
+*/
+func (a *Client) GetAppFleetInstalls(params *GetAppFleetInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppFleetInstallsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppFleetInstallsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppFleetInstalls",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/fleet/installs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppFleetInstallsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppFleetInstallsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppFleetInstalls: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14407,7 +14553,7 @@ func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, au
 /*
 GetInstallOverview installs overview
 
-Returns branch tracking, config drift, and per-resource alignment for an install. runs_behind counts successful app branch runs with newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. successful_runs includes the newest 50 successful runs with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. alignment compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
+Returns branch tracking, config drift, and per-resource sync status for an install. The desired app branch run is the run that produced the install's selected app_config_id, and the applied app branch run is the run that produced the app config it last applied. runs_behind counts successful runs after the applied app branch run, up to and including the desired app branch run, excluding previews, no-config-change runs, and runs that reproduce the applied configuration. It is omitted when the desired app config has no recorded app branch run. successful_runs includes the newest 50 runs behind with their associated commits, ordered by run creation time. commits_behind and pending_commits are deprecated aliases of runs_behind and successful_runs. config_drift compares applied app config IDs for compatibility. resource_sync_status compares resources against the selected app config's builds and relevant inputs, separating changes not applied from state drift detected by scans.
 */
 func (a *Client) GetInstallOverview(params *GetInstallOverviewParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOverviewOK, error) {
 	// NOTE: parameters are not validated before sending

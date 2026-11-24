@@ -47,7 +47,10 @@ func NewHTTPClient() *http.Client {
 			if err := validateHTTPURL(req.URL); err != nil {
 				return err
 			}
-			return RequirePublicHost(req.Context(), req.URL.Hostname())
+			if err := RequirePublicHost(req.Context(), req.URL.Hostname()); err != nil {
+				return err
+			}
+			return CheckRedirectTarget(req)
 		},
 	}
 }

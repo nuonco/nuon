@@ -2,6 +2,8 @@ package get
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -735,4 +738,143 @@ func TestGetAll_SourceRejectsGitBeforeExecutingIt(t *testing.T) {
 	}
 	_, err = os.Stat(marker)
 	require.True(t, os.IsNotExist(err), "a denied import must not invoke git")
+}
+
+func TestGetAll_CheckRemoteRunsBeforeTheFetch(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		_, _ = w.Write([]byte("contents"))
+	}))
+	defer srv.Close()
+
+	var checked []string
+	obj := &testStruct{Obj: srv.URL + "/values.yaml"}
+	err := Parse(context.Background(), obj, &Options{
+		FieldTimeout: time.Second * 5,
+		RootDir:      t.TempDir(),
+		CheckRemote: func(field, rawURL string) error {
+			checked = append(checked, field+" "+rawURL)
+			return errors.New("not allowed")
+		},
+	})
+	require.ErrorContains(t, err, "not allowed")
+	require.Equal(t, []string{"testStruct.Obj " + srv.URL + "/values.yaml"}, checked)
+	require.Zero(t, hits.Load())
+
+	// Local files are not remote fetches.
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "local.yaml"), []byte("local"), 0o600))
+	obj = &testStruct{Obj: "./local.yaml"}
+	err = Parse(context.Background(), obj, &Options{
+		FieldTimeout: time.Second * 5,
+		RootDir:      dir,
+		CheckRemote: func(field, rawURL string) error {
+			return errors.New("not allowed")
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "local", obj.Obj)
+}
+
+func TestGetAll_CheckRemoteCoversChecksumHops(t *testing.T) {
+	const contents = "contents"
+	sum := sha256.Sum256([]byte(contents))
+	sums := hex.EncodeToString(sum[:]) + "  values.yaml\n"
+
+	newServer := func(hits *atomic.Int32) *httptest.Server {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			hits.Add(1)
+			if strings.HasSuffix(r.URL.Path, "SHA256SUMS") {
+				_, _ = w.Write([]byte(sums))
+				return
+			}
+			_, _ = w.Write([]byte(contents))
+		}))
+		t.Cleanup(srv.Close)
+		return srv
+	}
+	var allowedHits, deniedHits atomic.Int32
+	allowed := newServer(&allowedHits)
+	denied := newServer(&deniedHits)
+
+	parse := func(t *testing.T, dir, value string) (string, []string, error) {
+		t.Helper()
+		var checked []string
+		obj := &testStruct{Obj: value}
+		err := Parse(context.Background(), obj, &Options{
+			FieldTimeout: time.Second * 5,
+			RootDir:      dir,
+			CheckRemote: func(field, rawURL string) error {
+				checked = append(checked, rawURL)
+				if strings.HasPrefix(rawURL, denied.URL) {
+					return errors.New("not allowed")
+				}
+				return nil
+			},
+		})
+		return obj.Obj, checked, err
+	}
+
+	t.Run("an allowed checksum file is checked and fetched", func(t *testing.T) {
+		allowedHits.Store(0)
+		src := allowed.URL + "/values.yaml?checksum=file:" + allowed.URL + "/SHA256SUMS"
+		got, checked, err := parse(t, t.TempDir(), src)
+		require.NoError(t, err)
+		require.Equal(t, contents, got)
+		require.Equal(t, []string{src, allowed.URL + "/SHA256SUMS"}, checked)
+		require.Zero(t, deniedHits.Load())
+	})
+
+	t.Run("an off-list checksum file is refused before any request", func(t *testing.T) {
+		allowedHits.Store(0)
+		src := allowed.URL + "/values.yaml?checksum=file:" + denied.URL + "/SHA256SUMS"
+		_, checked, err := parse(t, t.TempDir(), src)
+		require.ErrorContains(t, err, "not allowed")
+		require.Equal(t, []string{src, denied.URL + "/SHA256SUMS"}, checked)
+		require.Zero(t, allowedHits.Load())
+		require.Zero(t, deniedHits.Load())
+	})
+
+	t.Run("a checksum file that names another checksum file is followed", func(t *testing.T) {
+		allowedHits.Store(0)
+		second := allowed.URL + "/SHA256SUMS?checksum=file:" + denied.URL + "/SHA256SUMS"
+		src := allowed.URL + "/values.yaml?checksum=file:" + url.QueryEscape(second)
+		_, checked, err := parse(t, t.TempDir(), src)
+		require.ErrorContains(t, err, "not allowed")
+		require.Equal(t, denied.URL+"/SHA256SUMS", checked[len(checked)-1])
+		require.Zero(t, allowedHits.Load())
+		require.Zero(t, deniedHits.Load())
+	})
+
+	t.Run("a checksum file that cannot be resolved fails before any request", func(t *testing.T) {
+		allowedHits.Store(0)
+		src := allowed.URL + "/values.yaml?checksum=file:github.com/acme"
+		_, checked, err := parse(t, t.TempDir(), src)
+		require.ErrorContains(t, err, "unable to resolve the source")
+		require.Equal(t, []string{src}, checked)
+		require.Zero(t, allowedHits.Load())
+		require.Zero(t, deniedHits.Load())
+	})
+
+	t.Run("a local file with a remote checksum file is checked", func(t *testing.T) {
+		dir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "values.yaml"), []byte(contents), 0o600))
+		// Unescaped, the local path is cleaned and the URL loses its host.
+		_, checked, err := parse(t, dir, "./values.yaml?checksum=file:"+url.QueryEscape(denied.URL+"/SHA256SUMS"))
+		require.ErrorContains(t, err, "not allowed")
+		require.Equal(t, []string{denied.URL + "/SHA256SUMS"}, checked)
+		require.Zero(t, deniedHits.Load())
+	})
+
+	t.Run("a checksum chain that never ends is refused", func(t *testing.T) {
+		src := allowed.URL + "/SHA256SUMS"
+		for range 10 {
+			src = allowed.URL + "/SHA256SUMS?checksum=file:" + url.QueryEscape(src)
+		}
+		allowedHits.Store(0)
+		_, _, err := parse(t, t.TempDir(), src)
+		require.ErrorContains(t, err, "too many chained checksum files")
+		require.Zero(t, allowedHits.Load())
+	})
 }

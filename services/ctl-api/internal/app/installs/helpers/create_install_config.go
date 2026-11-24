@@ -62,6 +62,10 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 		return nil, fmt.Errorf("get install for config creation: %w", err)
 	}
 
+	if err := h.CheckStackOverridesURLPolicy(ctx, installID, req.VPCNestedTemplateURL, req.RunnerNestedTemplateURL, req.CustomNestedStacks); err != nil {
+		return nil, err
+	}
+
 	installConfig := build.InstallConfig(*req, installID)
 	if err := h.db.WithContext(ctx).Create(installConfig).Error; err != nil {
 		return nil, fmt.Errorf("unable to create install config: %w", err)
