@@ -1,5 +1,7 @@
 package syncer
 
+import "github.com/nuonco/nuon/pkg/urlpolicy"
+
 // Option configures optional syncer behaviour.
 type Option func(*syncer)
 
@@ -33,5 +35,11 @@ func WithBranchSync() Option {
 func WithoutBranchSync() Option {
 	return func(s *syncer) {
 		s.syncBranches = false
+	}
+}
+
+func WithURLPolicy(policy *urlpolicy.Policy) Option {
+	return func(s *syncer) {
+		s.urlPolicy = policy
 	}
 }

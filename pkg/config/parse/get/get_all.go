@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/config/features"
+	"github.com/nuonco/nuon/pkg/publicnet"
 )
 
 func (g *get) GetAll(ctx context.Context) error {
@@ -134,7 +135,7 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 		if field.Kind() == reflect.String {
 			strValue := field.String()
 
-			val, err := g.processField(ctx, strValue, fieldSubdir)
+			val, err := g.processField(ctx, strValue, fieldSubdir, typ.Name()+"."+fieldType.Name)
 			if err != nil {
 				return errors.Wrap(err, "unable to fetch field value")
 			}
@@ -212,7 +213,7 @@ func (g *get) isDir(name string) (bool, error) {
 	return info.IsDir(), nil
 }
 
-func (g *get) processField(ctx context.Context, inputVal string, subdir string) (string, error) {
+func (g *get) processField(ctx context.Context, inputVal string, subdir string, field string) (string, error) {
 	prefixes := []string{
 		"http",
 		"./",
@@ -293,6 +294,11 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 			if (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.Opaque != "" || u.User != nil {
 				return "", errors.New("remote field imports must use HTTP(S) URLs without credentials")
 			}
+			if g.opts.CheckRemote != nil {
+				if err := g.opts.CheckRemote(field, raw); err != nil {
+					return "", err
+				}
+			}
 			checksum := u.Query().Get("checksum")
 			if !strings.HasPrefix(checksum, "file:") {
 				break
@@ -305,6 +311,12 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 			if err != nil {
 				return "", err
 			}
+		}
+	}
+	// With a source, every hop was checked above.
+	if g.opts.Source == nil && g.opts.CheckRemote != nil {
+		if err := g.checkRemoteHops(field, inputVal, pwd); err != nil {
+			return "", err
 		}
 	}
 	if err := g.recordLocalFile(inputVal, pwd); err != nil {
@@ -324,6 +336,13 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 
 	ctx, cancel := context.WithTimeout(ctx, g.opts.FieldTimeout)
 	defer cancel()
+	if g.opts.CheckRemote != nil {
+		// The hops named in the config were checked above. A redirect is a hop
+		// the server names, so it is checked as it happens.
+		ctx = publicnet.WithRedirectCheck(ctx, func(target *url.URL) error {
+			return g.opts.CheckRemote(field, target.String())
+		})
+	}
 
 	// go-getter's ClientModeFile path for git is broken for `//path/to/file`
 	// references: GitGetter.GetFile() always strips the last path segment of
@@ -343,13 +362,14 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 
 	// Configure the client
 	client := &getter.Client{
-		Ctx:     ctx,
-		Src:     inputVal,
-		Dir:     true,
-		Dst:     tmpFP,
-		Pwd:     pwd,
-		Mode:    getter.ClientModeFile,
-		Getters: g.remoteGetters(),
+		Ctx:       ctx,
+		Src:       inputVal,
+		Dir:       true,
+		Dst:       tmpFP,
+		Pwd:       pwd,
+		Mode:      getter.ClientModeFile,
+		Detectors: GetDetectors(),
+		Getters:   g.remoteGetters(),
 	}
 
 	if err := client.Get(); err != nil {
@@ -365,6 +385,47 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 }
 
 var forcedSourcePattern = regexp.MustCompile(`^([A-Za-z0-9]+)::(.+)$`)
+
+// maxChecksumHops bounds the chain of checksum files that name further
+// checksum files.
+const maxChecksumHops = 5
+
+// checkRemoteHops calls CheckRemote for src and for every URL go-getter would
+// request on its behalf before the fetch starts: a `checksum=file:<url>`
+// parameter names a second download, and that URL can carry one of its own.
+// Local files are not remote fetches and are skipped, but their checksum
+// parameter is still followed.
+//
+// Each hop is detected with GetDetectors, because those are what the client
+// uses when it resolves the same string.
+func (g *get) checkRemoteHops(field, src, pwd string) error {
+	for range maxChecksumHops {
+		detected, err := getter.Detect(src, pwd, GetDetectors())
+		if err != nil {
+			return errors.Wrapf(err, "unable to resolve the source %q before checking it", src)
+		}
+		force, raw := "", detected
+		if parts := forcedSourcePattern.FindStringSubmatch(detected); parts != nil {
+			force, raw = parts[1], parts[2]
+		}
+		if force != "file" && !strings.HasPrefix(raw, "file:") {
+			if err := g.opts.CheckRemote(field, detected); err != nil {
+				return err
+			}
+		}
+
+		u, err := url.Parse(raw)
+		if err != nil {
+			return errors.Wrapf(err, "unable to parse the source %q before checking it", src)
+		}
+		kind, next, found := strings.Cut(u.Query().Get("checksum"), ":")
+		if !found || kind != "file" {
+			return nil
+		}
+		src = next
+	}
+	return errors.New("too many chained checksum files")
+}
 
 func confinedLocalPath(input string) (string, bool, error) {
 	force, raw := "", input
@@ -412,7 +473,16 @@ func confinedLocalPath(input string) (string, bool, error) {
 
 func (g *get) remoteGetters() map[string]getter.Getter {
 	if g.opts.Source == nil {
-		return nil
+		// Only HTTP(S) changes: go-getter's default client follows any
+		// redirect. Every other getter stays as it was.
+		getters := make(map[string]getter.Getter, len(getter.Getters))
+		for name, defaultGetter := range getter.Getters {
+			getters[name] = defaultGetter
+		}
+		httpGetter := &getter.HttpGetter{Netrc: true, Client: g.httpClient}
+		getters["http"] = httpGetter
+		getters["https"] = httpGetter
+		return getters
 	}
 	httpGetter := &getter.HttpGetter{
 		Client:                g.httpClient,

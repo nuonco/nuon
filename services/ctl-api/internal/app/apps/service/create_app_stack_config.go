@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -95,8 +96,12 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		return nil, err
 	}
 
-	appCloudFormationStackConfig, err := build.StackConfig(req.toConfig(), appID, req.AppConfigID)
+	appCloudFormationStackConfig, err := build.StackConfig(req.toConfig(), appID, req.AppConfigID, s.cfg.URLPolicy)
 	if err != nil {
+		var userErr stderr.ErrUser
+		if errors.As(err, &userErr) {
+			return nil, err
+		}
 		return nil, stderr.NewInvalidRequest(err)
 	}
 
