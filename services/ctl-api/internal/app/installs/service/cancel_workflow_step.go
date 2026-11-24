@@ -44,19 +44,11 @@ func (s *service) CancelWorkflowStep(ctx *gin.Context) {
 	}
 
 	workflowID := ctx.Param("workflow_id")
-	workflow, err := s.getWorkflow(ctx, org.ID, workflowID)
-	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("workflow not found: %w", err),
-		})
-		return
-	}
-
 	stepID := ctx.Param("step_id")
-	step, err := s.getWorkflowStep(ctx, org.ID, workflow.ID, stepID)
+	workflow, step, err := s.resolveWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("workflow step not found: %w", err),
+			Err: err,
 		})
 		return
 	}

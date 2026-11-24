@@ -25,34 +25,29 @@ func (s *service) mcpRejectStep(ctx context.Context, _ *mcp.CallToolRequest, in 
 		return nil, nil, fmt.Errorf("approval_id is required")
 	}
 
-	var approval app.WorkflowStepApproval
-	err = s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", in.ApprovalID, orgID).
-		Preload("InstallWorkflowStep").
-		Preload("Response").
-		First(&approval).Error
+	target, err := s.resolveWorkflowApproval(ctx, orgID, in.ApprovalID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find approval %q: %w", in.ApprovalID, err)
 	}
+	approval := target.approval
 
 	if approval.Response != nil {
 		return nil, nil, fmt.Errorf("approval already has a response")
 	}
 
-	response := app.WorkflowStepApprovalResponse{
-		InstallWorkflowStepApprovalID: approval.ID,
-		Type:                          app.WorkflowStepApprovalResponseTypeDeny,
-		Note:                          in.Reason,
-	}
-	if err := s.db.WithContext(ctx).Create(&response).Error; err != nil {
+	response, err := s.createWorkflowStepApprovalResponse(ctx, approval, &CreateWorkflowStepApprovalResponseRequest{
+		ResponseType: app.WorkflowStepApprovalResponseTypeDeny,
+		Note:         in.Reason,
+	})
+	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create approval response: %w", err)
 	}
 
-	if err := s.notifyWorkflowOfApprovalResponse(ctx, approval, &response); err != nil {
+	if err := s.notifyWorkflowOfApprovalResponse(ctx, target, response); err != nil {
 		return nil, nil, err
 	}
 
-	workflowID := approval.InstallWorkflowStep.InstallWorkflowID
+	workflowID := target.workflow.ID
 	out := map[string]any{
 		"status":      "rejected",
 		"approval_id": approval.ID,
