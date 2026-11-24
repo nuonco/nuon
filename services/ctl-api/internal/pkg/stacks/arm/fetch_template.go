@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -33,6 +34,13 @@ func (t *Templates) templateClient() *http.Client {
 		return t.fetchClient
 	}
 	return templateFetchClient
+}
+
+func (t *Templates) urlPolicy() *urlpolicy.Policy {
+	if t.cfg == nil {
+		return nil
+	}
+	return t.cfg.URLPolicy
 }
 
 type armTemplateResource struct {
@@ -128,7 +136,7 @@ func (t *armTemplateShape) hasManagedIdentity() bool {
 }
 
 func (t *Templates) fetchARMTemplate(templateURL string) (*armTemplateShape, error) {
-	resp, err := t.templateClient().Get(templateURL)
+	resp, err := stacks.GetTemplate(t.templateClient(), t.urlPolicy(), templateURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch template %s: %w", templateURL, err)
 	}

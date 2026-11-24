@@ -93,6 +93,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to get org: %w", err)
 	}
 
+	if cfg := req.InstallConfig; cfg != nil {
+		if err := s.CheckAppStackOverridesURLPolicy(ctx, appID, cfg.VPCNestedTemplateURL, cfg.RunnerNestedTemplateURL, cfg.CustomNestedStacks); err != nil {
+			return nil, err
+		}
+	}
+
 	parentApp := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
