@@ -75,8 +75,6 @@ func (m *model) createFormInputs() {
 
 		curVal := current[input.Name]
 		if input.Sensitive {
-			// Mask sensitive values; pre-fill with the stored value so leaving
-			// the field untouched preserves it on submit.
 			ti.EchoMode = textinput.EchoPassword
 			ti.EchoCharacter = '•'
 			ti.Placeholder = "leave unchanged"
@@ -206,11 +204,27 @@ func (m *model) insertAtCursor(idx int, content string) {
 
 func (m *model) validateForm() error {
 	for i, mapping := range m.inputMappings {
-		if mapping.required && strings.TrimSpace(m.inputs[i].Value()) == "" {
-			return fmt.Errorf("%s is required", mapping.label())
+		if !mapping.required || mapping.sensitive || strings.TrimSpace(m.inputs[i].Value()) != "" {
+			continue
 		}
+		return fmt.Errorf("%s is required", mapping.label())
 	}
 	return nil
+}
+
+func changedInputs(mappings []inputMapping, values []string) map[string]string {
+	changed := map[string]string{}
+	for i, mapping := range mappings {
+		value := values[i]
+		if mapping.sensitive && strings.TrimSpace(value) == "" {
+			continue
+		}
+		if value == mapping.currentValue {
+			continue
+		}
+		changed[mapping.name] = value
+	}
+	return changed
 }
 
 func (m *model) submitForm() tea.Cmd {
@@ -219,21 +233,18 @@ func (m *model) submitForm() tea.Cmd {
 			return inputsUpdatedMsg{err: err}
 		}
 
-		// The update endpoint expects the full set of inputs, so start from the
-		// existing values and merge in the form fields.
-		merged := make(map[string]string)
-		if m.currentInputs != nil && m.currentInputs.Values != nil {
-			for k, v := range m.currentInputs.Values {
-				merged[k] = v
-			}
+		values := make([]string, len(m.inputs))
+		for i := range m.inputs {
+			values[i] = m.inputs[i].Value()
 		}
-		for i, mapping := range m.inputMappings {
-			merged[mapping.name] = m.inputs[i].Value()
+		changed := changedInputs(m.inputMappings, values)
+		if len(changed) == 0 {
+			return inputsUpdatedMsg{unchanged: true}
 		}
 
 		deployDependents := m.deployDependents
 		resp, err := m.api.UpdateInstallInputs(m.ctx, m.installID, &models.ServiceUpdateInstallInputsRequest{
-			Inputs:           merged,
+			Inputs:           changed,
 			DeployDependents: &deployDependents,
 		})
 		if err != nil {
