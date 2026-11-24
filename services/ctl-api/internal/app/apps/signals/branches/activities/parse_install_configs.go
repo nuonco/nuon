@@ -10,8 +10,10 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	configparse "github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/parse/get"
+	"github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/rootfs"
 	"github.com/nuonco/nuon/pkg/sourcefs"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -97,7 +99,7 @@ func (a *Activities) parseInstallConfigs(ctx context.Context, sourceDir string, 
 		}
 
 		fullPath := filepath.Join(installsPath, entry.Name())
-		installCfg, err := parseInstallTOML(ctx, source, fullPath)
+		installCfg, err := parseInstallTOML(ctx, source, fullPath, a.cfg.URLPolicy)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse %s: %w", relPath, err)
 		}
@@ -125,7 +127,7 @@ func (a *Activities) parseSingleInstall(ctx context.Context, source *sourcefs.FS
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve %s: %w", fileName, err)
 	}
-	installCfg, err := parseInstallTOML(ctx, source, fullPath)
+	installCfg, err := parseInstallTOML(ctx, source, fullPath, a.cfg.URLPolicy)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse %s: %w", fileName, err)
 	}
@@ -137,7 +139,10 @@ func (a *Activities) parseSingleInstall(ctx context.Context, source *sourcefs.FS
 	}, nil
 }
 
-func parseInstallTOML(ctx context.Context, source *sourcefs.FS, filePath string) (*config.Install, error) {
+// parseInstallTOML parses one install file. A remote ui_definition is checked
+// against the stack_templates allowed hosts before it is fetched, as the app
+// config's own ui_definition is.
+func parseInstallTOML(ctx context.Context, source *sourcefs.FS, filePath string, policy *urlpolicy.Policy) (*config.Install, error) {
 	f, err := source.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open %s: %w", filePath, err)
@@ -151,6 +156,9 @@ func parseInstallTOML(ctx context.Context, source *sourcefs.FS, filePath string)
 	if err := configparse.LoadInstallUIDefinition(ctx, cfg, &get.Options{
 		RootDir: filepath.Join(source.Root(), filepath.Dir(filePath)),
 		Source:  source,
+		CheckRemote: validate.RemoteFetchCheck(policy, func(violation urlpolicy.Violation) {
+			policy.ReportWarnings(urlpolicy.Violations{violation})
+		}),
 	}); err != nil {
 		return nil, err
 	}
