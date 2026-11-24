@@ -144,6 +144,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case inputsUpdatedMsg:
 		m.submitting = false
+		if msg.unchanged {
+			m.setLogMessage("No inputs changed", "info")
+			return m, nil
+		}
 		if msg.err != nil {
 			m.error = msg.err
 			m.setLogMessage(fmt.Sprintf("Error updating inputs: %s", msg.err), "error")
