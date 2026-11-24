@@ -27,6 +27,9 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 	if err != nil {
 		return errors.Wrap(err, "unable to get step")
 	}
+	if step.StepTargetID == "" {
+		return nil
+	}
 
 	status := app.NewCompositeStatus(ctx, req.Status)
 	if len(req.Metadata) > 0 {
