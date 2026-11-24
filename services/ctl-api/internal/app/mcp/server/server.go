@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/mcp/skills"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
@@ -33,6 +34,7 @@ type Params struct {
 	LC          fx.Lifecycle
 	Shutdowner  fx.Shutdowner
 	DB          *gorm.DB `name:"psql"`
+	AcctClient  *account.Client
 	L           *zap.Logger
 	Cfg         *internal.Config
 	MW          metrics.Writer
@@ -47,6 +49,7 @@ type NuonctlParams struct {
 	LC          fx.Lifecycle
 	Shutdowner  fx.Shutdowner
 	DB          *gorm.DB `name:"psql"`
+	AcctClient  *account.Client
 	L           *zap.Logger
 	Cfg         *internal.Config
 	MW          metrics.Writer
@@ -56,6 +59,7 @@ type NuonctlParams struct {
 
 type Server struct {
 	db          *gorm.DB
+	acctClient  *account.Client
 	l           *zap.Logger
 	cfg         *internal.Config
 	mw          metrics.Writer
@@ -85,6 +89,7 @@ func New(params Params) *Server {
 		params.LC,
 		params.Shutdowner,
 		params.DB,
+		params.AcctClient,
 		params.L,
 		params.Cfg,
 		params.MW,
@@ -104,6 +109,7 @@ func NewNuonctl(params NuonctlParams) *Server {
 		params.LC,
 		params.Shutdowner,
 		params.DB,
+		params.AcctClient,
 		params.L,
 		params.Cfg,
 		params.MW,
@@ -122,6 +128,7 @@ func newServer(
 	lc fx.Lifecycle,
 	shutdowner fx.Shutdowner,
 	db *gorm.DB,
+	acctClient *account.Client,
 	l *zap.Logger,
 	cfg *internal.Config,
 	mw metrics.Writer,
@@ -136,6 +143,7 @@ func newServer(
 ) *Server {
 	s := &Server{
 		db:                 db,
+		acctClient:         acctClient,
 		l:                  l.Named("mcp"),
 		cfg:                cfg,
 		mw:                 mw,
