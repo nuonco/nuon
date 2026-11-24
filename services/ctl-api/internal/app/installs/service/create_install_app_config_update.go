@@ -98,7 +98,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		}, &installhelpers.IdempotentInstallWorkflowHooks{
 			AfterCreate: func(tx *gorm.DB, wf *app.Workflow) error {
 				update := app.InstallAppConfigVersion{
-					InstallID:      installID,
+					InstallID:      install.ID,
 					OldAppConfigID: install.AppConfigID,
 					NewAppConfigID: req.AppConfigID,
 					WorkflowID:     &wf.ID,
@@ -139,7 +139,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 
 	wf, err := s.helpers.CreateWorkflow(
 		ctx,
-		installID,
+		install.ID,
 		app.WorkflowTypeAppBranchConfigUpdate,
 		metadata,
 		req.PlanOnly,
@@ -152,7 +152,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 
 	// Create the InstallAppConfigVersion tracking record
 	update := app.InstallAppConfigVersion{
-		InstallID:      installID,
+		InstallID:      install.ID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: req.AppConfigID,
 		WorkflowID:     &wf.ID,
@@ -164,7 +164,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 	}
 
 	// Enqueue the workflow on the install's queue
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
