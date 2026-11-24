@@ -300,6 +300,52 @@ path = "./values/path.yaml"
 	require.Equal(t, "replicaCount: 4\n", cfg.Components[0].HelmChart.ValuesFiles[1].Contents)
 }
 
+func TestParseDirDoesNotFetchGCPStackModules(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "components"), 0755))
+	files := map[string]string{
+		"metadata.toml": `version = "v2"`,
+		"sandbox.toml": `
+terraform_version = "1.11.3"
+[public_repo]
+repo = "nuonco/gcp-gke-sandbox"
+directory = "."
+branch = "main"
+`,
+		"runner.toml": `
+runner_type = "gcp"
+helm_driver = "configmap"
+`,
+		"stack.toml": `
+type = "gcp-terraform"
+name = "acme-stack"
+[[custom_nested_stacks]]
+name = "bucket"
+index = 0
+template_url = "github.com/acme/install-stacks//gcp/modules/bucket"
+`,
+	}
+	for name, contents := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(contents), 0644))
+	}
+
+	var fetched []string
+	cfg, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		SkipBranches:  true,
+		SkipInstalls:  true,
+		FileProcessor: func(_ string, obj map[string]any) map[string]any { return obj },
+		CheckRemoteFetch: func(field, rawURL string) error {
+			fetched = append(fetched, field+" "+rawURL)
+			return fmt.Errorf("%s is outside the allowed hosts", rawURL)
+		},
+	})
+	require.NoError(t, err)
+	require.Empty(t, fetched)
+	require.Equal(t, "github.com/acme/install-stacks//gcp/modules/bucket", cfg.Stack.CustomNestedStacks[0].TemplateURL)
+	require.Empty(t, cfg.Stack.CustomNestedStacks[0].Contents)
+}
+
 func TestParseDirGetsHelmValuesContentsFromComponentDir(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, "components", "values"), 0755))
