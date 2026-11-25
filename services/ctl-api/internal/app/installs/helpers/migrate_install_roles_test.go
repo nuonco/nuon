@@ -16,7 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-type migrateRolesDeps struct {
+type reconcileRolesDeps struct {
 	fx.In
 
 	DB      *gorm.DB `name:"psql"`
@@ -28,7 +28,7 @@ type MigrateInstallRolesTestSuite struct {
 	tests.BaseDBTestSuite
 
 	app  *fxtest.App
-	deps migrateRolesDeps
+	deps reconcileRolesDeps
 }
 
 func TestMigrateInstallRolesSuite(t *testing.T) {
@@ -92,6 +92,27 @@ func (s *MigrateInstallRolesTestSuite) liveRolesByName(ctx context.Context, inst
 	return byName
 }
 
+func (s *MigrateInstallRolesTestSuite) moveInstallToConfig(ctx context.Context, install *app.Install, appConfigID string) {
+	// The updateappconfig signal updates app_config_id first, then reconciles.
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Model(&app.Install{}).
+		Where(app.Install{ID: install.ID}).
+		Update("app_config_id", appConfigID).Error)
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, install.ID))
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRunnerConfig(ctx, install.ID))
+}
+
+func (s *MigrateInstallRolesTestSuite) seedRunnerConfig(ctx context.Context, appID, appConfigID, orgID, createdByID string) *app.AppRunnerConfig {
+	row := &app.AppRunnerConfig{
+		AppID:       appID,
+		AppConfigID: appConfigID,
+		OrgID:       orgID,
+		CreatedByID: createdByID,
+		Type:        app.AppRunnerTypeAWS,
+	}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(row).Error)
+	return row
+}
+
 func roleConfigID(perm *app.AppPermissionsConfig, name string) string {
 	for _, r := range perm.Roles {
 		if r.Name == name {
@@ -106,8 +127,8 @@ var baseRoles = map[string]app.AWSIAMRoleType{
 	"maintenance": app.AWSIAMRoleTypeRunnerMaintenance,
 }
 
-// A sync must not replace the live rows: install_role_usage points at their IDs,
-// and the provisioned ARN is state about the customer account, not the config.
+// A reconcile must not replace the live rows: install_role_usage points at their
+// IDs, and the provisioned ARN is state about the customer account, not the config.
 func (s *MigrateInstallRolesTestSuite) TestRepointsLiveRolesInPlace() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -126,7 +147,7 @@ func (s *MigrateInstallRolesTestSuite) TestRepointsLiveRolesInPlace() {
 		"maintenance": app.AWSIAMRoleTypeRunnerMaintenance,
 		"read-only":   app.AWSIAMRoleTypeCustom,
 	})
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *newPerm))
+	s.moveInstallToConfig(ctx, install, newCfg.ID)
 
 	after := s.liveRolesByName(ctx, install.ID)
 	s.Require().Len(after, 3)
@@ -145,12 +166,11 @@ func (s *MigrateInstallRolesTestSuite) TestRepointsLiveRolesInPlace() {
 	s.False(added.Provisioned)
 	s.Empty(added.RoleID)
 
-	// The live set follows the newest permissions config even though the install
-	// stays pinned to the config it was created against, so nothing reading the
-	// live set may filter by install.app_config_id.
+	// Roles come from the install's desired ACV: moving the install to a config
+	// and reconciling is what moves the live set.
 	var pinned app.Install
 	s.Require().NoError(s.deps.DB.WithContext(ctx).Where(app.Install{ID: install.ID}).First(&pinned).Error)
-	s.Equal(oldCfg.ID, pinned.AppConfigID)
+	s.Equal(newCfg.ID, pinned.AppConfigID)
 	for _, r := range after {
 		s.Equal(newCfg.ID, r.AppRoleConfig.AppConfigID)
 	}
@@ -169,10 +189,10 @@ func (s *MigrateInstallRolesTestSuite) TestRemovesRolesDroppedFromConfig() {
 	before := s.liveRolesByName(ctx, install.ID)
 
 	newCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
-	newPerm := s.seedPermissions(ctx, testApp.ID, newCfg.ID, map[string]app.AWSIAMRoleType{
+	s.seedPermissions(ctx, testApp.ID, newCfg.ID, map[string]app.AWSIAMRoleType{
 		"provision": app.AWSIAMRoleTypeRunnerProvision,
 	})
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *newPerm))
+	s.moveInstallToConfig(ctx, install, newCfg.ID)
 
 	after := s.liveRolesByName(ctx, install.ID)
 	s.Require().Len(after, 1)
@@ -198,8 +218,8 @@ func (s *MigrateInstallRolesTestSuite) TestResyncOfSameConfigIsANoop() {
 	s.seedProvisionedInstallRoles(ctx, install.ID, perm)
 	before := s.liveRolesByName(ctx, install.ID)
 
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *perm))
-	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, testApp.ID, *perm))
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, install.ID))
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRoles(ctx, install.ID))
 
 	after := s.liveRolesByName(ctx, install.ID)
 	s.Require().Len(after, len(before))
@@ -213,4 +233,69 @@ func (s *MigrateInstallRolesTestSuite) TestResyncOfSameConfigIsANoop() {
 		Where(app.InstallRoles{InstallID: install.ID}).
 		Find(&all).Error)
 	s.Len(all, len(before))
+}
+
+// Reconciling one install must not move installs sitting on other ACVs.
+func (s *MigrateInstallRolesTestSuite) TestReconcileOnlyTouchesTheTargetInstall() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	oldCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	install1 := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+	install2 := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+	oldPerm := s.seedPermissions(ctx, testApp.ID, oldCfg.ID, baseRoles)
+	s.seedProvisionedInstallRoles(ctx, install1.ID, oldPerm)
+	s.seedProvisionedInstallRoles(ctx, install2.ID, oldPerm)
+
+	newCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
+	newPerm := s.seedPermissions(ctx, testApp.ID, newCfg.ID, map[string]app.AWSIAMRoleType{
+		"provision": app.AWSIAMRoleTypeRunnerProvision,
+	})
+	s.moveInstallToConfig(ctx, install1, newCfg.ID)
+
+	after1 := s.liveRolesByName(ctx, install1.ID)
+	s.Require().Len(after1, 1)
+	s.Equal(roleConfigID(newPerm, "provision"), after1["provision"].AppRoleConfigID)
+
+	after2 := s.liveRolesByName(ctx, install2.ID)
+	s.Require().Len(after2, len(baseRoles))
+	for name := range baseRoles {
+		s.Equal(roleConfigID(oldPerm, name), after2[name].AppRoleConfigID)
+	}
+}
+
+func (s *MigrateInstallRolesTestSuite) TestMigrateInstallRunnerConfigFollowsDesiredACV() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	oldCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+	oldRunner := s.seedRunnerConfig(ctx, testApp.ID, oldCfg.ID, install.OrgID, install.CreatedByID)
+	newCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
+	newRunner := s.seedRunnerConfig(ctx, testApp.ID, newCfg.ID, install.OrgID, install.CreatedByID)
+
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Model(&app.Install{}).
+		Where(app.Install{ID: install.ID}).
+		Update("app_runner_config_id", oldRunner.ID).Error)
+
+	s.moveInstallToConfig(ctx, install, newCfg.ID)
+
+	var moved app.Install
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Where(app.Install{ID: install.ID}).First(&moved).Error)
+	s.Equal(newRunner.ID, moved.AppRunnerConfigID)
+
+	// An ACV without a runner config keeps the current pointer, matching install creation.
+	emptyCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Model(&app.Install{}).
+		Where(app.Install{ID: install.ID}).
+		Update("app_config_id", emptyCfg.ID).Error)
+	s.Require().NoError(s.deps.Helpers.MigrateInstallRunnerConfig(ctx, install.ID))
+
+	var kept app.Install
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Where(app.Install{ID: install.ID}).First(&kept).Error)
+	s.Equal(newRunner.ID, kept.AppRunnerConfigID)
 }
