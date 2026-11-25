@@ -64,12 +64,16 @@ func (h *Helpers) EnsureInstallActions(ctx context.Context, installID, appConfig
 	if err != nil {
 		return err
 	}
-	if len(desired) == 0 {
+	return h.createInstallActions(ctx, installID, desired)
+}
+
+func (h *Helpers) createInstallActions(ctx context.Context, installID string, actionIDs []string) error {
+	if len(actionIDs) == 0 {
 		return nil
 	}
 
-	toCreate := make([]app.InstallActionWorkflow, 0, len(desired))
-	for _, actionID := range desired {
+	toCreate := make([]app.InstallActionWorkflow, 0, len(actionIDs))
+	for _, actionID := range actionIDs {
 		toCreate = append(toCreate, app.InstallActionWorkflow{
 			ActionWorkflowID: actionID,
 			InstallID:        installID,
@@ -81,7 +85,6 @@ func (h *Helpers) EnsureInstallActions(ctx context.Context, installID, appConfig
 		Create(&toCreate).Error; err != nil {
 		return fmt.Errorf("unable to create install action workflows: %w", err)
 	}
-
 	return nil
 }
 
@@ -113,14 +116,11 @@ func (h *Helpers) ReconcileInstallActions(ctx context.Context, installID string)
 		existingSet[existing[i].ActionWorkflowID] = &existing[i]
 	}
 
-	var toCreate []app.InstallActionWorkflow
+	var toCreate []string
 	for _, actionID := range desired {
 		iaw, exists := existingSet[actionID]
 		if !exists {
-			toCreate = append(toCreate, app.InstallActionWorkflow{
-				ActionWorkflowID: actionID,
-				InstallID:        installID,
-			})
+			toCreate = append(toCreate, actionID)
 			continue
 		}
 
@@ -141,12 +141,8 @@ func (h *Helpers) ReconcileInstallActions(ctx context.Context, installID string)
 		}
 	}
 
-	if len(toCreate) > 0 {
-		if err := h.db.WithContext(ctx).
-			Clauses(clause.OnConflict{DoNothing: true}).
-			Create(&toCreate).Error; err != nil {
-			return fmt.Errorf("unable to create install action workflows: %w", err)
-		}
+	if err := h.createInstallActions(ctx, installID, toCreate); err != nil {
+		return err
 	}
 
 	for i := range existing {
