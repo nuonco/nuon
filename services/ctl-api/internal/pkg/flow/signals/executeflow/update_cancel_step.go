@@ -86,6 +86,7 @@ func (s *Signal) cancelResidentStep(ctx workflow.Context, step *app.WorkflowStep
 		StepID:            step.ID,
 		Status:            app.StatusCancelled,
 		StatusDescription: "Cancelled",
+		IncludeSuperseded: true,
 	}); err != nil {
 		return fmt.Errorf("unable to mark target for step %s cancelled: %w", step.ID, err)
 	}
