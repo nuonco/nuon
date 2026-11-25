@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -11,6 +12,8 @@ import (
 	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
+
+const sseWorkflowFinishedPollInterval = 3 * time.Second
 
 type WorkflowsHandler struct {
 	cfg *internal.Config
@@ -38,7 +41,11 @@ func (h *WorkflowsHandler) StreamWorkflow(c *gin.Context) {
 	runSSEStream(c, sseStreamConfig{
 		ClientErrMsg:        "failed to fetch workflow",
 		FinishedGracePeriod: sseFinishedGracePeriod,
-		Log:                 h.l,
+		// A failed workflow reads as finished while it waits for a retry or
+		// skip. Poll fast enough that the resumed run's progress is not
+		// skipped over by the slow finished interval.
+		FinishedPollInterval: sseWorkflowFinishedPollInterval,
+		Log:                  h.l,
 		Fetch: func(ctx context.Context) (sseFetchResult, error) {
 			workflow, err := client.GetWorkflow(ctx, workflowID)
 			if err != nil {
