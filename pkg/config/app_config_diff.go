@@ -225,6 +225,13 @@ func diffBranchInstallGroups(old, new []AppBranchInstallGroupConfig) *diff.Diff 
 	return diff.NewDiff(diff.WithKey("install_groups"), diff.WithChildren(children...))
 }
 
+func groupApprovalOption(option InstallApprovalOption) string {
+	if option == InstallApprovalOptionApproveAll {
+		return string(InstallApprovalOptionApproveAll)
+	}
+	return string(InstallApprovalOptionPrompt)
+}
+
 func diffBranchInstallGroup(old, new AppBranchInstallGroupConfig) *diff.Diff {
 	name := new.Name
 	if name == "" {
@@ -234,6 +241,8 @@ func diffBranchInstallGroup(old, new AppBranchInstallGroupConfig) *diff.Diff {
 	children := []*diff.Diff{
 		diff.NewDiff(diff.WithKey("order"), diff.WithStringDiff(strconv.Itoa(old.Order), strconv.Itoa(new.Order))),
 		diff.NewDiff(diff.WithKey("default"), diff.WithBoolDiff(old.Default, new.Default)),
+		diff.NewDiff(diff.WithKey("approval_option"), diff.WithStringDiff(groupApprovalOption(old.ApprovalOption), groupApprovalOption(new.ApprovalOption))),
+		diff.NewDiff(diff.WithKey("install_approval_option"), diff.WithStringDiff(groupApprovalOption(old.InstallApprovalOption), groupApprovalOption(new.InstallApprovalOption))),
 		diff.NewDiff(diff.WithKey("auto_approve_on_policies_passing"), diff.WithOptionalBoolDiff(
 			old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing,
 		)),

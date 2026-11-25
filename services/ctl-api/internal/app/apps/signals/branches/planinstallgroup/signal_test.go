@@ -58,18 +58,24 @@ func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFromGroup() 
 		&app.AppBranchInstallGroup{
 			ID:                           "group-1",
 			Name:                         "prod",
+			ApprovalOption:               app.InstallApprovalOptionApproveAll,
 			AutoApproveOnPoliciesPassing: &autoApprove,
 		}, nil)
 
-	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
-		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) ([2]string, error) {
+		option := string(sig.StepApprovalOption(ctx))
+		if sig.AutoApproveOnPoliciesPassing(ctx) {
+			return [2]string{"true", option}, nil
+		}
+		return [2]string{"false", option}, nil
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
-	var result bool
+	var result [2]string
 	s.NoError(s.env.GetWorkflowResult(&result))
-	s.True(result)
+	s.Equal("true", result[0])
+	s.Equal(string(app.InstallApprovalOptionApproveAll), result[1])
 }
 
 func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingDefaultsOff() {
@@ -86,15 +92,20 @@ func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingDefaultsOff(
 			Name: "prod",
 		}, nil)
 
-	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
-		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) ([2]string, error) {
+		option := string(sig.StepApprovalOption(ctx))
+		if sig.AutoApproveOnPoliciesPassing(ctx) {
+			return [2]string{"true", option}, nil
+		}
+		return [2]string{"false", option}, nil
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
-	var result bool
+	var result [2]string
 	s.NoError(s.env.GetWorkflowResult(&result))
-	s.False(result)
+	s.Equal("false", result[0])
+	s.Equal(string(app.InstallApprovalOptionPrompt), result[1])
 }
 
 // Synthetic preview groups have no install group row to read the setting from.
