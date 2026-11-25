@@ -9,6 +9,7 @@ import {
 } from '@/components/branches/BranchOverview/overview-loading'
 import type { TTrackGroup } from '@/components/branches/BranchOverview/RolloutTrack'
 import { TemplateChangesButton } from '@/components/branches/ConfigChanges'
+import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import type { TLatestRollout, TRolloutInstallGroup } from './fixtures'
 
 const toTrackGroup = (group: TRolloutInstallGroup): TTrackGroup => ({
@@ -16,9 +17,7 @@ const toTrackGroup = (group: TRolloutInstallGroup): TTrackGroup => ({
   name: group.name || 'Install group',
   status: group.status,
   maxParallel: group.max_parallel ?? 1,
-  approval: group.auto_approve_on_policies_passing
-    ? 'Auto-approves when policies pass'
-    : 'Manual approval',
+  approval: installGroupApprovalLabel(group) ?? 'Manual approval',
   match: group.default
     ? { kind: 'default' }
     : group.label_selector?.match_labels
