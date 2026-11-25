@@ -579,12 +579,15 @@ func (st *installResourceSyncStatusState) stackResource() *InstallResourceSyncSt
 	case res.Stack != nil && res.Stack.DesiredVersionID != "" && res.Stack.DesiredVersionID == res.Stack.AppliedVersionID:
 		res.Category = InstallResourceSyncStatusCategoryInSync
 		res.Reason = "stack state drift is not scanned"
-	case applied == "" && st.stackHasVersions:
+	case applied == "" && st.stackHasVersions && st.desiredStackVersion == nil:
 		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "the applied stack version could not be determined"
 	case applied == "":
 		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = st.stackPendingReason("The stack hasn’t been set up yet.")
+	case st.desiredStackPending():
+		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
+		res.Reason = st.stackPendingReason("Stack configuration changes haven’t been applied.")
 	case applied == st.install.AppConfigID:
 		res.Category = InstallResourceSyncStatusCategoryInSync
 		res.Reason = "stack state drift is not scanned"
@@ -621,6 +624,17 @@ func (st *installResourceSyncStatusState) stackVersions() *InstallResourceSyncSt
 	return &out
 }
 
+func (st *installResourceSyncStatusState) desiredStackPending() bool {
+	if st.desiredStackVersion == nil {
+		return false
+	}
+	switch st.desiredStackVersion.Status.Status {
+	case app.InstallStackVersionStatusGenerating, app.InstallStackVersionStatusPendingUser, app.InstallStackVersionStatusProvisioning:
+		return true
+	}
+	return false
+}
+
 func (st *installResourceSyncStatusState) stackPendingReason(fallback string) string {
 	d := st.desiredStackVersion
 	if d == nil {
@@ -629,9 +643,10 @@ func (st *installResourceSyncStatusState) stackPendingReason(fallback string) st
 		}
 		return fallback
 	}
-	switch d.Status.Status {
-	case app.InstallStackVersionStatusGenerating, app.InstallStackVersionStatusPendingUser, app.InstallStackVersionStatusProvisioning:
+	if st.desiredStackPending() {
 		return "The new stack template is waiting to be applied in the customer’s cloud account."
+	}
+	switch d.Status.Status {
 	case app.InstallStackVersionStatusExpired:
 		return "The stack template for the selected config expired before it was applied."
 	case app.StatusCancelled:
