@@ -185,6 +185,8 @@ func installGroupRequests(ctx context.Context, resolver *branchNameResolver, cfg
 			Name:                         generics.ToPtr(group.Name),
 			Order:                        &order,
 			Default:                      group.Default,
+			ApprovalOption:               group.ApprovalOption.APIType(),
+			InstallApprovalOption:        group.InstallApprovalOption.APIType(),
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
 		}
 

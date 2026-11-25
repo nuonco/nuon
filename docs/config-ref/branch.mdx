@@ -45,6 +45,8 @@ title: 'Branch'
 | **`order`**<br/>integer | deployment order (lower runs first) | **Optional** | - |
 | **`label_selector`**<br/>object | label key-value pairs to dynamically match installs | **Optional** | - |
 | **`default`**<br/>boolean | whether unmatched installs owned by this branch deploy in this group | **Optional** | - |
+| **`approval_option`**<br/>string | prompt or approve-all. approve-all approves this group's config-diff plan. Defaults to prompt | **Optional** | - |
+| **`install_approval_option`**<br/>string | prompt or approve-all. approve-all approves the install workflows this group's rollout starts, ignoring each install's approval_option. Defaults to prompt, which uses each install's approval_option | **Optional** | - |
 | **`auto_approve_on_policies_passing`**<br/>boolean | Auto-approve this group's plan when all policy checks pass. Defaults to false | **Optional** | - |
 
 ### `preview`

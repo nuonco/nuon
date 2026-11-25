@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -60,6 +61,18 @@ func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
 		return false
 	}
 	return group.GetAutoApproveOnPoliciesPassing()
+}
+
+func (s *Signal) StepApprovalOption(ctx workflow.Context) app.InstallApprovalOption {
+	if s.InstallGroupID == "" {
+		return app.InstallApprovalOptionPrompt
+	}
+
+	group, err := activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
+	if err != nil || group == nil {
+		return app.InstallApprovalOptionPrompt
+	}
+	return group.ResolvedApprovalOption()
 }
 
 func (s *Signal) Type() signal.SignalType {

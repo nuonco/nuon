@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -18,6 +19,7 @@ func TestInstallGroupsFromRequest(t *testing.T) {
 			Order:                        0,
 			Default:                      true,
 			LabelSelector:                &labels.Selector{MatchLabels: labels.Labels{"type": "push"}},
+			ApprovalOption:               app.InstallApprovalOptionApproveAll,
 			AutoApproveOnPoliciesPassing: generics.ToPtr(true),
 		},
 		{
@@ -35,10 +37,12 @@ func TestInstallGroupsFromRequest(t *testing.T) {
 
 	require.Len(t, groups, 3)
 
+	require.Equal(t, app.InstallApprovalOptionApproveAll, groups[0].ResolvedApprovalOption())
 	require.True(t, groups[0].GetAutoApproveOnPoliciesPassing())
 	require.True(t, groups[0].Default)
 	require.Equal(t, labels.Labels{"type": "push"}, groups[0].LabelSelector.MatchLabels)
 
+	require.Equal(t, app.InstallApprovalOptionPrompt, groups[1].ResolvedApprovalOption())
 	require.NotNil(t, groups[1].AutoApproveOnPoliciesPassing)
 	require.False(t, groups[1].GetAutoApproveOnPoliciesPassing())
 	require.Equal(t, labels.Labels{"env": "prod"}, groups[1].LabelSelector.MatchLabels)

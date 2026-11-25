@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func TestBuildInstallGroupsThreadsAutoApproveOnPoliciesPassing(t *testing.T) {
@@ -17,6 +18,7 @@ func TestBuildInstallGroupsThreadsAutoApproveOnPoliciesPassing(t *testing.T) {
 				Name:                         "canary",
 				Order:                        0,
 				Default:                      true,
+				ApprovalOption:               config.InstallApprovalOptionApproveAll,
 				AutoApproveOnPoliciesPassing: generics.ToPtr(true),
 			},
 			{
@@ -38,9 +40,11 @@ func TestBuildInstallGroupsThreadsAutoApproveOnPoliciesPassing(t *testing.T) {
 	require.Len(t, groups, 3)
 
 	require.True(t, groups[0].Default)
+	require.Equal(t, app.InstallApprovalOptionApproveAll, groups[0].ResolvedApprovalOption())
 	require.NotNil(t, groups[0].AutoApproveOnPoliciesPassing)
 	require.True(t, groups[0].GetAutoApproveOnPoliciesPassing())
 
+	require.Equal(t, app.InstallApprovalOptionPrompt, groups[1].ResolvedApprovalOption())
 	require.NotNil(t, groups[1].AutoApproveOnPoliciesPassing)
 	require.False(t, groups[1].GetAutoApproveOnPoliciesPassing())
 
