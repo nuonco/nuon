@@ -73,6 +73,7 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 		StepID:            s.StepID,
 		Status:            app.StatusCancelled,
 		StatusDescription: "Cancelled",
+		IncludeSuperseded: true,
 	}); err != nil && l != nil {
 		l.Warn("failed to update step target status on cancel",
 			zap.String("step_id", s.StepID),
