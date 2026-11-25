@@ -6,6 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -549,3 +550,52 @@ var _ signal.SignalWithAutoRetry = (*DelayedCloneManualRetrySignal)(nil)
 var _ signal.SignalWithMaxRetries = (*DelayedCloneManualRetrySignal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*DelayedCloneManualRetrySignal)(nil)
 var _ signal.SignalWithCloneSteps = (*DelayedCloneManualRetrySignal)(nil)
+
+const (
+	RetryWithoutTargetSignalType      signal.SignalType = "test-flow-retry-without-target"
+	GroupRetryWithoutTargetSignalType signal.SignalType = "test-flow-group-retry-without-target"
+)
+
+type RetryWithoutTargetSignal struct {
+	TargetStepID string `json:"target_step_id,omitempty"`
+}
+
+type GroupRetryWithoutTargetSignal struct {
+	RetryWithoutTargetSignal
+}
+
+func init() {
+	catalog.Register(RetryWithoutTargetSignalType, func() signal.Signal { return &RetryWithoutTargetSignal{} })
+	catalog.Register(GroupRetryWithoutTargetSignalType, func() signal.Signal { return &GroupRetryWithoutTargetSignal{} })
+}
+
+func (s *RetryWithoutTargetSignal) Type() signal.SignalType         { return RetryWithoutTargetSignalType }
+func (s *RetryWithoutTargetSignal) Validate(workflow.Context) error { return nil }
+func (s *RetryWithoutTargetSignal) AutoRetry() bool                 { return true }
+func (s *RetryWithoutTargetSignal) MaxRetries() int                 { return 3 }
+func (s *RetryWithoutTargetSignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *RetryWithoutTargetSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
+func (s *RetryWithoutTargetSignal) Execute(workflow.Context) error {
+	return fmt.Errorf("retry-without-target: failed before creating a target")
+}
+func (s *RetryWithoutTargetSignal) OnRetry(ctx workflow.Context) error {
+	return activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            s.TargetStepID,
+		Status:            app.Status(app.InstallDeployStatusRetried),
+		StatusDescription: "deploy retried",
+	})
+}
+
+func (s *GroupRetryWithoutTargetSignal) Type() signal.SignalType {
+	return GroupRetryWithoutTargetSignalType
+}
+func (s *GroupRetryWithoutTargetSignal) RetryGroup() bool { return true }
+
+var _ signal.SignalWithAutoRetry = (*RetryWithoutTargetSignal)(nil)
+var _ signal.SignalWithMaxRetries = (*RetryWithoutTargetSignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*RetryWithoutTargetSignal)(nil)
+var _ signal.SignalWithOnRetry = (*RetryWithoutTargetSignal)(nil)
+var _ signal.SignalWithRetryGroup = (*GroupRetryWithoutTargetSignal)(nil)
+var _ signal.SignalWithOnRetry = (*GroupRetryWithoutTargetSignal)(nil)
