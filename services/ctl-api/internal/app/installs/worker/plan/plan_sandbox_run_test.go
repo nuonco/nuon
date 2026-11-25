@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
@@ -633,4 +634,120 @@ func TestGetSandboxRunTerraformVarsInstallTags(t *testing.T) {
 		require.True(t, ok, "labels var should be a string map, got %T", vars["labels"])
 		assert.Equal(t, "{{.nuon.install.id}}", labels["nuon-install-id"])
 	})
+}
+
+func TestRenderSandboxRunPlanPoliciesFromInstallACV(t *testing.T) {
+	p := &Planner{}
+	l := zap.NewNop()
+
+	installACV := &app.AppConfig{
+		ID: "acme-install-acv",
+		SandboxConfig: app.AppSandboxConfig{
+			Variables: pgtype.Hstore{"from": generics.ToPtr("install-acv")},
+		},
+		RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAWS},
+		PoliciesConfig: app.AppPoliciesConfig{
+			Policies: []app.AppPolicyConfig{
+				{
+					Type: config.AppPolicyTypeKubernetesCluster,
+					Name: "install-acv-policy",
+					Contents: `kind: ClusterPolicy
+metadata:
+  name: install-acv-policy
+`,
+				},
+			},
+		},
+		PermissionsConfig: app.AppPermissionsConfig{
+			ProvisionRole: app.AppAWSIAMRoleConfig{Name: "ProvisionRole"},
+		},
+	}
+	targetACV := &app.AppConfig{
+		ID: "acme-target-acv",
+		SandboxConfig: app.AppSandboxConfig{
+			Variables: pgtype.Hstore{"from": generics.ToPtr("target-acv")},
+		},
+		RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAWS},
+		PoliciesConfig: app.AppPoliciesConfig{
+			Policies: []app.AppPolicyConfig{
+				{
+					Type: config.AppPolicyTypeKubernetesCluster,
+					Name: "target-acv-policy",
+					Contents: `kind: ClusterPolicy
+metadata:
+  name: target-acv-policy
+`,
+				},
+			},
+		},
+		PermissionsConfig: app.AppPermissionsConfig{
+			ProvisionRole: app.AppAWSIAMRoleConfig{Name: "ProvisionRole"},
+		},
+	}
+
+	newInput := func(policyCfg *app.AppConfig) *RenderSandboxRunPlanInput {
+		return &RenderSandboxRunPlanInput{
+			RootDomain: "example.com",
+			Install:    &app.Install{ID: "acme-install", AppID: "acme-app"},
+			Stack: &app.InstallStack{
+				InstallStackOutputs: app.InstallStackOutputs{
+					AWSStackOutputs: &app.AWSStackOutputs{
+						Region:              "us-west-2",
+						ProvisionIAMRoleARN: "arn:aws:iam::123456789012:role/ProvisionRole",
+					},
+				},
+			},
+			AppCfg:    targetACV,
+			PolicyCfg: policyCfg,
+			Run:       &app.InstallSandboxRun{RunType: app.SandboxRunTypeProvision},
+			ResolveState: func() (*state.State, map[string]any, error) {
+				return &state.State{}, map[string]any{
+					"nuon": map[string]any{
+						"install": map[string]any{"id": "acme-install"},
+						"install_stack": map[string]any{
+							"outputs": map[string]any{
+								"region":                   "us-west-2",
+								"vpc_id":                   "vpc-acme",
+								"provision_iam_role_arn":   "arn:aws:iam::123456789012:role/ProvisionRole",
+								"deprovision_iam_role_arn": "arn:aws:iam::123456789012:role/DeprovisionRole",
+								"maintenance_iam_role_arn": "arn:aws:iam::123456789012:role/MaintenanceRole",
+							},
+						},
+					},
+				}, nil
+			},
+			ResolveSource: func() (*plantypes.GitSource, *plantypes.OCISource, error) {
+				return nil, nil, nil
+			},
+		}
+	}
+
+	tests := map[string]struct {
+		policyCfg         *app.AppConfig
+		expectedPolicyKey string
+		description       string
+	}{
+		"policy_cfg_set_renders_install_acv_policies": {
+			policyCfg:         installACV,
+			expectedPolicyKey: "clusterpolicy-install-acv-policy.yaml",
+			description:       "the plan must embed the install's desired ACV policies, which is what the policy check evaluated",
+		},
+		"policy_cfg_nil_falls_back_to_target_acv": {
+			policyCfg:         nil,
+			expectedPolicyKey: "clusterpolicy-target-acv-policy.yaml",
+			description:       "without a policy cfg the plan keeps rendering AppCfg policies (the other caller's path)",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			plan, _, err := p.RenderSandboxRunPlan(l, newInput(tt.policyCfg))
+			require.NoError(t, err, tt.description)
+
+			assert.Equal(t, "acme-target-acv", plan.AppConfigID, "the target ACV must still drive the plan identity")
+			assert.Equal(t, "target-acv", plan.Vars["from"], "the target ACV must still drive the sandbox variables")
+			assert.Len(t, plan.Policies, 1)
+			assert.Contains(t, plan.Policies, tt.expectedPolicyKey, tt.description)
+		})
+	}
 }
