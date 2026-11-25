@@ -10045,10 +10045,19 @@ export interface components {
       open_deployment?: components["schemas"]["service.InstallResourceSyncStatusOpenDeployment"];
       plan?: components["schemas"]["service.InstallResourceSyncStatusPlan"];
       reason?: string;
+      stack?: components["schemas"]["service.InstallResourceSyncStatusStack"];
       status?: string;
     };
     /** @enum {string} */
     "service.InstallResourceSyncStatusResourceKind": "component" | "image" | "sandbox" | "stack";
+    "service.InstallResourceSyncStatusStack": {
+      applied_version_id?: string;
+      applied_version_source?: components["schemas"]["service.InstallResourceSyncStatusStackVersionSource"];
+      desired_version_id?: string;
+      desired_version_status?: string;
+    };
+    /** @enum {string} */
+    "service.InstallResourceSyncStatusStackVersionSource": "recorded" | "inferred";
     "service.InstallStackUpdate": {
       input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
       role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
