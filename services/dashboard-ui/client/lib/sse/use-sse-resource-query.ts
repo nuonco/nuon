@@ -74,6 +74,7 @@ export function useSSEResourceQuery<TData>({
     suspended: sseSuspended,
     closed: sseClosed,
     disconnect,
+    reconnect,
   } = useResourceSSE({
     url: sseUrl,
     enabled: sseEnabled ?? shouldPoll,
@@ -102,5 +103,14 @@ export function useSSEResourceQuery<TData>({
     }
   }, [error])
 
-  return { data, isLoading, error, refetch, sseConnected, disconnect }
+  return {
+    data,
+    isLoading,
+    error,
+    refetch,
+    sseConnected,
+    sseClosed,
+    disconnect,
+    reconnect,
+  }
 }

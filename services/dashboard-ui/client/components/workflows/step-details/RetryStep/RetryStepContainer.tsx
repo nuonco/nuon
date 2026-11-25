@@ -46,6 +46,9 @@ export const RetryStepModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       queryClient.invalidateQueries({ queryKey: ['workflow-steps'] })
+      queryClient.invalidateQueries({
+        queryKey: ['workflow', org.id, step.install_workflow_id],
+      })
       removePanelByKey(step.id)
       removeModal(props.modalId)
     },
