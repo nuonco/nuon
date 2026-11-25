@@ -23,6 +23,9 @@ type InstallGroupRequest struct {
 
 	Default bool `json:"default,omitempty"`
 
+	ApprovalOption        app.InstallApprovalOption `json:"approval_option,omitempty"`
+	InstallApprovalOption app.InstallApprovalOption `json:"install_approval_option,omitempty"`
+
 	// AutoApproveOnPoliciesPassing approves this group's plan step without user
 	// input when its policy checks pass. Omit to leave it unset (off).
 	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
@@ -89,6 +92,19 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 		if group.Default {
 			defaultGroups++
 		}
+		for field, option := range map[string]app.InstallApprovalOption{
+			"approval_option":         group.ApprovalOption,
+			"install_approval_option": group.InstallApprovalOption,
+		} {
+			switch option {
+			case "", app.InstallApprovalOptionPrompt, app.InstallApprovalOptionApproveAll:
+			default:
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("install group %q has invalid %s %q", group.Name, field, option),
+					Description: fmt.Sprintf("%s must be prompt or approve-all", field),
+				}
+			}
+		}
 		if hasSelector {
 			if err := group.LabelSelector.Validate(); err != nil {
 				return stderr.ErrUser{
@@ -153,6 +169,8 @@ func installGroupsFromRequest(reqGroups []InstallGroupRequest) []app.AppBranchIn
 			Order:                        g.Order,
 			LabelSelector:                selector,
 			Default:                      g.Default,
+			ApprovalOption:               g.ApprovalOption,
+			InstallApprovalOption:        g.InstallApprovalOption,
 			AutoApproveOnPoliciesPassing: g.AutoApproveOnPoliciesPassing,
 		}
 	}

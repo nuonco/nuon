@@ -164,7 +164,75 @@ export const GroupEditor = ({
           <DefaultGroupSummary installCount={resolvedInstalls.length} />
         )}
 
-        <div className="border-t pt-3">
+        <div className="border-t pt-3 flex flex-col gap-3">
+          <CheckboxInput
+            id={`group-approval-${group.id}`}
+            checked={group.approval_option === 'approve-all'}
+            disabled={disabled}
+            onChange={(e) =>
+              onUpdate({
+                approval_option: e.target.checked ? 'approve-all' : 'prompt',
+              })
+            }
+            labelProps={{
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text
+                    variant="subtext"
+                    weight="strong"
+                    className="!leading-none"
+                  >
+                    Auto-approve this group's plan
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    Approves the config diff for this group and starts its
+                    deploys.
+                  </Text>
+                </span>
+              ),
+              className: '!p-1 !gap-1.5 items-start',
+              labelTextProps: { as: 'div' },
+            }}
+          />
+          <CheckboxInput
+            id={`group-install-approval-${group.id}`}
+            checked={group.install_approval_option === 'approve-all'}
+            disabled={disabled}
+            onChange={(e) =>
+              onUpdate({
+                install_approval_option: e.target.checked
+                  ? 'approve-all'
+                  : 'prompt',
+              })
+            }
+            labelProps={{
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text
+                    variant="subtext"
+                    weight="strong"
+                    className="!leading-none"
+                  >
+                    Auto-approve install deploys
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    Install workflows this group starts are approved
+                    automatically, ignoring each install's approval setting.
+                  </Text>
+                </span>
+              ),
+              className: '!p-1 !gap-1.5 items-start',
+              labelTextProps: { as: 'div' },
+            }}
+          />
           <CheckboxInput
             id={`group-default-${group.id}`}
             checked={group.is_default}
