@@ -47,6 +47,8 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get app config")
 	}
+	// Captured before appCfg moves to a pinned target; plan policies follow the desired ACV.
+	desiredACV := appCfg
 
 	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
 	if err != nil {
@@ -73,6 +75,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		Install:    install,
 		Stack:      stack,
 		AppCfg:     appCfg,
+		PolicyCfg:  desiredACV,
 		Run:        run,
 
 		LegacyAzureRoleFallback: p.legacyAzureRoleFallbackEnabled(ctx, l),
@@ -167,6 +170,9 @@ type RenderSandboxRunPlanInput struct {
 	AppCfg     *app.AppConfig
 	Run        *app.InstallSandboxRun
 
+	// PolicyCfg supplies the plan's policies; nil uses AppCfg.
+	PolicyCfg *app.AppConfig
+
 	// ResolveState loads the install state at this exact point in the plan
 	// render: after the sandbox var/config preparation and before rendering.
 	// Injected because the connected path resolves it via a Temporal activity
@@ -185,6 +191,10 @@ func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanIn
 	stack := in.Stack
 	appCfg := in.AppCfg
 	run := in.Run
+	policyCfg := appCfg
+	if in.PolicyCfg != nil {
+		policyCfg = in.PolicyCfg
+	}
 
 	isPulumi := appCfg.SandboxConfig.Type == config.AppSandboxTypePulumi
 
@@ -264,9 +274,9 @@ func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanIn
 		l.Info("rendered terraform vars", zap.Any("vars", vars))
 	}
 
-	if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
+	if err := render.RenderStruct(&policyCfg.PoliciesConfig, stateData); err != nil {
 		l.Error("error rendering policies",
-			zap.Any("policies", appCfg.PoliciesConfig),
+			zap.Any("policies", policyCfg.PoliciesConfig),
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
@@ -274,7 +284,7 @@ func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanIn
 	}
 
 	l.Info("getting policies")
-	policies, err := p.getPolicies(&appCfg.PoliciesConfig)
+	policies, err := p.getPolicies(&policyCfg.PoliciesConfig)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get policies")
 	}
