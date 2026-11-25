@@ -17,6 +17,7 @@ type UpdateFlowStepTargetStatusRequest struct {
 	Status            app.Status `validate:"required"`
 	StatusDescription string
 	Metadata          map[string]any
+	IncludeSuperseded bool
 }
 
 // @temporal-gen-v2 activity
@@ -27,8 +28,20 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 	if err != nil {
 		return errors.Wrap(err, "unable to get step")
 	}
-	if step.StepTargetID == "" {
-		return nil
+	targetID := step.StepTargetID
+	superseded := false
+	if targetID == "" {
+		if !req.IncludeSuperseded {
+			return nil
+		}
+		targetID, err = a.supersededStepTargetID(ctx, step)
+		if err != nil {
+			return errors.Wrap(err, "unable to get superseded step target")
+		}
+		if targetID == "" {
+			return nil
+		}
+		superseded = true
 	}
 
 	status := app.NewCompositeStatus(ctx, req.Status)
@@ -39,16 +52,23 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 	switch step.StepTargetType {
 	case "install_deploys":
 		obj := &app.InstallDeploy{
-			ID: step.StepTargetID,
+			ID: targetID,
 		}
 		return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			res := tx.Model(obj).Updates(app.InstallDeploy{
+			q := tx.Model(obj)
+			if superseded {
+				q = q.Where("status = ?", app.InstallDeployStatusRetried)
+			}
+			res := q.Updates(app.InstallDeploy{
 				Status:            app.InstallDeployStatus(req.Status),
 				StatusDescription: req.StatusDescription,
 				StatusV2:          status,
 			})
 			if res.Error != nil {
 				return errors.Wrap(res.Error, "unable to update install_deploy")
+			}
+			if res.RowsAffected == 0 {
+				return nil
 			}
 			if len(req.Metadata) > 0 {
 				return generics.MergeJSONBMetadata(tx, obj, obj.ID, "status_v2", req.Metadata)
@@ -57,10 +77,14 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 		})
 	case "install_sandbox_runs":
 		obj := &app.InstallSandboxRun{
-			ID: step.StepTargetID,
+			ID: targetID,
 		}
 		return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			res := tx.Model(obj).Updates(app.InstallSandboxRun{
+			q := tx.Model(obj)
+			if superseded {
+				q = q.Where("status = ?", app.SandboxRunStatusRetried)
+			}
+			res := q.Updates(app.InstallSandboxRun{
 				Status:            app.SandboxRunStatus(req.Status),
 				StatusDescription: req.StatusDescription,
 				StatusV2:          status,
@@ -68,14 +92,20 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 			if res.Error != nil {
 				return errors.Wrap(res.Error, "unable to update install_sandbox_run")
 			}
+			if res.RowsAffected == 0 {
+				return nil
+			}
 			if len(req.Metadata) > 0 {
 				return generics.MergeJSONBMetadata(tx, obj, obj.ID, "status_v2", req.Metadata)
 			}
 			return nil
 		})
 	case "install_stack_versions":
+		if superseded {
+			return nil
+		}
 		obj := &app.InstallStackVersion{
-			ID: step.StepTargetID,
+			ID: targetID,
 		}
 		res := a.db.WithContext(ctx).
 			Model(obj).
@@ -88,4 +118,23 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 	}
 
 	return nil
+}
+
+func (a *Activities) supersededStepTargetID(ctx context.Context, step *app.WorkflowStep) (string, error) {
+	if step.RetryIndex == 0 && step.GroupRetryIdx == 0 {
+		return "", nil
+	}
+	var prev app.WorkflowStep
+	res := a.db.WithContext(ctx).
+		Where("install_workflow_id = ? AND group_idx = ? AND step_target_type = ?", step.InstallWorkflowID, step.GroupIdx, step.StepTargetType).
+		Where("step_target_id IS NOT NULL AND step_target_id <> ''").
+		Where("id <> ?", step.ID).
+		Order("created_at DESC").
+		Order("idx DESC").
+		Limit(1).
+		Find(&prev)
+	if res.Error != nil {
+		return "", res.Error
+	}
+	return prev.StepTargetID, nil
 }

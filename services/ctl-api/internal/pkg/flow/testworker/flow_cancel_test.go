@@ -1,10 +1,14 @@
 package testworker
 
 import (
+	"context"
+
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
@@ -55,6 +59,96 @@ func (e *FlowTestSuite) TestCancelStepCallsInnerCancel() {
 	e.waitForStepStatus(ctx, stepID, app.StatusCancelled)
 	e.assertTemporalDrained(ctx, flw.ID)
 	require.Equal(e.T(), "stop", e.getStep(ctx, stepID).ResultDirective)
+}
+
+func (e *FlowTestSuite) TestCancelStepRetryWithoutTargetCancelsSupersededTarget() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	flowID, deployID, clone := e.parkRetryWithoutTarget(ctx, false)
+	require.Equal(e.T(), 1, clone.RetryIndex)
+
+	e.cancelWorkflow(ctx, flowID)
+	e.waitForWorkflowStatus(ctx, flowID, app.StatusCancelled)
+	e.waitForDeployStatus(ctx, deployID, app.InstallDeployStatusCancelled)
+}
+
+func (e *FlowTestSuite) TestCancelGroupRetryWithoutTargetCancelsSupersededTarget() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	flowID, deployID, clone := e.parkRetryWithoutTarget(ctx, true)
+	require.Equal(e.T(), 0, clone.RetryIndex)
+	require.Equal(e.T(), 1, clone.GroupRetryIdx)
+
+	e.cancelWorkflow(ctx, flowID)
+	e.waitForWorkflowStatus(ctx, flowID, app.StatusCancelled)
+	e.waitForDeployStatus(ctx, deployID, app.InstallDeployStatusCancelled)
+}
+
+func (e *FlowTestSuite) TestSkipRetryWithoutTargetKeepsSupersededTarget() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	flowID, deployID, clone := e.parkRetryWithoutTarget(ctx, false)
+
+	_, err := e.service.FlowClient.SkipStep(ctx, &flowclient.SkipStepRequest{
+		InstallWorkflowID: flowID,
+		StepID:            clone.ID,
+	})
+	require.NoError(e.T(), err)
+	e.waitForStepStatus(ctx, clone.ID, app.StatusUserSkipped)
+	e.waitForWorkflowTerminal(ctx, flowID)
+	require.Equal(e.T(), app.InstallDeployStatusRetried, e.getDeploy(ctx, deployID).Status)
+}
+
+func (e *FlowTestSuite) parkRetryWithoutTarget(ctx context.Context, group bool) (string, string, *app.WorkflowStep) {
+	ownerID, ownerType := newTestOwner()
+	deploy := e.seedDeployTarget(ctx, app.InstallDeployStatusError)
+	stepID := domains.NewWorkflowStepID()
+	var sig signal.Signal = &RetryWithoutTargetSignal{TargetStepID: stepID}
+	if group {
+		sig = &GroupRetryWithoutTargetSignal{RetryWithoutTargetSignal{TargetStepID: stepID}}
+	}
+	steps := []app.WorkflowStep{
+		failingTargetedStep("retry-without-target", signaldb.SignalData{Signal: sig}, deploy),
+	}
+	steps[0].ID = stepID
+	flw, queueID := e.setupLifecycleTest(ctx, ownerID, ownerType, steps)
+	e.enqueueLifecycleFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
+
+	_, err := e.service.FlowClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+		InstallWorkflowID: flw.ID,
+		StepID:            steps[0].ID,
+	})
+	require.NoError(e.T(), err)
+
+	var cloneID string
+	require.Eventually(e.T(), func() bool {
+		all, err := e.tryStepsByWorkflow(ctx, flw.ID)
+		if err != nil {
+			return false
+		}
+		for _, s := range all {
+			if s.ID != steps[0].ID && s.Name == "retry-without-target" && s.Status.Status == app.StatusError {
+				cloneID = s.ID
+				return true
+			}
+		}
+		return false
+	}, pollTimeout, pollInterval, "retry clone did not fail")
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
+
+	clone := e.getStep(ctx, cloneID)
+	require.Empty(e.T(), clone.StepTargetID)
+	require.Equal(e.T(), app.InstallDeployStatusRetried, e.getDeploy(ctx, deploy.ID).Status)
+	return flw.ID, deploy.ID, clone
+}
+
+func (e *FlowTestSuite) waitForDeployStatus(ctx context.Context, deployID string, want app.InstallDeployStatus) {
+	require.Eventually(e.T(), func() bool {
+		var got app.InstallDeploy
+		err := e.service.DB.WithContext(ctx).First(&got, "id = ?", deployID).Error
+		return err == nil && got.Status == want
+	}, pollTimeout, pollInterval, "deploy did not reach status %s", want)
 }
 
 // TestCancelWorkflowPropagatesDown verifies that cancel-workflow stops the
