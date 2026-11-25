@@ -585,7 +585,7 @@ func (st *installResourceSyncStatusState) stackResource() *InstallResourceSyncSt
 	case applied == "":
 		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = st.stackPendingReason("The stack hasn’t been set up yet.")
-	case st.desiredStackPending():
+	case st.desiredStackUnapplied():
 		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = st.stackPendingReason("Stack configuration changes haven’t been applied.")
 	case applied == st.install.AppConfigID:
@@ -630,6 +630,20 @@ func (st *installResourceSyncStatusState) desiredStackPending() bool {
 	}
 	switch st.desiredStackVersion.Status.Status {
 	case app.InstallStackVersionStatusGenerating, app.InstallStackVersionStatusPendingUser, app.InstallStackVersionStatusProvisioning:
+		return true
+	}
+	return false
+}
+
+func (st *installResourceSyncStatusState) desiredStackUnapplied() bool {
+	if st.desiredStackPending() {
+		return true
+	}
+	if st.desiredStackVersion == nil {
+		return false
+	}
+	switch st.desiredStackVersion.Status.Status {
+	case app.InstallStackVersionStatusExpired, app.StatusCancelled:
 		return true
 	}
 	return false
