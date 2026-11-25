@@ -1,5 +1,7 @@
+import type { TPrLink } from '@/components/branches/shared/pr-link'
 import { Avatar } from '@/components/common/Avatar'
 import { Badge } from '@/components/common/Badge'
+import { Expand } from '@/components/common/Expand'
 import {
   CommitLink,
   PullRequestLink,
@@ -21,6 +23,7 @@ export interface IRunCommit {
   shaUrl?: string
   createdAt?: string
   committedAt?: string
+  pullRequest?: TPrLink | null
 }
 
 export interface IRunBaseline {
@@ -134,6 +137,44 @@ export const RunSourceMark = ({ source }: { source: TRunSource }) => {
   return null
 }
 
+const TRAILING_PR = /\s*\(#(\d+)\)\s*$/
+
+const CommitSubject = ({
+  subject,
+  pullRequest,
+}: {
+  subject: string
+  pullRequest?: TPrLink | null
+}) => {
+  const match = subject.match(TRAILING_PR)
+  const linked =
+    pullRequest && match && Number(match[1]) === pullRequest.number
+      ? pullRequest
+      : undefined
+  const text = linked && match ? subject.slice(0, match.index) : subject
+
+  return (
+    <Text variant="body" weight="strong" className="break-words">
+      {text}
+      {linked ? (
+        <>
+          {' ('}
+          <PullRequestLink
+            number={linked.number}
+            href={linked.url}
+            label={`#${linked.number}`}
+            showIcon={false}
+            textVariant="body"
+            variant="inline"
+            weight="strong"
+          />
+          {')'}
+        </>
+      ) : null}
+    </Text>
+  )
+}
+
 export const RunCommitSummary = ({
   source,
   title,
@@ -146,20 +187,33 @@ export const RunCommitSummary = ({
   const message = commit?.message || title
   const [subject, ...rest] = message.split('\n')
   const description = rest.join('\n').trim()
+  const subjectNode = (
+    <CommitSubject subject={subject} pullRequest={commit?.pullRequest} />
+  )
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div className="flex min-w-0 flex-1 flex-col gap-2">
       <SourceIdentity source={source} />
-      <Text variant="body" weight="strong" className="break-words">
-        {subject}
-      </Text>
       {description ? (
-        <ShowMore key={description}>
-          <Text as="p" variant="subtext" className="break-words whitespace-pre-line">
+        <Expand
+          id={`run-commit-message-${commit?.sha ?? subject}`}
+          interactiveHeading
+          isIconBeforeHeading
+          toggleLabel="Show commit message"
+          headerClassName="!p-0 !items-center"
+          heading={subjectNode}
+        >
+          <Text
+            as="p"
+            variant="subtext"
+            className="break-words whitespace-pre-line pt-1 pl-10"
+          >
             {description}
           </Text>
-        </ShowMore>
-      ) : null}
+        </Expand>
+      ) : (
+        subjectNode
+      )}
       <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {commit?.avatarUrl ? (
           <Avatar

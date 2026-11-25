@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/schema"
 	"github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/errs"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 )
 
 func (s *Service) loadConfig(file string) (*config.AppConfig, error) {
@@ -56,7 +57,7 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 		failures = append(failures, line)
 	}
 
-	_, err = lookup.AppID(ctx, s.api, appName)
+	appID, err := lookup.AppID(ctx, s.api, appName)
 	if err != nil {
 		err = errs.WithUserFacing(err, "error looking up app id")
 		if len(failures) == 0 {
@@ -66,10 +67,15 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 		return ui.PrintError(&ui.CLIUserError{Msg: strings.Join(failures, "\n")})
 	}
 
+	urlPolicy := s.allowedHostsPolicy(ctx, appID)
+
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
 		Dirname:       dir,
 		V:             validator.New(),
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
+		CheckRemoteFetch: validate.RemoteFetchCheck(urlPolicy, func(violation urlpolicy.Violation) {
+			ui.PrintWarning(violation.Error())
+		}),
 	})
 	if err != nil {
 		failures = append(failures, err.Error())
@@ -79,7 +85,7 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 		}
 
 		ui.PrintLn("validating configs")
-		err = validate.Validate(ctx, s.v, cfg)
+		err = validate.Validate(ctx, s.v, cfg, validate.WithURLPolicy(urlPolicy))
 		if err != nil {
 			if config.IsWarningErr(err) {
 				ui.PrintError(err)

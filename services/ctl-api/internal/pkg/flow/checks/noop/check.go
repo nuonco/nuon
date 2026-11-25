@@ -13,8 +13,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-const planOnlyNoSkipVersion = "noop-plan-only-no-skip-v1"
-
 // Check implements directive.ApprovalCreateCheck for noop plan detection.
 type Check struct {
 	sig      signal.Signal
@@ -116,17 +114,12 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
-	planOnlyNoSkip := workflow.GetVersion(ctx, planOnlyNoSkipVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if planOnlyNoSkip && flw.PlanOnly {
-		return directive.Pass(), nil
-	}
-
-	if err := handleNoopDeployPlan(ctx, step, flw, planOnlyNoSkip); err != nil {
-		return directive.Pass(), errors.Wrap(err, "failed to handle noop plan")
-	}
-
 	if flw.PlanOnly {
 		return directive.Pass(), nil
+	}
+
+	if err := handleNoopDeployPlan(ctx, step, flw); err != nil {
+		return directive.Pass(), errors.Wrap(err, "failed to handle noop plan")
 	}
 
 	if err := c.SetResultDirective(ctx, step.ID, directive.StepSkipGroup); err != nil {
@@ -143,7 +136,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	}, nil
 }
 
-func handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, sameGroupOnly bool) error {
+func handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
@@ -175,7 +168,7 @@ func handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app
 	}
 
 	nextStep := flw.Steps[nextStepIndex]
-	if !sameGroupOnly || nextStep.GroupIdx == step.GroupIdx {
+	if nextStep.GroupIdx == step.GroupIdx {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: nextStep.ID,
 			Status: app.CompositeStatus{

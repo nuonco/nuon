@@ -14,7 +14,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 type InstallStackVersionRunSignalTestSuite struct {
@@ -68,27 +67,6 @@ func (s *InstallStackVersionRunSignalTestSuite) TestInstallStackVersionRunSignal
 	env.ExecuteWorkflow(func(ctx workflow.Context) error { return sig.Execute(ctx) })
 
 	require.ErrorContains(s.T(), env.GetWorkflowError(), "write failed")
-	env.AssertExpectations(s.T())
-}
-
-func (s *InstallStackVersionRunSignalTestSuite) TestExistingHistoryKeepsSplitStatusWrite() {
-	env, sig := s.testEnvironment(app.RunnerStatusAwaitingInstallStackRun)
-	env.OnGetVersion(atomicRunnerStatusVersion, workflow.DefaultVersion, 1).
-		Return(workflow.DefaultVersion).
-		Once()
-	env.OnActivity((*activities.Activities).GetStackRunRunnerDisabled, mock.Anything, mock.Anything, mock.Anything).
-		Return(false, nil).
-		Once()
-	env.OnActivity((*activities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).
-		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).
-		Once()
-
-	env.ExecuteWorkflow(func(ctx workflow.Context) error { return sig.Execute(ctx) })
-
-	require.NoError(s.T(), env.GetWorkflowError())
 	env.AssertExpectations(s.T())
 }
 

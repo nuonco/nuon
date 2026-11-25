@@ -3,6 +3,7 @@ package installs
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -83,7 +84,7 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 	}
 
 	if buildID == "" {
-		buildID, err = s.resolveComponentDeployBuildID(ctx, installID, componentID)
+		buildID, err = s.resolveComponentDeployBuildID(ctx, install, componentID)
 		if err != nil {
 			return ui.PrintError(err)
 		}
@@ -109,29 +110,67 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 	return nil
 }
 
-// resolveComponentDeployBuildID picks a build when --build-id is omitted.
-// Prefer the prior deploy's build so a redeploy stays on the same artifact;
-// when the component has never been deployed, fall back to its latest build.
-func (s *Service) resolveComponentDeployBuildID(ctx context.Context, installID, componentID string) (string, error) {
-	if buildID, ok := priorDeployBuildID(s.api.GetInstallComponentLatestDeploy(ctx, installID, componentID)); ok {
-		return buildID, nil
-	}
+const (
+	deployBuildPageSize = 50
+	deployBuildMaxPages = 5
+)
 
-	build, err := s.api.GetComponentLatestBuild(ctx, componentID)
-	if err != nil {
-		return "", fmt.Errorf("could not resolve a build for component %s; pass --build-id explicitly: %w", componentID, err)
+// resolveComponentDeployBuildID picks the build the dashboard preselects: the newest active,
+// non-preview build on the install's app branch.
+func (s *Service) resolveComponentDeployBuildID(ctx context.Context, install *models.AppInstall, componentID string) (string, error) {
+	for page := 0; page < deployBuildMaxPages; page++ {
+		builds, hasMore, err := s.api.GetComponentBuilds(ctx, componentID, install.AppID, &models.GetPaginatedQuery{
+			Offset: page * deployBuildPageSize,
+			Limit:  deployBuildPageSize,
+		})
+		if err != nil {
+			return "", fmt.Errorf("could not list builds for component %s; pass --build-id explicitly: %w", componentID, err)
+		}
+		if buildID, ok := latestDeployableBuildID(builds, install.AppBranchID); ok {
+			return buildID, nil
+		}
+		if !hasMore {
+			break
+		}
 	}
-	if build == nil || build.ID == "" {
-		return "", fmt.Errorf("could not resolve a build for component %s; pass --build-id explicitly", componentID)
-	}
-	return build.ID, nil
+	return "", fmt.Errorf("no active build found for component %s on the install's app branch; pass --build-id explicitly", componentID)
 }
 
-func priorDeployBuildID(deploy *models.AppInstallDeploy, err error) (string, bool) {
-	if err != nil || deploy == nil || deploy.BuildID == "" {
+func latestDeployableBuildID(builds []*models.AppComponentBuild, appBranchID string) (string, bool) {
+	var latest *models.AppComponentBuild
+	var latestAt time.Time
+	for _, b := range builds {
+		if b == nil || b.ID == "" || b.IsPreview {
+			continue
+		}
+		if b.StatusV2 == nil || b.StatusV2.Status != models.AppStatusActive {
+			continue
+		}
+		if appBranchID != "" && buildAppBranchID(b) != appBranchID {
+			continue
+		}
+		createdAt, err := time.Parse(time.RFC3339Nano, b.CreatedAt)
+		if err != nil {
+			continue
+		}
+		if latest == nil || createdAt.After(latestAt) {
+			latest, latestAt = b, createdAt
+		}
+	}
+	if latest == nil {
 		return "", false
 	}
-	return deploy.BuildID, true
+	return latest.ID, true
+}
+
+func buildAppBranchID(b *models.AppComponentBuild) string {
+	if b.AppBranchID != "" {
+		return b.AppBranchID
+	}
+	if b.AppBranchRun != nil && b.AppBranchRun.AppBranch != nil {
+		return b.AppBranchRun.AppBranch.ID
+	}
+	return ""
 }
 
 func (s *Service) DeployCancel(ctx context.Context, installID, deployID string, asJSON bool) error {

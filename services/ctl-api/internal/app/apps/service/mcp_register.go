@@ -20,6 +20,13 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	), s.mcpGetApp)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"get_app_allowed_hosts",
+		"Get app allowed hosts",
+		"Get the URL prefixes this control plane allows in an app's config, by category (runner_api, public_api, runner_bootstrap, stack_templates, config_fetch). "+
+			"A category with restricted=false accepts any URL. Use this to explain or avoid a sync rejected because a config URL is not allowed. Pass the app name or ID.",
+	), s.mcpGetAppAllowedHosts)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_app_config_schema",
 		"Get app config schema",
 		"Return the JSON schema for one app-config file type, the same schema the Nuon LSP uses. "+

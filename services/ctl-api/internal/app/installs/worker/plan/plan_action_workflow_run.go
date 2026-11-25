@@ -41,7 +41,17 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, nil, errors.Wrap(err, "unable to get install")
 	}
 
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, slimInstall.AppConfigID)
+	appConfigID := slimInstall.AppConfigID
+	if run.InstallWorkflow != nil {
+		pinned, err := run.InstallWorkflow.PreparedInstallConfigID(&app.Install{ID: slimInstall.ID, OrgID: slimInstall.OrgID, AppID: slimInstall.AppID, AppConfigID: slimInstall.AppConfigID})
+		if err != nil {
+			return nil, nil, err
+		}
+		if pinned != "" {
+			appConfigID = pinned
+		}
+	}
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, appConfigID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get app config")
 	}

@@ -1,6 +1,10 @@
 package app
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/nuonco/nuon/pkg/config"
+)
 
 type AppBranchRunMode string
 
@@ -15,6 +19,11 @@ type AppBranchRunConfig struct {
 	Mode        AppBranchRunMode `json:"mode,omitempty"`
 	TagPrefix   string           `json:"tag_prefix,omitempty"`
 	GithubLabel string           `json:"github_label,omitempty"`
+	// Paths and PathsIgnore are mutually exclusive, and neither accepts a pattern
+	// starting with "!". The check on app_branch_configs.run_config enforces this;
+	// AutoMigrate creates it, it is not a migration.
+	Paths       []string `json:"paths,omitempty"`
+	PathsIgnore []string `json:"paths_ignore,omitempty"`
 }
 
 func (c *AppBranchRunConfig) Normalize() {
@@ -52,5 +61,5 @@ func (c AppBranchRunConfig) Validate() error {
 	default:
 		return fmt.Errorf("unknown app branch run mode %q (valid modes: push, on_tag, on_github_label, manual_only)", c.Mode)
 	}
-	return nil
+	return config.ValidateRunPaths(c.Paths, c.PathsIgnore)
 }

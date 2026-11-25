@@ -218,7 +218,11 @@ export const DeploymentTemplateContent = ({
   )
 }
 
-export const DeploymentAlerts = () => {
+export const DeploymentAlerts = ({
+  showApprovals = true,
+}: {
+  showApprovals?: boolean
+}) => {
   const { workflow, failedSteps } = useWorkflow()
   const { hasResponded } = useRespondedApprovals()
   const steps = deploymentSteps(workflow)
@@ -229,28 +233,26 @@ export const DeploymentAlerts = () => {
       !['approve-all', 'noop'].includes(step.approval.type) &&
       !hasResponded(step.id)
   )
+  const policySteps = steps.filter((step) => {
+    const { hasViolations, skipFindings } = getPolicyViolationCounts(step)
+    return (
+      (hasViolations || skipFindings.length > 0) &&
+      !failedSteps.some((failed) => failed.id === step.id)
+    )
+  })
   return (
     <>
       <WorkflowAlertBanners workflow={workflow} failedSteps={failedSteps} />
-      {approvals.map((step) => (
+      {(showApprovals ? approvals : []).map((step) => (
         <ApprovalBanner key={step.id} step={step} />
       ))}
-      {steps
-        .filter((step) => {
-          const { hasViolations, skipFindings } = getPolicyViolationCounts(step)
-          return (
-            (hasViolations || skipFindings.length > 0) &&
-            !failedSteps.some((failed) => failed.id === step.id)
-          )
-        })
-        .map((step) => (
-          <div key={step.id} className="flex shrink-0 flex-col gap-2">
-            <Text variant="subtext" weight="strong">
-              {step.name}
-            </Text>
-            <PolicyViolations step={step} />
-          </div>
-        ))}
+      {policySteps.length ? (
+        <div className="flex shrink-0 flex-col gap-2">
+          {policySteps.map((step) => (
+            <PolicyViolations key={step.id} step={step} />
+          ))}
+        </div>
+      ) : null}
     </>
   )
 }

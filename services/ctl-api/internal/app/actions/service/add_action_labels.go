@@ -9,7 +9,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	applookup "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/lookup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -55,18 +57,37 @@ func (s *service) AddAppActionLabels(ctx *gin.Context) {
 		return
 	}
 
-	var action app.ActionWorkflow
-	if err := s.db.WithContext(ctx).First(&action, "id = ?", actionID).Error; err != nil {
+	action, err := s.findAppLabelAction(ctx, actionID)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action %s: %w", actionID, err))
 		return
 	}
 
 	action.Labels.Merge(labels.Labels(req.Labels))
 
-	if err := s.db.WithContext(ctx).Model(&action).Select("labels").Updates(&action).Error; err != nil {
+	if err := s.db.WithContext(ctx).Model(action).Select("labels").Updates(action).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update action labels: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, action)
+}
+
+func (s *service) findAppLabelAction(ctx *gin.Context, actionID string) (*app.ActionWorkflow, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	currentApp, err := applookup.ByRef(ctx, s.db, orgID, ctx.Param("app_id"))
+	if err != nil {
+		return nil, err
+	}
+
+	var action app.ActionWorkflow
+	if err := s.db.WithContext(ctx).
+		Where(&app.ActionWorkflow{ID: actionID, AppID: currentApp.ID, OrgID: orgID}, "ID", "AppID", "OrgID").
+		First(&action).Error; err != nil {
+		return nil, err
+	}
+	return &action, nil
 }

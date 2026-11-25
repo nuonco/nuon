@@ -6,12 +6,25 @@ import (
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/validate"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
-func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.AppStackConfig, error) {
+func StackConfig(stack *config.StackConfig, appID, appConfigID string, policy *urlpolicy.Policy) (*app.AppStackConfig, error) {
 	if stack == nil {
 		return nil, errors.New("stack config is required")
+	}
+
+	if err := validation.CheckURLPolicy(policy, validate.StackURLPolicyViolations(policy, "stack", validate.StackURLs{
+		Type:                    stack.Type,
+		VPCNestedTemplateURL:    stack.VPCNestedTemplateURL,
+		RunnerNestedTemplateURL: stack.RunnerNestedTemplateURL,
+		UIDefinition:            stack.UIDefinition,
+		CustomNestedStacks:      stack.CustomNestedStacks,
+	})); err != nil {
+		return nil, err
 	}
 
 	stackType := app.StackType(stack.Type)

@@ -25,15 +25,16 @@ func (s *service) mcpApproveAll(ctx context.Context, _ *mcp.CallToolRequest, in 
 		return nil, nil, fmt.Errorf("workflow_id is required")
 	}
 
-	var workflow app.Workflow
-	err = s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", in.WorkflowID, orgID).
-		Preload("Steps").
-		First(&workflow).Error
+	workflow, err := s.resolveWorkflow(ctx, orgID, in.WorkflowID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find workflow %q: %w", in.WorkflowID, err)
 	}
-	if err := mcpApproveAllGate(workflow); err != nil {
+	if err := s.db.WithContext(ctx).
+		Where(&app.WorkflowStep{InstallWorkflowID: workflow.ID, OrgID: workflow.OrgID}, "InstallWorkflowID", "OrgID").
+		Find(&workflow.Steps).Error; err != nil {
+		return nil, nil, fmt.Errorf("unable to find workflow steps: %w", err)
+	}
+	if err := mcpApproveAllGate(*workflow); err != nil {
 		return nil, nil, err
 	}
 
@@ -48,7 +49,7 @@ func (s *service) mcpApproveAll(ctx context.Context, _ *mcp.CallToolRequest, in 
 		return nil, nil, fmt.Errorf("unable to set approve-all on workflow %q", workflow.ID)
 	}
 
-	s.markWorkflowApproveAll(ctx, workflow.ID)
+	s.markWorkflowApproveAll(ctx, workflow)
 	s.l.Info("workflow approve-all requested",
 		zap.String("flow_event", "workflow.approve_all_requested"),
 		zap.String("workflow_id", workflow.ID),

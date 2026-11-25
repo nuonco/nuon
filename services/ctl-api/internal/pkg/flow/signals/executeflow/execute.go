@@ -128,18 +128,16 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 		if runErr == nil {
 			if s.cancelRequested {
-				if workflow.GetVersion(ctx, flowCancelStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-					s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
-					if s.Resident {
-						if err := s.awaitResidentUpdates(ctx); err != nil {
-							return err
-						}
+				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				if s.Resident {
+					if err := s.awaitResidentUpdates(ctx); err != nil {
+						return err
 					}
-					// Re-assert cancellation after the run unwinds: a cancel that
-					// lands while executeRun is finishing can be overwritten by
-					// its final success status write.
-					s.writeFlowCancelled(ctx)
 				}
+				// Re-assert cancellation after the run unwinds: a cancel that
+				// lands while executeRun is finishing can be overwritten by
+				// its final success status write.
+				s.writeFlowCancelled(ctx)
 				return nil
 			}
 
@@ -160,15 +158,13 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 		} else {
 			if s.cancelRequested {
-				if workflow.GetVersion(ctx, flowCancelStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-					s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
-					if s.Resident {
-						if err := s.awaitResidentUpdates(ctx); err != nil {
-							return err
-						}
+				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				if s.Resident {
+					if err := s.awaitResidentUpdates(ctx); err != nil {
+						return err
 					}
-					s.writeFlowCancelled(ctx)
 				}
+				s.writeFlowCancelled(ctx)
 				return nil
 			}
 
@@ -637,11 +633,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		case flowdirective.GroupStop:
 			// Derive the reason before the sweeps overwrite step statuses.
-			stepName, reason := "", ""
-			var stepCE *compositeerrors.CompositeErrorData
-			if workflow.GetVersion(ctx, groupStopReasonVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-				stepName, reason, stepCE = s.groupStopReason(ctx, group)
-			}
+			stepName, reason, stepCE := s.groupStopReason(ctx, group)
 
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 			s.markRemainingStepsNotAttempted(ctx, l)
@@ -1161,7 +1153,6 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	if err != nil {
 		return false
 	}
-	terminalErrorComplete := workflow.GetVersion(ctx, workflowCompleteTerminalErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	for _, step := range steps {
 		// Superseded steps keep their original status (e.g. error) for
@@ -1177,9 +1168,6 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 			continue
 		case app.StatusError:
-			if !terminalErrorComplete {
-				return false
-			}
 			// Treat a settled failure (terminal directive) as complete so
 			// failures do not leak forever-open workflows: the group already
 			// acted on it, so nothing will resume this run. A parked error
@@ -1199,9 +1187,6 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 
 // writeFlowCancelled update's workflow's status to cancelled
 func (s *Signal) writeFlowCancelled(ctx workflow.Context) {
-	if workflow.GetVersion(ctx, flowCancelStatusVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return
-	}
 	l, _ := log.WorkflowLogger(ctx)
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: s.WorkflowID,
@@ -1275,26 +1260,6 @@ func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.Wor
 	return false
 }
 
-// runnerDisabledCheckVersion gates the pre-group runner check so in-flight
-// histories, which never scheduled the activity, still replay deterministically.
-const runnerDisabledCheckVersion = "execute-flow-runner-disabled-check-v1"
-
-// stackChangedRunnerGateVersion gates the stack-change deferral on that check.
-// Histories that already recorded the activity must keep sending the same input.
-const stackChangedRunnerGateVersion = "execute-flow-stack-changed-runner-gate-v1"
-
-// flowCancelStatusVersion gates the cancelled-status writes added on the
-// cancel-return paths; in-flight histories never scheduled those activities.
-const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
-
-// groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
-// reason; in-flight histories never scheduled it before the sweeps.
-const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
-
-// workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
-// complete because in-flight histories previously parked after every error.
-const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
-
 // stopIfRunnerDisabled halts a workflow whose install runner was disabled after
 // it started. Creation already rejects these, so without this the workflow would
 // fail one runner-dependent group at a time and report each as its own error.
@@ -1305,18 +1270,11 @@ func (s *Signal) stopIfRunnerDisabled(
 	groups []app.WorkflowStepGroup,
 	groupPosition int,
 ) (bool, error) {
-	if workflow.GetVersion(ctx, runnerDisabledCheckVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return false, nil
-	}
-
 	if flw.OwnerType != "installs" || !flw.Type.RequiresInstallRunner() {
 		return false, nil
 	}
 
-	req := workflowactivities.CheckFlowRunnerDisabledRequest{FlowID: s.WorkflowID}
-	if workflow.GetVersion(ctx, stackChangedRunnerGateVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		req.HonorStackChanged = true
-	}
+	req := workflowactivities.CheckFlowRunnerDisabledRequest{FlowID: s.WorkflowID, HonorStackChanged: true}
 	disabled, err := workflowactivities.AwaitCheckFlowRunnerDisabled(ctx, req)
 	if err != nil {
 		// A failed check must not take down a workflow that would otherwise run.

@@ -379,3 +379,31 @@ func (s *ActionLabelsTestSuite) TestRemoveActionLabelsNotFound() {
 	rr := s.makeRequest(http.MethodDelete, path, reqBody)
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
+
+func (s *ActionLabelsTestSuite) TestActionLabelsRejectActionsOutsideApp() {
+	otherCtx, _ := s.service.Seeder.EnsureAccount(context.Background(), s.T())
+	otherCtx, _ = s.service.Seeder.EnsureOrg(otherCtx, s.T())
+	otherOrgApp := s.service.Seeder.CreateApp(otherCtx, s.T())
+	sameOrgApp := s.service.Seeder.CreateApp(s.ctx, s.T())
+
+	targets := map[string]string{
+		"other org":          s.service.Seeder.CreateActionWorkflow(otherCtx, s.T(), otherOrgApp.ID).ID,
+		"same org other app": s.service.Seeder.CreateActionWorkflow(s.ctx, s.T(), sameOrgApp.ID).ID,
+	}
+	for name, actionID := range targets {
+		s.Run(name, func() {
+			require.NoError(s.T(), s.service.DB.Model(&app.ActionWorkflow{}).Where("id = ?", actionID).
+				Update("labels", labels.Labels{"env": "prod"}).Error)
+			path := "/v1/apps/" + s.testApp.ID + "/actions/" + actionID + "/labels"
+
+			rr := s.makeRequest(http.MethodPost, path, AddActionLabelsRequest{Labels: map[string]string{"owner": "acme"}})
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
+			rr = s.makeRequest(http.MethodDelete, path, RemoveActionLabelsRequest{Keys: []string{"env"}})
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
+
+			var stored app.ActionWorkflow
+			require.NoError(s.T(), s.service.DB.First(&stored, "id = ?", actionID).Error)
+			assert.Equal(s.T(), labels.Labels{"env": "prod"}, stored.Labels)
+		})
+	}
+}

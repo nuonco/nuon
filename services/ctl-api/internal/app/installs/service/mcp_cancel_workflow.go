@@ -28,10 +28,8 @@ func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest,
 		return nil, nil, fmt.Errorf("workflow_id is required")
 	}
 
-	var wf app.Workflow
-	if err := s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", in.WorkflowID, orgID).
-		First(&wf).Error; err != nil {
+	wf, err := s.resolveWorkflow(ctx, orgID, in.WorkflowID)
+	if err != nil {
 		return nil, nil, fmt.Errorf("unable to find workflow %q: %w", in.WorkflowID, err)
 	}
 
@@ -46,7 +44,7 @@ func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest,
 	}
 
 	if wf.Status.Status == app.StatusPending {
-		if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
+		if err := s.cancelWorkflow(ctx, wf); err != nil {
 			return nil, nil, fmt.Errorf("unable to cancel workflow: %w", err)
 		}
 		return apiPkg.MCPJSONResult(mcpCancelResult(wf.ID, "cancelled"))
@@ -56,7 +54,7 @@ func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest,
 		InstallWorkflowID: wf.ID,
 	}); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if dbErr := s.cancelWorkflow(ctx, wf.ID); dbErr != nil {
+			if dbErr := s.cancelWorkflow(ctx, wf); dbErr != nil {
 				return nil, nil, fmt.Errorf("unable to cancel orphaned workflow: %w", dbErr)
 			}
 			return apiPkg.MCPJSONResult(mcpCancelResult(wf.ID, "cancelled"))

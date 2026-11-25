@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	configsync "github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/urlpolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -41,6 +42,7 @@ type RunDeps struct {
 	TFClient         terraform.Client
 	Metrics          *Metrics
 	Logger           *zap.Logger
+	URLPolicy        *urlpolicy.Policy
 }
 
 type RunRequest struct {
@@ -116,7 +118,7 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (res *RunResult, ret
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, fmt.Errorf("unable to unmarshal intermediate config: %w", err))
 	}
 
-	var opts []Option
+	opts := []Option{WithURLPolicy(deps.URLPolicy)}
 	if req.DispatchBuilds {
 		opts = append(opts, WithComponentBuildDispatch())
 	}

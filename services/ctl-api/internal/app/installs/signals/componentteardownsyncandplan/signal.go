@@ -28,8 +28,6 @@ import (
 
 const SignalType signal.SignalType = "component-teardown-sync-and-plan"
 
-const planCompositeErrorVersion = "teardown-sync-and-plan-composite-error-v1"
-
 type Signal struct {
 	signal.LifecycleBase
 
@@ -497,6 +495,15 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	if err != nil {
 		return errors.Wrap(err, "unable to get component")
 	}
+	if installDeploy.InstallWorkflow != nil {
+		targets, err := installDeploy.InstallWorkflow.ExecutionTargets()
+		if err != nil {
+			return err
+		}
+		if targets != nil {
+			comp.Type = build.ComponentConfigConnection.Type
+		}
+	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
@@ -531,12 +538,9 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	}
 	s.runnerJobID = runnerJob.ID
 
-	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if planCompositeErrorsEnabled {
-		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
-			InstallDeployID: installDeploy.ID,
-		})
-	}
+	_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+		InstallDeployID: installDeploy.ID,
+	})
 
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
@@ -546,7 +550,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	})
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
-		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
+		if deployerrors.IsDeployPlanRenderFailed(err) {
 			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
 				InstallDeployID: installDeploy.ID,
 				ComponentName:   installDeploy.ComponentName,

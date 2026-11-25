@@ -22,32 +22,7 @@ const (
 	statusCancelled  = "cancelled"
 )
 
-const installGroupCancelAsCancelVersion = "install-group-cancel-as-cancel-v1"
-
-// installVersionStatusVersion gates the per-install config-version status
-// writes added by the diffing engine; in-flight histories never scheduled
-// those activities between the enqueue and await commands.
-// todo(sk): cleanup after terminating old workflows
-const installVersionStatusVersion = "install-app-config-version-status-v1"
-
-// installMetadataBeforeEnqueueVersion gates the step metadata write that lists
-// the resolved installs before any install workflow is created.
-const installMetadataBeforeEnqueueVersion = "install-metadata-before-enqueue-v1"
-
-// installUpdateFailedCompositeErrorVersion gates the step composite error that
-// names the install whose update failed. In-flight histories have no GetInstall
-// or status write between the group-run update and the return.
-const installUpdateFailedCompositeErrorVersion = "install-update-failed-composite-error-v1"
-
-// installUpdateFailedBranchRunErrorVersion gates copying that error onto the
-// app branch run, which the branch overview reads.
-const installUpdateFailedBranchRunErrorVersion = "install-update-failed-branch-run-error-v1"
-
-const installGroupDirectiveVersion = "install-group-directive-v1"
-
-// installGroupDesiredOnlyVersion gates the desired-config-rollout behavior:
-// group approvals record the install's desired config and enqueue the
-// update-app-config signal instead of deploying.
+// Workflows that started before desired-config rollout must keep deploying.
 const installGroupDesiredOnlyVersion = "install-group-desired-only-v1"
 
 const statusPending = "pending"
@@ -106,11 +81,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	s.desiredOnly = desiredOnly
 
-	if workflow.GetVersion(ctx, installMetadataBeforeEnqueueVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		s.writePendingInstallMetadata(ctx, groupName, installIDs)
-	}
+	s.writePendingInstallMetadata(ctx, groupName, installIDs)
 
-	releaseInstalls := workflow.GetVersion(ctx, installGroupDirectiveVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion && !s.desiredOnly
+	releaseInstalls := !s.desiredOnly
 	if releaseInstalls {
 		if err := s.registerDirectiveHandler(ctx); err != nil {
 			return err
@@ -337,8 +310,6 @@ func (s *Signal) awaitInstallUpdates(
 ) (*installUpdateFailure, error) {
 	logger := workflow.GetLogger(ctx)
 
-	treatCancelAsCancel := workflow.GetVersion(ctx, installGroupCancelAsCancelVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-
 	results := make(map[string]string, len(enqueued))
 	var errs []error
 	var cancelledErr error
@@ -373,7 +344,7 @@ func (s *Signal) awaitInstallUpdates(
 	for i, e := range enqueued {
 		res, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout)
 		switch {
-		case err != nil && treatCancelAsCancel && callback.IsCancelled(err):
+		case err != nil && callback.IsCancelled(err):
 			markCancelled(i, e.installID, err.Error(), err)
 
 		case err != nil:
@@ -392,7 +363,7 @@ func (s *Signal) awaitInstallUpdates(
 				status = res.Status
 			}
 			errMsg := fmt.Sprintf("install %s %s: finished as %s", e.installID, s.updateTarget(e.workflowID), status)
-			if treatCancelAsCancel && status == statusCancelled {
+			if status == statusCancelled {
 				markCancelled(i, e.installID, errMsg, nil)
 				break
 			}
@@ -447,13 +418,6 @@ func (s *Signal) awaitInstallUpdates(
 func (s *Signal) recordInstallUpdateFailure(ctx workflow.Context, failure *installUpdateFailure) {
 	logger := workflow.GetLogger(ctx)
 
-	onStep := s.StepID != "" &&
-		workflow.GetVersion(ctx, installUpdateFailedCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	onBranchRun := workflow.GetVersion(ctx, installUpdateFailedBranchRunErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if !onStep && !onBranchRun {
-		return
-	}
-
 	name := failure.installID
 	install, err := activities.AwaitGetInstallByInstallID(ctx, failure.installID)
 	if err != nil {
@@ -462,19 +426,17 @@ func (s *Signal) recordInstallUpdateFailure(ctx workflow.Context, failure *insta
 		name = install.Name
 	}
 
-	if onBranchRun {
-		if _, err := activities.AwaitSetAppBranchRunInstallUpdateFailedError(ctx, activities.SetAppBranchRunInstallUpdateFailedErrorRequest{
-			RunID:       s.RunID,
-			InstallID:   failure.installID,
-			InstallName: name,
-			WorkflowID:  failure.workflowID,
-			Detail:      failure.detail,
-		}); err != nil {
-			logger.Warn("unable to record install update error on app branch run", "run_id", s.RunID, "error", err)
-		}
+	if _, err := activities.AwaitSetAppBranchRunInstallUpdateFailedError(ctx, activities.SetAppBranchRunInstallUpdateFailedErrorRequest{
+		RunID:       s.RunID,
+		InstallID:   failure.installID,
+		InstallName: name,
+		WorkflowID:  failure.workflowID,
+		Detail:      failure.detail,
+	}); err != nil {
+		logger.Warn("unable to record install update error on app branch run", "run_id", s.RunID, "error", err)
 	}
 
-	if !onStep {
+	if s.StepID == "" {
 		return
 	}
 
@@ -528,9 +490,6 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) updateInstallAppConfigVersionStatus(ctx workflow.Context, installID string, status app.Status, desc string) {
-	if workflow.GetVersion(ctx, installVersionStatusVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return
-	}
 	_, _ = activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
 		AppBranchRunID: s.RunID,
 		InstallID:      installID,

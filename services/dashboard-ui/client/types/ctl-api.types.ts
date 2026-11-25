@@ -40,6 +40,8 @@ export type TAppBranchRunConfig = {
   mode?: TAppBranchRunMode
   tag_prefix?: string
   github_label?: string
+  paths?: string[]
+  paths_ignore?: string[]
 }
 
 export type TAppBranchRunMetadata = {
@@ -138,6 +140,23 @@ export type TPreviewRunRequest = {
 export type TCreateAppBranchRequest =
   components['schemas']['service.CreateAppBranchRequest']
 export type TVCSBranch = { name: string }
+
+export type TAppFleet = components['schemas']['service.AppFleetResponse']
+export type TAppFleetSummary = components['schemas']['service.AppFleetSummary']
+export type TAppFleetCounts = components['schemas']['service.AppFleetCounts']
+export type TAppFleetBranch = components['schemas']['service.AppFleetBranch']
+export type TAppFleetGroup = components['schemas']['service.AppFleetGroup']
+export type TAppFleetInstall = components['schemas']['service.AppFleetInstall']
+export type TAppFleetRollout = 'applied' | 'behind' | 'unknown'
+export type TAppFleetRunnerFilter = 'active' | 'not-active'
+export type TAppFleetFilters = {
+  q?: string
+  labels?: string
+  health?: string
+  runner_status?: TAppFleetRunnerFilter
+  rollout?: TAppFleetRollout
+  component_id?: string
+}
 
 export type TApp = components['schemas']['app.App'] & {
   // labels from the app config's default_labels, applied to every install

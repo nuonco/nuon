@@ -133,6 +133,8 @@ func branchConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg 
 			Mode:        models.AppAppBranchRunMode(run.Mode),
 			TagPrefix:   run.TagPrefix,
 			GithubLabel: run.GithubLabel,
+			Paths:       run.Paths,
+			PathsIgnore: run.PathsIgnore,
 		},
 	}
 

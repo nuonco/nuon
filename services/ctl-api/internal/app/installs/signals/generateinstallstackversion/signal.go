@@ -22,13 +22,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// compositeErrorVersion gates the composite-error recording behaviour for
-// template render failures. New histories record the error; replaying old
-// histories (DefaultVersion) skip it to stay deterministic.
-const compositeErrorVersion = "generate-install-stack-version-composite-error-v1"
-
-const dedupeVersion = "generate-install-stack-version-dedupe-v1"
-
 const SignalType signal.SignalType = "generate-install-stack-version"
 
 const (
@@ -207,8 +200,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	compositeErrorsEnabled := workflow.GetVersion(ctx, compositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-
 	// Above the cloud split: the GCP path returns below, and every cloud's stack
 	// needs this account before its directions are rendered.
 	if _, err := activities.AwaitEnsureInstallStackServiceAccountByInstallStackID(ctx, stack.ID); err != nil {
@@ -236,13 +227,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		tmplByts, checksum, err := gcp.Render(inp)
 		if err != nil {
-			if compositeErrorsEnabled {
-				_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
-					StackVersionID: stackVersion.ID,
-					Platform:       "gcp",
-					Detail:         err.Error(),
-				})
-			}
+			_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+				StackVersionID: stackVersion.ID,
+				Platform:       "gcp",
+				Detail:         err.Error(),
+			})
 			return temporal.NewNonRetryableApplicationError("gcp tfvars render failed", "render_failed", errors.Wrap(err, "unable to render gcp tfvars"))
 		}
 
@@ -327,13 +316,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Input: *inp,
 		})
 		if renderErr != nil {
-			if compositeErrorsEnabled {
-				_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
-					StackVersionID: stackVersion.ID,
-					Platform:       "aws",
-					Detail:         renderErr.Error(),
-				})
-			}
+			_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+				StackVersionID: stackVersion.ID,
+				Platform:       "aws",
+				Detail:         renderErr.Error(),
+			})
 			return temporal.NewNonRetryableApplicationError("aws stack template render failed", "render_failed", errors.Wrap(renderErr, "unable to render stack template"))
 		}
 		tmplByts = renderedTemplate.RAWJson
@@ -379,13 +366,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Input: *inp,
 		})
 		if armErr != nil {
-			if compositeErrorsEnabled {
-				_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
-					StackVersionID: stackVersion.ID,
-					Platform:       "azure",
-					Detail:         armErr.Error(),
-				})
-			}
+			_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+				StackVersionID: stackVersion.ID,
+				Platform:       "azure",
+				Detail:         armErr.Error(),
+			})
 			return temporal.NewNonRetryableApplicationError("azure arm template render failed", "render_failed", errors.Wrap(armErr, "unable to create ARM template"))
 		}
 		tmplByts = armResult.RAWJson
@@ -437,20 +422,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to save cloudformation stack")
 	}
 
-	if workflow.GetVersion(ctx, dedupeVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		active, err := activities.AwaitGetActiveInstallStackVersionByInstallID(ctx, install.ID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get active stack version")
-		}
-		if active != nil && SameTemplate(tmplByts, stackVersion, active.Contents, active) {
-			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: stackVersion.ID,
-				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusOutdated, map[string]any{
-					app.InstallStackVersionDuplicateOfMetadataKey: active.ID,
-				}),
-			})
-			return nil
-		}
+	active, err := activities.AwaitGetActiveInstallStackVersionByInstallID(ctx, install.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get active stack version")
+	}
+	if active != nil && SameTemplate(tmplByts, stackVersion, active.Contents, active) {
+		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: stackVersion.ID,
+			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusOutdated, map[string]any{
+				app.InstallStackVersionDuplicateOfMetadataKey: active.ID,
+			}),
+		})
+		return nil
 	}
 
 	statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -462,9 +445,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 func (s *Signal) failStackConfigRender(ctx workflow.Context, install *app.Install, stack *app.InstallStack, cfg *app.AppConfig, region, platform string, cause error, nonRetryableMsg, wrapMsg string) error {
 	wrapped := errors.Wrap(cause, wrapMsg)
-	if workflow.GetVersion(ctx, compositeErrorVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-		return wrapped
-	}
 
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
 		InstallID:       install.ID,
@@ -490,14 +470,11 @@ func (s *Signal) failStackConfigRender(ctx workflow.Context, install *app.Instal
 		}
 	}
 
-	setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, cause.Error(), true)
+	setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, cause.Error())
 	return temporal.NewNonRetryableApplicationError(nonRetryableMsg, "render_failed", wrapped)
 }
 
-func setStackVersionCompositeRenderError(ctx workflow.Context, stackVersionID, platform, detail string, enabled bool) {
-	if !enabled {
-		return
-	}
+func setStackVersionCompositeRenderError(ctx workflow.Context, stackVersionID, platform, detail string) {
 	if err := activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
 		StackVersionID: stackVersionID,
 		Platform:       platform,

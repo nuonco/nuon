@@ -149,6 +149,7 @@ func (s *service) attachLatestBranchRuns(ctx context.Context, branches []app.App
 		Model(&app.AppBranchRun{}).
 		Select("DISTINCT ON (app_branch_id) id").
 		Where("app_branch_id IN ?", branchIDs).
+		Scopes(scopes.ExcludeIgnoredPreviewRuns).
 		Order("app_branch_id, created_at DESC")
 
 	runs := make([]app.AppBranchRun, 0)
