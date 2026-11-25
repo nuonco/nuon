@@ -20,7 +20,7 @@ const groups: TTrackGroup[] = [
     name: 'Canary',
     status: 'success',
     maxParallel: 2,
-    approval: 'Auto-approves when policies pass',
+    approval: "Auto-approves this group's plan",
     match: { kind: 'labels', labels: { env: 'prod', tier: 'canary' } },
     installs: [
       { id: 'alpha', name: 'alpha', status: 'success' },
@@ -50,7 +50,7 @@ const groups: TTrackGroup[] = [
     name: 'Remaining',
     status: 'pending',
     maxParallel: 4,
-    approval: 'Auto-approves when policies pass',
+    approval: "Auto-approves this group's plan",
     match: { kind: 'default' },
     plannedCount: 8,
     installs: [],

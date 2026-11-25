@@ -24,6 +24,8 @@ export type TCreateBranchConfigRequest = {
     default?: boolean
     order: number
     max_parallel?: number
+    approval_option?: 'approve-all' | 'prompt'
+    install_approval_option?: 'approve-all' | 'prompt'
     auto_approve_on_policies_passing?: boolean
   }>
   // Omit to carry the current setting forward; send [] to clear it.

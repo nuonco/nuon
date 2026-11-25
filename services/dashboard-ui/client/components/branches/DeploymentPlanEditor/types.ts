@@ -13,5 +13,7 @@ export interface IInstallGroup {
   is_default: boolean
   order: number
   max_parallel: number
+  approval_option: 'approve-all' | 'prompt'
+  install_approval_option: 'approve-all' | 'prompt'
   auto_approve_on_policies_passing: boolean
 }
