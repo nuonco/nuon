@@ -56,6 +56,35 @@ func (h *Helpers) installAppConfig(ctx context.Context, installID string, appCon
 	return &appCfg, nil
 }
 
+// EnsureInstallActions creates the install actions appConfigID needs that the
+// install doesn't have yet. It never marks an action removed, so it is safe to
+// call before the install moves to appConfigID.
+func (h *Helpers) EnsureInstallActions(ctx context.Context, installID, appConfigID string) error {
+	desired, err := h.desiredActionWorkflowIDs(ctx, appConfigID)
+	if err != nil {
+		return err
+	}
+	if len(desired) == 0 {
+		return nil
+	}
+
+	toCreate := make([]app.InstallActionWorkflow, 0, len(desired))
+	for _, actionID := range desired {
+		toCreate = append(toCreate, app.InstallActionWorkflow{
+			ActionWorkflowID: actionID,
+			InstallID:        installID,
+		})
+	}
+
+	if err := h.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&toCreate).Error; err != nil {
+		return fmt.Errorf("unable to create install action workflows: %w", err)
+	}
+
+	return nil
+}
+
 func (h *Helpers) ReconcileInstallActions(ctx context.Context, installID string) error {
 	appCfg, err := h.installAppConfig(ctx, installID)
 	if err != nil {

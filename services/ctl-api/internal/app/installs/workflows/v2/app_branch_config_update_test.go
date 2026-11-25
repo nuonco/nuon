@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ const (
 	newAppConfigID = "cfg-new"
 	existingCompID = "comp-existing"
 	addedCompID    = "comp-added"
+	addedActionID  = "acw-added"
 )
 
 // filterComponentsByDiff can only ever return a subset of the order it is given,
@@ -136,6 +138,15 @@ type appBranchConfigUpdateSuite struct {
 	// graphRequests records what the workflow asked the app graph to be ordered
 	// against.
 	graphRequests []activities.GetAppGraphRequest
+
+	// newConfigActions are the action configs on the config being rolled out.
+	newConfigActions []app.ActionWorkflowConfig
+	// installActions are what GetActionWorkflows returns, and
+	// pendingInstallActions join them once EnsureInstallActions runs.
+	installActions        []*app.InstallActionWorkflow
+	pendingInstallActions []*app.InstallActionWorkflow
+	ensureRequests        []activities.EnsureInstallActionsInput
+	planOnly              bool
 }
 
 func TestAppBranchConfigUpdateSuite(t *testing.T) {
@@ -157,6 +168,11 @@ func (s *appBranchConfigUpdateSuite) SetupTest() {
 		DeadlockDetectionTimeout: time.Minute,
 	})
 	s.graphRequests = nil
+	s.newConfigActions = nil
+	s.installActions = nil
+	s.pendingInstallActions = nil
+	s.ensureRequests = nil
+	s.planOnly = true
 
 	// Registering by name is what lets the test env deserialize each call's
 	// arguments before handing them to the mock; without it the mock sees zero
@@ -170,6 +186,7 @@ func (s *appBranchConfigUpdateSuite) SetupTest() {
 		"GetAppGraph":                          a.GetAppGraph,
 		"GetInstallAppConfigVersionDiff":       a.GetInstallAppConfigVersionDiff,
 		"GetActionWorkflows":                   a.GetActionWorkflows,
+		"EnsureInstallActions":                 a.EnsureInstallActions,
 		"GetInstallComponentsBatch":            a.GetInstallComponentsBatch,
 		"GetInstallStack":                      a.GetInstallStack,
 		"ClassifyInstallGroupDirective":        a.ClassifyInstallGroupDirective,
@@ -202,6 +219,7 @@ func (s *appBranchConfigUpdateSuite) newAppConfig() *app.AppConfig {
 				ComponentDependencyIDs: pq.StringArray{existingCompID},
 			},
 		},
+		ActionWorkflowConfigs: s.newConfigActions,
 	}
 }
 
@@ -214,7 +232,16 @@ func (s *appBranchConfigUpdateSuite) mockActivities(diff *app.InstallConfigDiff,
 		&app.ComponentBuild{ID: "bld-1"}, nil).Maybe()
 	s.env.OnActivity("GetInstallAppConfigVersionDiff", mock.Anything, mock.Anything).Return(diff, nil)
 	s.env.OnActivity("GetActionWorkflows", mock.Anything, mock.Anything).Return(
-		[]*app.InstallActionWorkflow{}, nil)
+		func(context.Context, *activities.GetActionWorkflows) ([]*app.InstallActionWorkflow, error) {
+			return s.installActions, nil
+		})
+	s.env.OnActivity("EnsureInstallActions", mock.Anything, mock.Anything).Return(
+		func(_ context.Context, input *activities.EnsureInstallActionsInput) error {
+			s.ensureRequests = append(s.ensureRequests, *input)
+			s.installActions = append(s.installActions, s.pendingInstallActions...)
+			s.pendingInstallActions = nil
+			return nil
+		}).Maybe()
 	s.env.OnActivity("GetInstallComponentsBatch", mock.Anything, mock.Anything).Return(
 		map[string]*app.InstallComponent{}, nil)
 
@@ -239,7 +266,7 @@ func (s *appBranchConfigUpdateSuite) mockActivities(diff *app.InstallConfigDiff,
 func (s *appBranchConfigUpdateSuite) workflow() *app.Workflow {
 	return &app.Workflow{
 		ID:       "flw-1",
-		PlanOnly: true,
+		PlanOnly: s.planOnly,
 		Metadata: pgtype.Hstore{
 			"install_id":               generics.ToPtr("install-1"),
 			"new_app_config_id":        generics.ToPtr(newAppConfigID),
@@ -331,6 +358,56 @@ func (s *appBranchConfigUpdateSuite) TestWithoutStackChangeGatesUpFront() {
 	s.Require().Len(gateIndexes(names), 1)
 	s.Equal(-1, indexOf(names, "await install stack"))
 	s.Less(indexOf(names, runnerHealthyStepName), indexOf(names, "sync and plan existing"))
+}
+
+// The update app config step only creates install actions for newly added
+// actions when it runs, so without creating them up front a new action's
+// pre-deploy trigger never gets a step on the rollout that adds it.
+func (s *appBranchConfigUpdateSuite) TestRunsPreDeployActionAddedInNewConfig() {
+	s.planOnly = false
+	s.newConfigActions = []app.ActionWorkflowConfig{{
+		AppConfigID:      newAppConfigID,
+		ActionWorkflowID: addedActionID,
+		Triggers: []app.ActionWorkflowTriggerConfig{{
+			Type:        app.ActionWorkflowTriggerTypePreDeployComponent,
+			ComponentID: generics.NewNullString(existingCompID),
+		}},
+	}}
+	s.pendingInstallActions = []*app.InstallActionWorkflow{{
+		ID:               "iaw-added",
+		ActionWorkflowID: addedActionID,
+		ActionWorkflow:   app.ActionWorkflow{ID: addedActionID, Name: "added_pre_deploy"},
+	}}
+
+	result := s.run(
+		&app.InstallConfigDiff{
+			Changed: []app.ComponentDiffEntry{{ComponentID: existingCompID}},
+		},
+		[]string{existingCompID},
+	)
+
+	s.Equal([]activities.EnsureInstallActionsInput{{
+		InstallID:   "install-1",
+		AppConfigID: newAppConfigID,
+	}}, s.ensureRequests)
+
+	names := stepNames(result.Steps)
+	preDeploy := indexOf(names, "added_pre_deploy Action Run (pre-deploy-component)")
+	s.Require().NotEqual(-1, preDeploy, "steps: %v", names)
+	s.Less(preDeploy, indexOf(names, "sync and plan existing"))
+}
+
+// A plan-only update gets no lifecycle action steps, so it has no reason to
+// create install actions for a config the install may never move to.
+func (s *appBranchConfigUpdateSuite) TestPlanOnlyDoesNotCreateInstallActions() {
+	s.run(
+		&app.InstallConfigDiff{
+			Changed: []app.ComponentDiffEntry{{ComponentID: existingCompID}},
+		},
+		[]string{existingCompID},
+	)
+
+	s.Empty(s.ensureRequests)
 }
 
 func stepNames(steps []*app.WorkflowStep) []string {
