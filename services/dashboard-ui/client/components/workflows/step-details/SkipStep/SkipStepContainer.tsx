@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
@@ -24,6 +24,7 @@ export const SkipStepModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const removePanelByKey = useRemovePanelByKey()
+  const queryClient = useQueryClient()
 
   const {
     mutate: execute,
@@ -45,6 +46,12 @@ export const SkipStepModalContainer = ({
           </Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-steps'] })
+      queryClient.invalidateQueries({
+        queryKey: ['workflow', org.id, step.install_workflow_id],
+      })
       removePanelByKey(step.id)
       removeModal(props.modalId)
     },

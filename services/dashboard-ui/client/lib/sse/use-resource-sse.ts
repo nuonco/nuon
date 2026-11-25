@@ -140,6 +140,17 @@ export function useResourceSSE({
     }
   }, [url])
 
+  // A closed stream stays closed until its inputs change. Call this when a
+  // finished resource turns out to be running again.
+  const reconnect = useCallback(() => {
+    disconnect()
+    finishedRef.current = false
+    closedRef.current = false
+    setClosed(false)
+    reconnectAttemptRef.current = 0
+    connect()
+  }, [connect, disconnect])
+
   useEffect(() => {
     ensureActivityTracking()
     finishedRef.current = false
@@ -167,5 +178,5 @@ export function useResourceSSE({
     return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [enabled, url, connect, disconnect])
 
-  return { connected, suspended, closed, disconnect }
+  return { connected, suspended, closed, disconnect, reconnect }
 }
