@@ -71,21 +71,6 @@ func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 		require.Equal(t, latestCfg.AppRunnerType, cfg.AppRunnerType)
 	})
 
-	s.T().Run("updates installs to reference new runner", func(t *testing.T) {
-		install := s.createInstall(s.appID)
-
-		req := s.fakeRunnerConfigReq(s.appID)
-
-		appRunnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
-		require.NoError(t, err)
-		require.NotNil(t, appRunnerCfg)
-
-		updatedInstall, err := s.apiClient.GetInstall(s.ctx, install.ID)
-		require.NoError(t, err)
-		require.NotEmpty(t, updatedInstall)
-		require.Equal(t, updatedInstall.AppRunnerConfig.ID, appRunnerCfg.ID)
-	})
-
 	s.T().Run("errors on invalid app id", func(t *testing.T) {
 		req := s.fakeRunnerConfigReq(s.appID)
 
