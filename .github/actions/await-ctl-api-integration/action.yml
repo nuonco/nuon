@@ -2,7 +2,8 @@
 name: await-ctl-api-integration
 description: |
   Blocks until the ctl-api integration workflow has passed for a commit, dispatching it when no run exists.
-  Returns immediately when skip is true, or when a pull request for the commit has the skip-integration label.
+  Returns immediately when skip is true, or when a pull request for the commit has the skip-integration label,
+  unless the newest finished integration run on the commit or its ancestors failed; then skipping is refused.
 inputs:
   sha:
     description: Commit being promoted
@@ -37,17 +38,46 @@ runs:
         SKIP: ${{ inputs.skip }}
       run: |
         set -euo pipefail
+        skip_reason=""
         if [[ "$SKIP" == "true" ]]; then
-          echo "skipping ctl-api integration gate"
-          exit 0
-        fi
-        labels=""
-        if ! labels="$(gh api "repos/${REPO}/commits/${SHA}/pulls" --jq '[.[].labels[].name] | join("\n")')"; then
-          echo "could not read pull request labels for ${SHA}; not skipping on the label"
+          skip_reason="skip input"
+        else
           labels=""
+          if ! labels="$(gh api "repos/${REPO}/commits/${SHA}/pulls" --jq '[.[].labels[].name] | join("\n")')"; then
+            echo "could not read pull request labels for ${SHA}; not skipping on the label"
+            labels=""
+          fi
+          if printf '%s\n' "$labels" | grep -qx 'skip-integration'; then
+            skip_reason="skip-integration label"
+          fi
         fi
-        if printf '%s\n' "$labels" | grep -qx 'skip-integration'; then
-          echo "skipping ctl-api integration gate (skip-integration label)"
+        if [[ -n "$skip_reason" ]]; then
+          for commit in $(gh api "repos/${REPO}/commits?sha=${SHA}&per_page=20" --jq '.[].sha'); do
+            verdict=""
+            while read -r id conclusion url; do
+              ran="$(gh api "repos/${REPO}/actions/runs/${id}/jobs" --jq '[.jobs[] | select(.name == "integration")][0].conclusion // "skipped"')"
+              if [[ "$ran" == "skipped" ]]; then
+                continue
+              fi
+              if [[ "$conclusion" == "success" ]]; then
+                verdict="pass"
+                break
+              fi
+              if [[ "$conclusion" == "failure" && -z "$verdict" ]]; then
+                verdict="$url"
+              fi
+            done < <(gh api "repos/${REPO}/actions/workflows/${WORKFLOW}/runs?head_sha=${commit}&status=completed&per_page=50" \
+              --jq '.workflow_runs[] | select(.event == "push" or .event == "workflow_dispatch") | "\(.id) \(.conclusion) \(.html_url)"')
+            if [[ -z "$verdict" ]]; then
+              continue
+            fi
+            if [[ "$verdict" != "pass" ]]; then
+              echo "::error::refusing to skip the ctl-api integration gate (${skip_reason}): integration failed on ${commit}, which ${SHA} includes: ${verdict}. Fix it and promote a commit whose integration run passes."
+              exit 1
+            fi
+            break
+          done
+          echo "skipping ctl-api integration gate (${skip_reason})"
           exit 0
         fi
         deadline=$(( $(date +%s) + TIMEOUT_MINUTES * 60 ))
