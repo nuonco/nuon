@@ -16,11 +16,13 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -73,14 +75,10 @@ func generateEagerStepGroups(ctx workflow.Context, cfg StepConfig, flw *app.Work
 		return &EagerStepGroupsResult{Workflow: flw}, nil
 	}
 
-	queueSignalID, err := enqueueGenerateStepsSignal(ctx, cfg, flw)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch the eager step groups.
-	result, err := queueclient.AwaitFetchEagerStepGroups(ctx, queueclient.FetchEagerStepGroupsRequest{
-		QueueSignalID: queueSignalID,
+	queueSignalID, result, err := enqueueAndFetchGeneratedSteps(ctx, cfg, flw, func(queueSignalID string) (*app.GenerateStepsResult, error) {
+		return queueclient.AwaitFetchEagerStepGroups(ctx, queueclient.FetchEagerStepGroupsRequest{
+			QueueSignalID: queueSignalID,
+		})
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch eager step groups from generate-steps signal")
@@ -109,6 +107,18 @@ func completeStepGeneration(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 	result, err := queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
 		QueueSignalID: queueSignalID,
 	})
+	if err != nil && queueclient.IsFetchHandlerLost(err) {
+		_, result, err = enqueueAndFetchGeneratedSteps(ctx, cfg, flw, func(queueSignalID string) (*app.GenerateStepsResult, error) {
+			if _, err := queueclient.AwaitFetchEagerStepGroups(ctx, queueclient.FetchEagerStepGroupsRequest{
+				QueueSignalID: queueSignalID,
+			}); err != nil {
+				return nil, err
+			}
+			return queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
+				QueueSignalID: queueSignalID,
+			})
+		})
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch remaining steps from generate-steps signal")
 	}
@@ -183,6 +193,44 @@ func enqueueGenerateStepsSignal(ctx workflow.Context, cfg StepConfig, flw *app.W
 	}
 
 	return enqueueResp.QueueSignalID, nil
+}
+
+const generateStepsMaxAttempts = 3
+
+func enqueueAndFetchGeneratedSteps(
+	ctx workflow.Context,
+	cfg StepConfig,
+	flw *app.Workflow,
+	fetch func(queueSignalID string) (*app.GenerateStepsResult, error),
+) (string, *app.GenerateStepsResult, error) {
+	l, _ := log.WorkflowLogger(ctx)
+
+	var lastErr error
+	for attempt := 1; attempt <= generateStepsMaxAttempts; attempt++ {
+		queueSignalID, err := enqueueGenerateStepsSignal(ctx, cfg, flw)
+		if err != nil {
+			return "", nil, err
+		}
+
+		result, err := fetch(queueSignalID)
+		if err == nil {
+			return queueSignalID, result, nil
+		}
+		if !queueclient.IsFetchHandlerLost(err) {
+			return "", nil, err
+		}
+
+		lastErr = err
+		if attempt < generateStepsMaxAttempts {
+			l.Warn("generate-steps handler closed before serving steps, re-enqueueing",
+				zap.String("queue_signal_id", queueSignalID),
+				zap.Int("attempt", attempt),
+				zap.Int("max_attempts", generateStepsMaxAttempts),
+				zap.Error(err))
+		}
+	}
+
+	return "", nil, errors.Wrapf(lastErr, "generate-steps handler lost %d times", generateStepsMaxAttempts)
 }
 
 // persistGenerateResult assigns IDs to groups/steps, injects step context, and
