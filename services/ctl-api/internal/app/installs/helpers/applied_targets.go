@@ -198,6 +198,27 @@ func (h *Helpers) AppliedInstallSandboxRun(ctx context.Context, sandbox *app.Ins
 	return &run, nil
 }
 
+func (h *Helpers) AppliedInstallStackVersion(ctx context.Context, stack *app.InstallStack) (*app.InstallStackVersion, error) {
+	if stack == nil || stack.ID == "" {
+		return nil, nil
+	}
+	var version app.InstallStackVersion
+	// The caller reads only the identity columns; the version's template
+	// contents stay out of every install overview read.
+	err := h.db.WithContext(ctx).
+		Scopes(scopes.WithOverrideTable("install_stack_versions_live_view_v1")).
+		Select("id", "install_stack_id", "app_config_id").
+		Where(app.InstallStackVersion{InstallStackID: stack.ID}).
+		First(&version).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to get applied install stack version: %w", err)
+	}
+	return &version, nil
+}
+
 func (h *Helpers) AppliedBuildIDs(ctx context.Context, installID string) (map[string]string, error) {
 	var components []app.InstallComponent
 	if err := h.db.WithContext(ctx).Where(app.InstallComponent{InstallID: installID}).Find(&components).Error; err != nil {
