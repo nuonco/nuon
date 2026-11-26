@@ -30,6 +30,7 @@ type UpdateInstallConfigRequest struct {
 	RunnerImageAutoUpdate   *bool                      `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID           *string                    `json:"runner_image_id,omitempty"`
 	ActionTimeout           *time.Duration             `json:"action_timeout,omitempty" swaggertype:"primitive,integer" extensions:"x-nullable"`
+	RegistryRetentionMode   *string                    `json:"registry_retention_mode,omitempty" extensions:"x-nullable"`
 }
 
 func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {
@@ -38,6 +39,11 @@ func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {
 	}
 	if err := (helpers.CreateInstallConfigParams{ActionTimeout: c.ActionTimeout}).ValidateActionTimeout(); err != nil {
 		return err
+	}
+	if c.RegistryRetentionMode != nil && *c.RegistryRetentionMode != "" {
+		if err := (helpers.CreateInstallConfigParams{RegistryRetentionMode: c.RegistryRetentionMode}).ValidateRegistryRetentionMode(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -135,6 +141,11 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 	patch := cctx.PatcherFromContext(ctx)
 	if req.Telemetry != nil && (req.Telemetry.Enabled != nil || (patch != nil && slices.Contains(patch.SelectFields, "telemetry.enabled"))) {
 		updates["telemetry_enabled"] = req.Telemetry.Enabled
+	}
+	if req.RegistryRetentionMode != nil && *req.RegistryRetentionMode == "" {
+		updates["registry_retention_mode"] = nil
+	} else if req.RegistryRetentionMode != nil || (patch != nil && slices.Contains(patch.SelectFields, "registry_retention_mode")) {
+		updates["registry_retention_mode"] = req.RegistryRetentionMode
 	}
 
 	if len(updates) > 0 {

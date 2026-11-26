@@ -222,7 +222,7 @@ func createInstall(ctx context.Context, installHelpers *installhelpers.Helpers, 
 		installCfg.StackOverrides.HasOverrides() ||
 		installCfg.CloudFormation != nil ||
 		len(installCfg.ComponentToggles) > 0 || installCfg.Telemetry != nil ||
-		installCfg.ActionTimeout != "" {
+		installCfg.RegistryRetention != nil || installCfg.ActionTimeout != "" {
 		params := build.InstallConfigInputFromConfig(installCfg)
 		req.InstallConfig = &params
 	}
@@ -351,6 +351,10 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}
 	if installConfig.ActionTimeout != nil {
 		fields = append(fields, "action_timeout")
+	}
+	if installConfig.RegistryRetentionMode != nil ||
+		(existing.InstallConfig != nil && existing.InstallConfig.RegistryRetentionMode != nil) {
+		fields = append(fields, "registry_retention_mode")
 	}
 	if len(fields) > 0 {
 		if existing.InstallConfig != nil {
@@ -590,6 +594,9 @@ func existingToConfig(install *app.Install) *config.Install {
 		cfg.ComponentToggles = install.InstallConfig.ComponentToggles
 		if install.InstallConfig.ActionTimeout != nil {
 			cfg.ActionTimeout = config.FormatActionTimeout(*install.InstallConfig.ActionTimeout)
+		}
+		if install.InstallConfig.RegistryRetentionMode != nil {
+			cfg.RegistryRetention = &config.InstallRegistryRetention{Mode: install.InstallConfig.RegistryRetentionMode}
 		}
 	}
 

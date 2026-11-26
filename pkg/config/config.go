@@ -43,6 +43,8 @@ type AppConfig struct {
 	Secrets *SecretsConfig `mapstructure:"secrets,omitempty" toml:"secrets,omitempty"`
 	// Break-glass config
 	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty" toml:"break_glass,omitempty"`
+	// Registry retention config
+	RegistryRetention *RegistryRetention `mapstructure:"registry_retention,omitempty" toml:"registry_retention,omitempty" json:",omitempty"`
 	// Stack config
 	Stack *StackConfig `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
 	// Operation rules
@@ -121,6 +123,8 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Manage secret variables shared across components").
 		Field("break_glass").Short("break-glass configuration").
 		Long("Configure break-glass roles for emergency access to installs").
+		Field("registry_retention").Short("registry retention configuration").
+		Long("Configure pruning of old images from each install's registry").
 		Field("stack").Short("stack configuration").
 		Long("Stack configuration for infrastructure orchestration").
 		Field("kubernetes_contexts").Short("kubernetes context bindings").
@@ -195,6 +199,12 @@ func (a *AppConfig) Parse(opts ...ParseOption) error {
 		parseFns = append(parseFns, parseFn{
 			"kubernetes_contexts",
 			a.KubernetesContexts.parse,
+		})
+	}
+	if a.RegistryRetention != nil {
+		parseFns = append(parseFns, parseFn{
+			"registry_retention",
+			func() error { return a.RegistryRetention.parse() },
 		})
 	}
 

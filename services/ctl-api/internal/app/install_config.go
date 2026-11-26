@@ -48,6 +48,7 @@ type InstallConfig struct {
 	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" gorm:"default null" temporaljson:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID            *string                               `json:"runner_image_id,omitempty" gorm:"default null" temporaljson:"runner_image_id,omitempty"`
 	ActionTimeout            *time.Duration                        `json:"action_timeout,omitempty" gorm:"default null" swaggertype:"primitive,integer" temporaljson:"action_timeout,omitempty" extensions:"x-nullable"`
+	RegistryRetentionMode    *string                               `json:"registry_retention_mode,omitempty" gorm:"default null" temporaljson:"registry_retention_mode,omitempty" extensions:"x-nullable"`
 	labels.Labeled
 }
 

@@ -29,6 +29,7 @@ func drawArchiveMemberModel(t hegel.TestCase) []archiveMemberModel {
 		{kind: "sandbox", name: "sandbox", path: "sandbox.toml"},
 		{kind: "stack", name: "stack", path: "stack.toml"},
 		{kind: "runner", name: "runner", path: "runner.toml"},
+		{kind: "registry_retention", name: "registry_retention", path: "registry_retention.toml"},
 	} {
 		if hegel.Draw(t, hegel.Booleans()) {
 			fixed.text = hegel.Draw(t, sourceArchiveText())

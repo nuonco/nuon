@@ -52,6 +52,9 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 	if err := req.ValidateActionTimeout(); err != nil {
 		return nil, err
 	}
+	if err := req.ValidateRegistryRetentionMode(); err != nil {
+		return nil, err
+	}
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return nil, err

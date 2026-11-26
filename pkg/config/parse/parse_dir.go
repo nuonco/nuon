@@ -282,7 +282,7 @@ func sourceMemberIdentity(group, path string, value any) (string, string) {
 			return "break_glass", "break_glass"
 		case "operation_roles":
 			return "operation_roles", "operation_roles"
-		case "sandbox", "stack", "runner":
+		case "sandbox", "stack", "runner", "registry_retention":
 			return group, group
 		}
 	}

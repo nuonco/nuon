@@ -82,6 +82,7 @@ type AppConfig struct {
 
 	PermissionsConfig          AppPermissionsConfig        `json:"permissions,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"permissions_config,omitzero,omitempty"`
 	BreakGlassConfig           AppBreakGlassConfig         `json:"break_glass,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"break_glass_config,omitzero,omitempty"`
+	RegistryRetentionConfig    AppRegistryRetentionConfig  `json:"registry_retention,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"registry_retention_config,omitzero,omitempty"`
 	PoliciesConfig             AppPoliciesConfig           `json:"policies,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies_config,omitzero,omitempty"`
 	SecretsConfig              AppSecretsConfig            `json:"secrets,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"secrets_config,omitzero,omitempty"`
 	SandboxConfig              AppSandboxConfig            `json:"sandbox,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"sandbox_config,omitzero,omitempty"`

@@ -43,6 +43,10 @@ func TestAppConfigDiff_RootFields(t *testing.T) {
 		"BreakGlass": {"break_glass", func(c *AppConfig, v string) {
 			c.BreakGlass = &BreakGlass{Roles: []*AppAWSIAMRole{{Name: "emergency", Description: v}}}
 		}},
+		"RegistryRetention": {"registry_retention", func(c *AppConfig, v string) {
+			count := len(v)
+			c.RegistryRetention = &RegistryRetention{RetainCount: &count}
+		}},
 		"Stack": {"stack", func(c *AppConfig, v string) { c.Stack.Description = v }},
 		"OperationRoles": {"operation_roles", func(c *AppConfig, v string) {
 			c.OperationRoles = &OperationRolesConfig{Type: OperationRuleConfigTypeMatrix, RuleMatrix: []*OperationRoleRule{{Principal: "nuon::component:*", Operation: OperationDeploy, RoleName: v}}}

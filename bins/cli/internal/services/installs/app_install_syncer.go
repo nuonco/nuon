@@ -191,10 +191,14 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil || installCfg.ActionTimeout != "" {
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil || installCfg.ActionTimeout != "" ||
+		installCfg.RegistryRetention != nil {
 		icParams := &models.HelpersCreateInstallConfigParams{}
 		if installCfg.Telemetry != nil {
 			icParams.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+		}
+		if installCfg.RegistryRetention != nil {
+			icParams.RegistryRetentionMode = installCfg.RegistryRetention.Mode
 		}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = installCfg.ApprovalOption.APIType()
@@ -329,8 +333,12 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
+	clearRegistryRetentionMode := (installCfg.RegistryRetention == nil || installCfg.RegistryRetention.Mode == nil) &&
+		appInstall.InstallConfig != nil && appInstall.InstallConfig.RegistryRetentionMode != nil
+
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil || installCfg.ActionTimeout != ""
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil || installCfg.ActionTimeout != "" ||
+		installCfg.RegistryRetention != nil || clearRegistryRetentionMode
 
 	if hasConfigFields {
 		so := installCfg.StackOverrides
@@ -340,6 +348,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 		if appInstall.InstallConfig == nil {
 			createReq := &models.ServiceCreateInstallConfigRequest{}
+			if installCfg.RegistryRetention != nil {
+				createReq.RegistryRetentionMode = installCfg.RegistryRetention.Mode
+			}
 			if installCfg.Telemetry != nil {
 				createReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
 			}
@@ -369,6 +380,16 @@ func (s *appInstallSyncer) syncExistingInstall(
 			if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil &&
 				(appInstall.InstallConfig.TelemetryEnabled == nil || *appInstall.InstallConfig.TelemetryEnabled != *installCfg.Telemetry.Enabled) {
 				updateReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+				needsUpdate = true
+			}
+
+			if installCfg.RegistryRetention != nil && installCfg.RegistryRetention.Mode != nil &&
+				(appInstall.InstallConfig.RegistryRetentionMode == nil || *appInstall.InstallConfig.RegistryRetentionMode != *installCfg.RegistryRetention.Mode) {
+				updateReq.RegistryRetentionMode = installCfg.RegistryRetention.Mode
+				needsUpdate = true
+			}
+			if clearRegistryRetentionMode {
+				updateReq.RegistryRetentionMode = generics.ToPtr("")
 				needsUpdate = true
 			}
 

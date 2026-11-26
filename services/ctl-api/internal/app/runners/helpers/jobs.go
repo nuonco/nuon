@@ -31,6 +31,7 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		// sync timeouts
 		app.RunnerJobTypeOCISync:            time.Minute * 15,
 		app.RunnerJobTypeFetchImageMetadata: time.Minute * 5,
+		app.RunnerJobTypeOCIPrune:           time.Minute * 15,
 
 		// deploy timeouts
 		app.RunnerJobTypeTerraformDeploy:          time.Minute * 60,

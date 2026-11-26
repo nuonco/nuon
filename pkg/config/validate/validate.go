@@ -86,6 +86,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig, o
 		func() error {
 			return a.BreakGlass.Validate()
 		},
+		func() error {
+			return a.RegistryRetention.Validate()
+		},
 
 		func() error {
 			return ValidateTemplateRefs(a)

@@ -43,6 +43,8 @@ type ConfigDir struct {
 	BreakGlass    *config.BreakGlass      `name:"break_glass"`
 	BreakGlassDir []*config.AppAWSIAMRole `name:"break_glass"`
 
+	RegistryRetention *config.RegistryRetention `name:"registry_retention"`
+
 	Stack     *config.StackConfig      `name:"stack"`
 	Sandbox   *config.AppSandboxConfig `name:"sandbox"`
 	Runner    *config.AppRunnerConfig  `name:"runner"`
@@ -248,6 +250,7 @@ func (c *ConfigDir) toAppConfig(skipBranches bool) (*config.AppConfig, error) {
 		Installs:           c.Installs,
 		InstallsConfig:     c.InstallsConfig,
 		BreakGlass:         breakGlass,
+		RegistryRetention:  c.RegistryRetention,
 		Secrets:            secrets,
 		Branch:             branch,
 		Branches:           branches,

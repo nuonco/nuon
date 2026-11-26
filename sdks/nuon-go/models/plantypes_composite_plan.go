@@ -31,6 +31,9 @@ type PlantypesCompositePlan struct {
 	// fetch image metadata plan
 	FetchImageMetadataPlan *PlantypesFetchImageMetadataPlan `json:"fetch_image_metadata_plan,omitempty"`
 
+	// prune oci plan
+	PruneOciPlan *PlantypesPruneOCIPlan `json:"prune_oci_plan,omitempty"`
+
 	// sandbox run plan
 	SandboxRunPlan *PlantypesSandboxRunPlan `json:"sandbox_run_plan,omitempty"`
 
@@ -58,6 +61,10 @@ func (m *PlantypesCompositePlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateFetchImageMetadataPlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePruneOciPlan(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -171,6 +178,29 @@ func (m *PlantypesCompositePlan) validateFetchImageMetadataPlan(formats strfmt.R
 	return nil
 }
 
+func (m *PlantypesCompositePlan) validatePruneOciPlan(formats strfmt.Registry) error {
+	if swag.IsZero(m.PruneOciPlan) { // not required
+		return nil
+	}
+
+	if m.PruneOciPlan != nil {
+		if err := m.PruneOciPlan.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("prune_oci_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("prune_oci_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesCompositePlan) validateSandboxRunPlan(formats strfmt.Registry) error {
 	if swag.IsZero(m.SandboxRunPlan) { // not required
 		return nil
@@ -257,6 +287,10 @@ func (m *PlantypesCompositePlan) ContextValidate(ctx context.Context, formats st
 	}
 
 	if err := m.contextValidateFetchImageMetadataPlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePruneOciPlan(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -369,6 +403,31 @@ func (m *PlantypesCompositePlan) contextValidateFetchImageMetadataPlan(ctx conte
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("fetch_image_metadata_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesCompositePlan) contextValidatePruneOciPlan(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PruneOciPlan != nil {
+
+		if swag.IsZero(m.PruneOciPlan) { // not required
+			return nil
+		}
+
+		if err := m.PruneOciPlan.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("prune_oci_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("prune_oci_plan")
 			}
 
 			return err

@@ -386,6 +386,7 @@
                   "config-ref/permissions",
                   "config-ref/permission-policy",
                   "config-ref/policies",
+                  "config-ref/registry-retention",
                   "config-ref/runner",
                   "config-ref/sandbox",
                   "config-ref/secrets",

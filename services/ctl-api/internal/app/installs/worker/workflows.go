@@ -59,6 +59,7 @@ func (w *Workflows) All() []any {
 		plan.CreateSandboxRunPlan,
 		plan.CreateDeployPlan,
 		plan.CreateSyncPlan,
+		plan.CreatePruneOCIPlan,
 		plan.CreateSyncSecretsPlan,
 		wkflow.DeprovisionDNSDelegation,
 		wkflow.ProvisionDNSDelegation,

@@ -27,6 +27,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/operationroles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/policies"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/registryretention"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/runner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/sandbox"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/secrets"
@@ -228,6 +229,12 @@ func (s *syncer) syncSteps() []syncStep {
 			Resource: "app-break-glass",
 			Method: func(ctx context.Context) error {
 				return breakglass.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+			},
+		},
+		{
+			Resource: "app-registry-retention",
+			Method: func(ctx context.Context) error {
+				return registryretention.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
 			},
 		},
 		{

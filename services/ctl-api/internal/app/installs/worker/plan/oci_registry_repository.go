@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/registryprune"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
@@ -234,23 +235,7 @@ func getInstallRegistryPullConfig(
 // tag prefix: lowercase, every run of non-alphanumerics (including "_")
 // collapsed to a single "-", no leading or trailing separator.
 func imageNameSegment(componentName string) string {
-	var b strings.Builder
-	lastDash := false
-	for _, r := range strings.ToLower(componentName) {
-		switch {
-		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
-			b.WriteRune(r)
-			lastDash = false
-		case !lastDash:
-			b.WriteRune('-')
-			lastDash = true
-		}
-	}
-	segment := strings.Trim(b.String(), "-")
-	if segment == "" {
-		return "app"
-	}
-	return segment
+	return registryprune.ImageNameSegment(componentName)
 }
 
 func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {

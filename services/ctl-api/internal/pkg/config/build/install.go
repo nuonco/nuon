@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
 type InstallConfigInput struct {
@@ -22,6 +23,7 @@ type InstallConfigInput struct {
 	RunnerImageAutoUpdate    *bool                                 `json:"runner_image_auto_update,omitempty" extensions:"x-nullable"`
 	RunnerImageID            *string                               `json:"runner_image_id,omitempty"`
 	ActionTimeout            *time.Duration                        `json:"action_timeout,omitempty" swaggertype:"primitive,integer" extensions:"x-nullable"`
+	RegistryRetentionMode    *string                               `json:"registry_retention_mode,omitempty" extensions:"x-nullable"`
 }
 
 func InstallConfigInputFromConfig(install *config.Install) InstallConfigInput {
@@ -46,6 +48,9 @@ func InstallConfigInputFromConfig(install *config.Install) InstallConfigInput {
 		in.AWSStackParameters = overrides.Root.Parameters
 		in.AWSNestedStackParameters = overrides.NestedStacks
 	}
+	if install.RegistryRetention != nil {
+		in.RegistryRetentionMode = install.RegistryRetention.Mode
+	}
 	if install.ActionTimeout != "" {
 		timeout, err := config.ParseActionTimeout(install.ActionTimeout)
 		if err == nil {
@@ -65,6 +70,10 @@ func (in InstallConfigInput) ValidateActionTimeout() error {
 	return nil
 }
 
+func (in InstallConfigInput) ValidateRegistryRetentionMode() error {
+	return validation.ValidateRegistryRetentionMode(in.RegistryRetentionMode)
+}
+
 func InstallConfig(in InstallConfigInput, installID string) *app.InstallConfig {
 	obj := &app.InstallConfig{
 		InstallID:                installID,
@@ -77,6 +86,7 @@ func InstallConfig(in InstallConfigInput, installID string) *app.InstallConfig {
 		RunnerImageAutoUpdate:    in.RunnerImageAutoUpdate,
 		RunnerImageID:            in.RunnerImageID,
 		ActionTimeout:            in.ActionTimeout,
+		RegistryRetentionMode:    in.RegistryRetentionMode,
 		Labeled:                  labels.Labeled{Labels: labels.Labels(in.Labels)},
 	}
 	if in.Telemetry != nil {

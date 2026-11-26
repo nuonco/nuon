@@ -24,7 +24,8 @@ const (
 	// the splitting loop in Execute() must check for `drift-sandbox-` BEFORE
 	// the bare `drift-` case or sandbox emitters get classified as
 	// per-component drift emitters and reconciled against the wrong list.
-	driftSandboxEmitterPrefix = "drift-sandbox-"
+	driftSandboxEmitterPrefix  = "drift-sandbox-"
+	registryPruneEmitterPrefix = "registry-prune-"
 )
 
 type Signal struct {
@@ -159,9 +160,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Check the more specific `drift-sandbox-` prefix BEFORE the bare `drift-`
 	// case — otherwise sandbox emitters get swept into the per-component bucket.
-	var driftEmitters, driftSandboxEmitters []app.QueueEmitter
+	var driftEmitters, driftSandboxEmitters, registryPruneEmitters []app.QueueEmitter
 	for _, em := range driftCronEmitters {
 		switch {
+		case strings.HasPrefix(em.Name, registryPruneEmitterPrefix):
+			registryPruneEmitters = append(registryPruneEmitters, em)
 		case strings.HasPrefix(em.Name, driftSandboxEmitterPrefix):
 			driftSandboxEmitters = append(driftSandboxEmitters, em)
 		case strings.HasPrefix(em.Name, driftEmitterPrefix):
@@ -183,6 +186,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if err := s.reconcileDriftSandboxEmitter(ctx, l, install, driftCronQueue, driftSandboxEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile sandbox drift emitter: %w", err)
+	}
+
+	if err := s.reconcileRegistryPruneEmitter(ctx, l, install, driftCronQueue, registryPruneEmitters); err != nil {
+		return fmt.Errorf("unable to reconcile registry prune emitter: %w", err)
 	}
 
 	return nil

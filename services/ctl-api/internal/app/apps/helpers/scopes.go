@@ -39,6 +39,11 @@ func PreloadAppBreakGlassConfig(db *gorm.DB) *gorm.DB {
 		Preload("BreakGlassConfig.Roles.Policies")
 }
 
+// registry retention config
+func PreloadAppRegistryRetentionConfig(db *gorm.DB) *gorm.DB {
+	return db.Preload("RegistryRetentionConfig")
+}
+
 // component role config
 func PreloadAppOperationRoleConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("OperationRoleConfig").

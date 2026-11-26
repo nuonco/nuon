@@ -10,6 +10,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/registryprune"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
@@ -98,30 +99,16 @@ func (p *Planner) RenderSyncOCIPlan(l *zap.Logger, in *RenderSyncOCIPlanInput) (
 	// resolved tag instead of an internal ID. Fall back to installRegistryTag
 	// for non-image components and image builds without source identity.
 	srcTag := in.Deploy.ComponentBuildID
-	dstTag := installRegistryTag(in.Deploy)
 	if in.CompBuild.SourceDigest != "" {
-		// oras.Copy resolves both tags and digest references, so passing
-		// the manifest digest as the source ref pulls the exact same
-		// content the runner originally resolved during build.
 		srcTag = in.CompBuild.SourceDigest
-
-		// Push the install-registry copy under a tag the customer can
-		// recognise. Prefer the tag the runner resolved (e.g. "1.25.5"),
-		// and fall back to the build ID when the user pinned by digest
-		// and there is no resolved tag. The digest is the canonical
-		// identity of the artifact — the tag is metadata only and
-		// duplicate tags across builds (e.g. successive deploys of
-		// "1.25.5") are intentionally idempotent.
-		dstTag = in.CompBuild.ResolvedTag
-		if dstTag == "" {
-			dstTag = in.CompBuild.ID
-		} else if in.DstCfg.RegistryType == configs.OCIRegistryTypeECR {
-			// ECR keeps one shared repo (repos must be pre-created), so
-			// prefix the tag to keep resolved versions from colliding
-			// across components.
-			dstTag = imageNameSegment(in.Deploy.ComponentName) + "-" + dstTag
-		}
 	}
+	dstTag := registryprune.InstallRegistryTag(
+		in.Deploy.ComponentName,
+		installRegistryTag(in.Deploy),
+		in.CompBuild.SourceDigest,
+		in.CompBuild.ResolvedTag,
+		in.DstCfg.RegistryType == configs.OCIRegistryTypeECR,
+	)
 
 	pln := &plantypes.SyncOCIPlan{
 		Src:    in.SrcCfg,

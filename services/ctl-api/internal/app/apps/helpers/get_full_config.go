@@ -23,6 +23,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 			// permissions
 			PreloadAppSecretsConfig,
 			PreloadAppBreakGlassConfig,
+			PreloadAppRegistryRetentionConfig,
 			PreloadAppConfigPermissionsConfig,
 			PreloadAppConfigPolicyConfig,
 			PreloadAppOperationRoleConfig,

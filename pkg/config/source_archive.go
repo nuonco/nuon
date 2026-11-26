@@ -133,6 +133,8 @@ func sourceMemberKey(path string, contents []byte) (string, error) {
 		return "stack:stack", nil
 	case "runner.toml":
 		return "runner:runner", nil
+	case "registry_retention.toml":
+		return "registry_retention:registry_retention", nil
 	}
 	parts := strings.Split(path, "/")
 	if len(parts) == 3 && parts[0] == "permissions" && parts[1] == "policies" {

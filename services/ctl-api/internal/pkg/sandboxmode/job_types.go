@@ -29,6 +29,7 @@ func AllRunnerJobTypes() []string {
 		"oci-sync",
 		"noop-sync",
 		"fetch-image-metadata",
+		"oci-prune",
 
 		"actions-workflow",
 
