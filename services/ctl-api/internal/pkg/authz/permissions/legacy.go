@@ -144,6 +144,15 @@ func (p *AccountPermissions) CanPerform(object string, verb Permission, readOnly
 	return denied
 }
 
+func (p *AccountPermissions) CanPerformExact(object string, verb Permission) error {
+	if p != nil {
+		if source, ok := p.Sources[object]; ok && (source.Permission == PermissionAll || source.Permission == verb) {
+			return nil
+		}
+	}
+	return NoAccessError{ObjectID: object, Permission: verb}
+}
+
 func LegacyOrgPermission(set PermissionSet) (Permission, error) {
 	if len(set) == 0 {
 		return PermissionUnknown, nil

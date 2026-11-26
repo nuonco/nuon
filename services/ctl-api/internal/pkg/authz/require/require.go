@@ -43,7 +43,11 @@ func noun(kind permissions.ResourceKind) string {
 //	require.Route(api, permissions.KindStack, permissions.PermissionRead, "install_id").
 //		GET("/v1/stacks/:install_id/config", handler)
 func Route(router gin.IRouter, kind permissions.ResourceKind, verb permissions.Permission, paramName string) *gin.RouterGroup {
-	return route(router, kind, paramName, func(*gin.Context) permissions.Permission { return verb })
+	return route(router, kind, paramName, func(*gin.Context) permissions.Permission { return verb }, false)
+}
+
+func ExactRoute(router gin.IRouter, kind permissions.ResourceKind, verb permissions.Permission, paramName string) *gin.RouterGroup {
+	return route(router, kind, paramName, func(*gin.Context) permissions.Permission { return verb }, true)
 }
 
 // OrgRoute returns a group requiring permission on the selected org, inferred
@@ -54,7 +58,7 @@ func Route(router gin.IRouter, kind permissions.ResourceKind, verb permissions.P
 //	org := require.OrgRoute(api)
 //	org.GET("/v1/orgs/current", handler)
 func OrgRoute(router gin.IRouter) *gin.RouterGroup {
-	return route(router, permissions.KindOrg, "", permissions.FromRequest)
+	return route(router, permissions.KindOrg, "", permissions.FromRequest, false)
 }
 
 // OrgOrInstallRoute is like OrgRoute, but also allows accounts that only have
@@ -179,10 +183,10 @@ func OrgInstallOrLogStreamRoute(router gin.IRouter, paramName string) *gin.Route
 }
 
 func ResourceRoute(router gin.IRouter, kind permissions.ResourceKind, paramName string) *gin.RouterGroup {
-	return route(router, kind, paramName, permissions.FromRequest)
+	return route(router, kind, paramName, permissions.FromRequest, false)
 }
 
-func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, permission func(*gin.Context) permissions.Permission) *gin.RouterGroup {
+func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, permission func(*gin.Context) permissions.Permission, exact bool) *gin.RouterGroup {
 	description := noun(kind) + " not found"
 
 	guard := func(ctx *gin.Context) {
@@ -241,7 +245,13 @@ func route(router gin.IRouter, kind permissions.ResourceKind, paramName string, 
 		// The declared verb, not the one inferred from the request method: the
 		// route says what it does, the method is only a hint.
 		obj := permissions.Object(orgID, kind, id)
-		if err := acct.Authority.CanPerform(obj, verb, false); err != nil {
+		check := acct.Authority.CanPerform
+		if exact {
+			check = func(object string, verb permissions.Permission, _ bool) error {
+				return acct.Authority.CanPerformExact(object, verb)
+			}
+		}
+		if err := check(obj, verb, false); err != nil {
 			notFound(fmt.Errorf("account %s cannot %s %s %s: %w", acct.ID, verb, kind, id, err))
 			return
 		}
