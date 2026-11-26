@@ -84,6 +84,7 @@ type Client interface {
 	// Deprecated: use GetJobCompositePlan.
 	GetJobPlanJSON(ctx context.Context, jobID string) (string, error)
 	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
+	CreateJobRegistryCredentials(ctx context.Context, jobID string) (*models.ServiceCreateRunnerJobRegistryCredentialsResponse, error)
 	UpdateJob(ctx context.Context, jobID string, req *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error)
 
 	// job executions

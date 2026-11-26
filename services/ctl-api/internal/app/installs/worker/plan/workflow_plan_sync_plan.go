@@ -16,8 +16,9 @@ import (
 
 // Placeholder identity for a sandboxed sync with no pullable source image.
 const (
-	fakeSyncRepository = "registry.example.com/nuon/app-service"
-	fakeSyncTag        = "v1.2.3"
+	fakeSyncLoginServer = "registry.example.com"
+	fakeSyncRepository  = fakeSyncLoginServer + "/nuon/app-service"
+	fakeSyncTag         = "v1.2.3"
 )
 
 func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanRequest) (*plantypes.SyncOCIPlan, error) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/managedregistry"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
@@ -23,6 +24,10 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		arch := ociarchive.New()
 		if err := arch.Initialize(ctx); err != nil {
 			return fmt.Errorf("unable to initialize OCI archive: %w", err)
+		}
+
+		if err := managedregistry.Resolve(ctx, h.apiClient, job.ID, h.state.plan.OCISource.Registry); err != nil {
+			return err
 		}
 
 		l.Info("unpacking OCI archive")

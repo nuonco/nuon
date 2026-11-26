@@ -5,12 +5,18 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/managedregistry"
 	"github.com/nuonco/nuon/pkg/runner/registry"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	srcCfg := h.state.plan.Src
 	dstCfg := h.state.plan.Dst
+
+	if err := managedregistry.Resolve(ctx, h.apiClient, job.ID, srcCfg, dstCfg); err != nil {
+		h.writeErrorResult(ctx, "resolve registry credentials", err)
+		return err
+	}
 
 	res, err := h.ociCopy.Copy(ctx,
 		srcCfg,

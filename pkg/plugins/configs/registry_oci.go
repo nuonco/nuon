@@ -56,6 +56,10 @@ type OCIRegistryRepository struct {
 
 	ACRAppRegistration *ACRAppRegistration `hcl:"acr_app_registration,block"`
 
+	// ManagedCredential means the plan carries no credential; the runner mints
+	// one per job through the runner API.
+	ManagedCredential bool `hcl:"managed_credential,optional"`
+
 	// based on the type of access, either the repository (ecr) or login server (acr) will be provided.
 	Repository  string `hcl:"repository"`
 	LoginServer string `hcl:"login_server"`

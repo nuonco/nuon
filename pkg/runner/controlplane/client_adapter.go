@@ -78,6 +78,10 @@ func (c *clientAdapter) GetJobCompositePlan(ctx context.Context, jobID string) (
 	return c.Client.GetJobCompositePlan(ctx, jobID)
 }
 
+func (c *clientAdapter) CreateJobRegistryCredentials(context.Context, string) (*models.ServiceCreateRunnerJobRegistryCredentialsResponse, error) {
+	return nil, unsupported("CreateJobRegistryCredentials")
+}
+
 func (c *clientAdapter) UpdateJob(context.Context, string, *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error) {
 	return nil, unsupported("UpdateJob")
 }

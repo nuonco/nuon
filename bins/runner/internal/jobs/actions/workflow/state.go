@@ -10,6 +10,7 @@ import (
 
 type handlerState struct {
 	// set during the fetch/validate phase
+	jobID       string
 	workflowCfg *models.AppActionWorkflowConfig
 	run         *models.AppInstallActionWorkflowRun
 	plan        *plantypes.ActionWorkflowRunPlan

@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -264,45 +263,23 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 		return nil, errors.Wrap(err, "unable to get install stack by install id")
 	}
 
-	var accessInfo *activities.OrgECRAccessInfo
 	if install.Org.SandboxMode {
-		l.Info("sandbox-mode enabled, creating fake access info")
-		accessInfo = generics.GetFakeObj[*activities.OrgECRAccessInfo]()
-	} else {
-		accessInfo, err = activities.AwaitGetOrgECRAccessInfo(ctx, &activities.GetOrgECRAccessInfoRequest{
-			OrgID: install.OrgID,
-			AppID: install.AppID,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get access info")
-		}
+		l.Info("sandbox-mode enabled, creating fake org registry repository")
+		return &configs.OCIRegistryRepository{
+			Plugin:       "oci",
+			RegistryType: configs.OCIRegistryTypePrivateOCI,
+			Repository:   fmt.Sprintf("%s/%s", install.OrgID, install.AppID),
+			LoginServer:  fakeSyncLoginServer,
+		}, nil
 	}
 
-	appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
-	loginServer := strings.TrimPrefix(accessInfo.ServerAddress, "https://")
-
-	// For GCP/GAR, the RegistryID from GetOrgECRAccessInfo contains the full GAR URL
-	// (e.g. "us-central1-docker.pkg.dev/project/repo"). Use it to build the full image path.
-	// Always use PrivateOCI with static credentials — the install runner may not have GCP
-	// default credentials (it runs in the customer's cloud, not ours).
-	if accessInfo.RegistryID != "" && strings.Contains(accessInfo.ServerAddress, "pkg.dev") {
-		garURL := accessInfo.RegistryID
-		if idx := strings.Index(garURL, "/"); idx != -1 {
-			loginServer = garURL[:idx]
-			appRepoName = fmt.Sprintf("%s/%s/%s", garURL[idx+1:], install.OrgID, install.AppID)
-		}
+	cfg, err := activities.AwaitGetOrgRegistryRepository(ctx, &activities.GetOrgRegistryRepositoryRequest{
+		AppID: install.AppID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get org registry repository")
 	}
-
-	return &configs.OCIRegistryRepository{
-		Repository:   appRepoName,
-		Region:       "",
-		RegistryType: configs.OCIRegistryTypePrivateOCI,
-		OCIAuth: &configs.OCIRegistryAuth{
-			Username: accessInfo.Username,
-			Password: accessInfo.RegistryToken,
-		},
-		LoginServer: loginServer,
-	}, nil
+	return cfg, nil
 }
 
 // RenderText does the same thing as render.RenderV2, but using "text/template" instead of "html/template",

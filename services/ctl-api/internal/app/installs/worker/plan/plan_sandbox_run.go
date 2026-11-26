@@ -24,7 +24,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, *operationroles.RoleSelection, error) {
@@ -120,7 +119,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 				if sandboxBuild != nil {
 					l.Info("found active sandbox build, resolving OCI source", zap.String("sandbox_build_id", sandboxBuild.ID))
-					registry, regErr := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{
+					registry, regErr := activities.AwaitGetOrgRegistryRepository(ctx, &activities.GetOrgRegistryRepositoryRequest{
 						AppID: install.AppID,
 					})
 					if regErr != nil {
@@ -138,21 +137,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				gitSource, err = activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
 				if err != nil {
 					return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
-				}
-			}
-
-			// The install runner does not share the control plane's cloud, so a GAR
-			// artifact has to travel with its own credentials rather than relying on
-			// the runner finding GCP application default credentials.
-			if ociSource != nil {
-				if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
-					return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
-				}
-				if err := sharedactivities.EnsureACRAuth(ctx, ociSource.Registry); err != nil {
-					return nil, nil, errors.Wrap(err, "unable to get ACR access token for sandbox artifact")
-				}
-				if err := sharedactivities.EnsureECRAuth(ctx, ociSource.Registry); err != nil {
-					return nil, nil, errors.Wrap(err, "unable to get ECR access token for sandbox artifact")
 				}
 			}
 

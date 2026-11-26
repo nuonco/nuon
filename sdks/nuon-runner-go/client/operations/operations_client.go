@@ -120,6 +120,8 @@ type ClientService interface {
 
 	CreateRunnerJobExecutionResult(params *CreateRunnerJobExecutionResultParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerJobExecutionResultCreated, error)
 
+	CreateRunnerJobRegistryCredentials(params *CreateRunnerJobRegistryCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerJobRegistryCredentialsOK, error)
+
 	CreateRunnerProcess(params *CreateRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerProcessCreated, error)
 
 	CreateTelemetryAccessToken(params *CreateTelemetryAccessTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTelemetryAccessTokenOK, error)
@@ -698,6 +700,54 @@ func (a *Client) CreateRunnerJobExecutionResult(params *CreateRunnerJobExecution
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateRunnerJobExecutionResult: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	CreateRunnerJobRegistryCredentials creates registry credentials for a runner job
+
+	Mint a short-lived credential for the app's repository in Nuon's management registry, for use by one runner job.
+
+Only the job's own token (claimed via `ClaimRunnerJobToken`) may call this, and only while the job is available or in progress. The credential is limited to the repository the job's plan names: pull only, or pull and push when the plan writes to that repository. The credential is returned once and is never stored in the plan.
+*/
+func (a *Client) CreateRunnerJobRegistryCredentials(params *CreateRunnerJobRegistryCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerJobRegistryCredentialsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateRunnerJobRegistryCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateRunnerJobRegistryCredentials",
+		Method:             "POST",
+		PathPattern:        "/v1/runner-jobs/{runner_job_id}/registry-credentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRunnerJobRegistryCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateRunnerJobRegistryCredentialsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateRunnerJobRegistryCredentials: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

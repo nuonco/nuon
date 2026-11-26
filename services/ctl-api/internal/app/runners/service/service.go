@@ -28,6 +28,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/orgregistry"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
@@ -85,6 +86,7 @@ type service struct {
 	queueClient            *queueclient.Client
 	telemetryTokenIssuer   *telemetrytoken.Issuer
 	telemetryRelayEndpoint string
+	orgRegistry            *orgregistry.Client
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -363,6 +365,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	jobRoutes.PATCH("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id", s.UpdateRunnerJobExecution)
 	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
 	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/executions/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
+	jobRoutes.POST("/v1/runner-jobs/:runner_job_id/registry-credentials", s.CreateRunnerJobRegistryCredentials)
 	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id")
 	s.EndpointAudit.Add("PATCH", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id")
 	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), "/v1/runner-jobs/:runner_job_id/plan")
@@ -453,6 +456,7 @@ func New(params Params) (*service, error) {
 		queueClient:            params.QueueClient,
 		telemetryTokenIssuer:   telemetryTokenIssuer,
 		telemetryRelayEndpoint: telemetryRelayEndpoint,
+		orgRegistry:            orgregistry.New(params.V, params.DB, params.Cfg),
 		logStreamCache:         expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}, nil
 }

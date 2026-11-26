@@ -13,7 +13,7 @@ import (
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	h.state = &handlerState{}
+	h.state = &handlerState{jobID: job.ID}
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
