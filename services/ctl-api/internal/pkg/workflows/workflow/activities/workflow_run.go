@@ -43,7 +43,25 @@ func (a *Activities) PkgWorkflowsFlowCreateWorkflowRun(ctx context.Context, req 
 		return nil, errors.Wrap(res.Error, "unable to create workflow run")
 	}
 
+	// A failed group stamps finished_at while the flow waits for a retry or
+	// skip. Clear it when that flow resumes so the dashboard keeps streaming.
+	// This runs inside the existing activity so the workflow's command
+	// sequence is unchanged for replays.
+	if resumesFinishedFlow(req.Type) {
+		if err := a.reopenFlow(ctx, req.WorkflowID); err != nil {
+			return nil, err
+		}
+	}
+
 	return run, nil
+}
+
+func resumesFinishedFlow(t app.WorkflowRunType) bool {
+	switch t {
+	case app.WorkflowRunTypeRetry, app.WorkflowRunTypeSkip, app.WorkflowRunTypeResume:
+		return true
+	}
+	return false
 }
 
 type UpdateWorkflowRunStatusRequest struct {

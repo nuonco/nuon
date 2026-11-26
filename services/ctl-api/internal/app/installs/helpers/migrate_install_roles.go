@@ -2,7 +2,10 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -10,60 +13,74 @@ import (
 // Install roles mirror the identities that exist in the customer account, so each
 // install keeps one live set. Rows are repointed in place: a stable ID is what keeps
 // install_role_usage history and enabled/provisioned/role_id attached across syncs.
-func (s *Helpers) MigrateInstallRoles(ctx context.Context, appID string, permCfg app.AppPermissionsConfig) error {
+// Roles come from the install's desired ACV, so syncing a new permissions config no
+// longer moves installs until they move to that ACV.
+func (s *Helpers) MigrateInstallRoles(ctx context.Context, installID string) error {
+	appCfg, err := s.installAppConfig(ctx, installID)
+	if err != nil {
+		return err
+	}
+
+	var permCfg app.AppPermissionsConfig
+	if err := s.db.WithContext(ctx).
+		Preload("Roles").
+		Where(app.AppPermissionsConfig{AppConfigID: appCfg.ID}).
+		Order("created_at DESC").
+		First(&permCfg).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("unable to get app permissions config for install %s: %w", installID, err)
+	}
 	if permCfg.ID == "" {
 		return nil
 	}
 
-	var installs []app.Install
-	res := s.db.WithContext(ctx).
+	var install app.Install
+	if err := s.db.WithContext(ctx).
 		Preload("InstallRoles").
 		Preload("InstallRoles.AppRoleConfig").
-		Where(app.Install{AppID: appID}).
-		Find(&installs)
-	if res.Error != nil {
-		return fmt.Errorf("unable to get installs for app %s: %w", appID, res.Error)
+		First(&install, "id = ?", installID).Error; err != nil {
+		return fmt.Errorf("unable to get install %s: %w", installID, err)
 	}
 
-	for _, install := range installs {
-		staleByName := make(map[string]app.InstallRoles, len(install.InstallRoles))
-		for _, ir := range install.InstallRoles {
-			staleByName[ir.AppRoleConfig.Name] = ir
+	staleByName := make(map[string]app.InstallRoles, len(install.InstallRoles))
+	for _, ir := range install.InstallRoles {
+		staleByName[ir.AppRoleConfig.Name] = ir
+	}
+
+	for _, role := range permCfg.Roles {
+		existing, found := staleByName[role.Name]
+		if !found {
+			newRole := app.InstallRoles{
+				InstallID:       install.ID,
+				AppRoleConfigID: role.ID,
+			}
+			if err := s.db.WithContext(ctx).Create(&newRole).Error; err != nil {
+				return fmt.Errorf("unable to create install role for install %s: %w", install.ID, err)
+			}
+			continue
 		}
+		delete(staleByName, role.Name)
 
-		for _, role := range permCfg.Roles {
-			existing, found := staleByName[role.Name]
-			if !found {
-				newRole := app.InstallRoles{
-					InstallID:       install.ID,
-					AppRoleConfigID: role.ID,
-				}
-				if err := s.db.WithContext(ctx).Create(&newRole).Error; err != nil {
-					return fmt.Errorf("unable to create install role for install %s: %w", install.ID, err)
-				}
-				continue
-			}
-			delete(staleByName, role.Name)
-
-			if existing.AppRoleConfigID == role.ID {
-				continue
-			}
-			err := s.db.WithContext(ctx).
-				Model(&app.InstallRoles{}).
-				Where(app.InstallRoles{ID: existing.ID}).
-				Update("app_role_config_id", role.ID).Error
-			if err != nil {
-				return fmt.Errorf("unable to repoint install role %s: %w", existing.ID, err)
-			}
+		if existing.AppRoleConfigID == role.ID {
+			continue
 		}
+		err := s.db.WithContext(ctx).
+			Model(&app.InstallRoles{}).
+			Where(app.InstallRoles{ID: existing.ID}).
+			Update("app_role_config_id", role.ID).Error
+		if err != nil {
+			return fmt.Errorf("unable to repoint install role %s: %w", existing.ID, err)
+		}
+	}
 
-		for _, stale := range staleByName {
-			err := s.db.WithContext(ctx).
-				Where(app.InstallRoles{ID: stale.ID}).
-				Delete(&app.InstallRoles{}).Error
-			if err != nil {
-				return fmt.Errorf("unable to delete install role %s: %w", stale.ID, err)
-			}
+	for _, stale := range staleByName {
+		err := s.db.WithContext(ctx).
+			Where(app.InstallRoles{ID: stale.ID}).
+			Delete(&app.InstallRoles{}).Error
+		if err != nil {
+			return fmt.Errorf("unable to delete install role %s: %w", stale.ID, err)
 		}
 	}
 

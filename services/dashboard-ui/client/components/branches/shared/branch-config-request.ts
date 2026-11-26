@@ -8,6 +8,10 @@ export const installGroupsForApi = (
     name: g.name ?? '',
     order: g.order ?? idx,
     max_parallel: g.max_parallel || 1,
+    approval_option:
+      g.approval_option === 'approve-all' ? 'approve-all' : 'prompt',
+    install_approval_option:
+      g.install_approval_option === 'approve-all' ? 'approve-all' : 'prompt',
     auto_approve_on_policies_passing:
       g.auto_approve_on_policies_passing ?? undefined,
     ...(g.default ? { default: true } : { label_selector: g.label_selector }),

@@ -203,7 +203,7 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app-permissions",
 			Method: func(ctx context.Context) error {
-				return permissions.Sync(ctx, s.db, s.installHelpers, s.cfg, s.appID, s.appConfigID)
+				return permissions.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
 			},
 		},
 		{

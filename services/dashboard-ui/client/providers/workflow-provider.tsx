@@ -55,6 +55,8 @@ export const WorkflowProvider = ({
     isLoading,
     error,
     disconnect,
+    sseClosed,
+    reconnect,
   } = useSSEResourceQuery<TWorkflow>({
     sseUrl:
       org?.id && workflowId
@@ -69,6 +71,12 @@ export const WorkflowProvider = ({
     onError: onRefreshError,
     isFinished: (data) => !!data?.finished,
   })
+
+  // A retry or skip resumes a workflow the stream already closed as finished.
+  const resumedAfterClose = sseClosed && !!workflow && !workflow.finished
+  useEffect(() => {
+    if (resumedAfterClose && sseEnabled && isPanelTop) reconnect()
+  }, [resumedAfterClose, sseEnabled, isPanelTop, reconnect])
 
   const metrics = useWorkflowMetrics(workflow)
 

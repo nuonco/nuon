@@ -104,6 +104,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to reconcile install runbooks: %w", err)
 	}
 
+	if err := activities.AwaitMigrateInstallRoles(ctx, &activities.MigrateInstallRolesInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to migrate install roles: %w", err)
+	}
+
+	if err := activities.AwaitMigrateInstallRunnerConfig(ctx, &activities.MigrateInstallRunnerConfigInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to migrate install runner config: %w", err)
+	}
+
 	metadata := s.Metadata
 	if metadata == nil {
 		metadata = map[string]string{}

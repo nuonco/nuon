@@ -45,6 +45,14 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	}
 
 	if flw.ApprovalOption != app.InstallApprovalOptionApproveAll {
+		if c.stepApprovesAll(ctx, step) {
+			return c.approve(ctx, step, flw, autoApproval{
+				note:         "auto-approved",
+				approvalType: "install-group",
+				summary:      "Auto-approved this group's plan",
+				reason:       "approve_all",
+			})
+		}
 		return directive.Pass(), nil
 	}
 
@@ -62,6 +70,22 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		reason:                 "approve_all",
 		requireApproveResponse: directive.ResolveDriftApprovalPolicy(ctx, flw),
 	})
+}
+
+type stepApprovalOption interface {
+	StepApprovalOption(ctx workflow.Context) app.InstallApprovalOption
+}
+
+func (c *Check) stepApprovesAll(ctx workflow.Context, step *app.WorkflowStep) bool {
+	sig := c.StepSignalFn(step)
+	if sig == nil {
+		return false
+	}
+	opt, ok := sig.(stepApprovalOption)
+	if !ok {
+		return false
+	}
+	return opt.StepApprovalOption(ctx) == app.InstallApprovalOptionApproveAll
 }
 
 type autoApproval struct {

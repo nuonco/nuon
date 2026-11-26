@@ -3991,11 +3991,13 @@ export interface components {
     };
     "app.AppBranchInstallGroup": {
       app_branch_config_id?: string;
+      approval_option?: "approve-all" | "prompt";
       auto_approve_on_policies_passing?: boolean | null;
       created_at?: string;
       created_by_id?: string;
       default?: boolean;
       id?: string;
+      install_approval_option?: "approve-all" | "prompt";
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       max_parallel?: number;
       name?: string;
@@ -9883,12 +9885,14 @@ export interface components {
       type?: components["schemas"]["app.WorkflowType"];
     };
     "service.InstallGroupRequest": {
+      approval_option?: "approve-all" | "prompt";
       /**
        * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
        * input when its policy checks pass. Omit to leave it unset (off).
        */
       auto_approve_on_policies_passing?: boolean | null;
       default?: boolean;
+      install_approval_option?: "approve-all" | "prompt";
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       name: string;
       order?: number;
