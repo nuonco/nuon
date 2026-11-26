@@ -49,6 +49,9 @@ var DriftsViewV4 string
 //go:embed drifts_view_v5.sql
 var DriftsViewV5 string
 
+//go:embed drifts_view_v6.sql
+var DriftsViewV6 string
+
 //go:embed app_configs_view_v2.sql
 var AppConfigViewV2 string
 
