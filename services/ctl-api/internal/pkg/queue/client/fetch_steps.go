@@ -69,6 +69,9 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) (*app.Ge
 			// The update targets the original handler run that has the generated
 			// steps in memory. If that run terminated, the steps are lost and
 			// the caller must re-enqueue the generate-steps signal.
+			if lostErr := handlerLostError("FetchSteps", req.QueueSignalID, runID, err); lostErr != nil {
+				return nil, lostErr
+			}
 			return nil, temporal.NewNonRetryableApplicationError(
 				fmt.Sprintf("FetchSteps update failed for signal %s (run %s): %s", req.QueueSignalID, runID, err),
 				"FETCH_STEPS_FAILED",
@@ -78,6 +81,9 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) (*app.Ge
 
 		var result app.GenerateStepsResult
 		if err := rawResp.Get(ctx, &result); err != nil {
+			if lostErr := handlerLostError("FetchSteps", req.QueueSignalID, runID, err); lostErr != nil {
+				return nil, lostErr
+			}
 			return nil, temporal.NewNonRetryableApplicationError(
 				fmt.Sprintf("FetchSteps result failed for signal %s: %s", req.QueueSignalID, err),
 				"FETCH_STEPS_FAILED",
