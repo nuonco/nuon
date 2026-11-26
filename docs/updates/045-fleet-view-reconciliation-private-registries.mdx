@@ -1,0 +1,167 @@
+---
+title: 045 - Fleet View, Install Reconciliation, and Private Registries
+description: See every install of an app on one page, deploy only the components a change affects, and pull private images through cloud connections.
+boost: 0.3
+---
+
+_November 23, 2026_
+
+## Fleet view
+
+See every install of an app on one page.
+
+- Find installs that are [unhealthy](/guides/health-checks#how-component-health-is-determined) or waiting on [approval](/concepts/workflows#workflow-approvals)
+- See which version is running where, grouped by [app branch](/concepts/app-branches) and [install group](/concepts/app-branches#install-groups)
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/045-fleet-view.png"
+    alt="The fleet view for an app with 147 installs: 22 installs need attention, 74 have the latest run applied, and each app branch lists its install groups with a bar of installs on and not on the latest run"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+<Note>Fleet view is in early access. [Contact us](https://nuon.co/contact-us) to turn it on for your org.</Note>
+
+---
+
+## Deploy only what changed
+
+Nuon now automatically reconciles your install with what has changed in your application. When a [component](/concepts/components) changes, Nuon figures out what needs to be deployed to update your install, without deploying what hasn't changed.
+
+- Rebuild a component only when its config or source changes
+- See the changed files and the commit behind each deployment
+
+<Tip>Edit one component's [Helm chart](/guides/helm-chart-components) template, and the next branch run deploys that component. The sandbox and every other component stay as they are.</Tip>
+
+---
+
+## Private image registries
+
+Pull private images through a [cloud connection](/guides/cloud-connections).
+
+- Use Amazon ECR, Google Artifact Registry, or Azure Container Registry
+- Assign each image repository to a cloud connection under **Settings > Image repositories**
+
+Image credentials already in app config keep working.
+
+<Card title="Private image registries" icon="box" href="/guides/private-image-registries" horizontal />
+
+---
+
+## Tables and plan diff viewer
+
+Try two new dashboard views. Open the account menu in the top right and choose **Preferences** to turn them on.
+
+- Switch any table between a table view and a card view
+- Search plan diffs and compare them in a split view
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  gap: '16px',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/045-new-tables.png"
+    alt="An installs table with the Show columns menu open, listing Status, App, Platform, Region, Branch, Labels, and Updated as columns to show or hide"
+    style={{
+      flex: '1 1 280px',
+      minWidth: 0,
+      maxWidth: '520px',
+      margin: 0,
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+  <img
+    src="/images/changelog/045-new-tables-grid.png"
+    alt="The same installs shown as a card grid, each card listing the install's status, app, platform, region, branch, and last update"
+    style={{
+      flex: '1 1 280px',
+      minWidth: 0,
+      maxWidth: '520px',
+      margin: 0,
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '32px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/045-new-diff-viewer.png"
+    alt="The new plan diff viewer showing a deployment.yaml change in split view, with a Find in diff search box and the old and new lines side by side"
+    style={{
+      width: '100%',
+      maxWidth: '680px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+---
+
+## EKS access for break-glass roles
+
+Automatically configure EKS access entries on [break-glass roles](/concepts/break-glass).
+
+- Add an [`eks_access`](/config-ref/break-glass) block to the role
+- Cluster access is granted when the customer turns the role on and removed when they turn it off
+
+```toml break_glass.toml
+[[role]]
+name         = "{{.nuon.install.id}}-cluster-debug"
+display_name = "Cluster debugging"
+description  = "Lets the vendor debug workloads on the EKS cluster."
+
+[[role.policies]]
+name     = "eks-describe"
+contents = """
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": ["eks:DescribeCluster"], "Resource": "*" }
+  ]
+}
+"""
+
+[role.eks_access]
+cluster_name = "{{.nuon.sandbox.outputs.cluster.name}}"
+
+[[role.eks_access.policies]]
+policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+```
+
+Available on AWS with [CloudFormation install stacks](/guides/provision-stacks-with-cloudformation).
