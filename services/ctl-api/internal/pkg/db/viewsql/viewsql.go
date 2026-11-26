@@ -100,6 +100,9 @@ var InstallSandboxRunsLiveViewV1 string
 //go:embed install_deploys_state_view_v1.sql
 var InstallDeploysStateViewV1 string
 
+//go:embed install_stack_versions_live_view_v1.sql
+var InstallStackVersionsLiveViewV1 string
+
 //go:embed install_stack_version_runs_state_view_v1.sql
 var InstallStackVersionRunsStateViewV1 string
 
