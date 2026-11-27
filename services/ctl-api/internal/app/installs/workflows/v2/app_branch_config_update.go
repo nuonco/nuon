@@ -75,6 +75,18 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.Wrap(err, "unable to get new app config")
 	}
 
+	// Lifecycle action steps signal an install action, and the update app
+	// config step only creates install actions for newly added actions when
+	// it runs, after these steps are generated.
+	if !flw.PlanOnly {
+		if err := activities.AwaitEnsureInstallActions(ctx, &activities.EnsureInstallActionsInput{
+			InstallID:   installID,
+			AppConfigID: newAppConfigID,
+		}); err != nil {
+			return nil, errors.Wrap(err, "unable to ensure install actions")
+		}
+	}
+
 	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
 		InstallID: installID,
 	})
