@@ -134,32 +134,32 @@ type InstallResourceSyncStatus struct {
 } // @name service.InstallResourceSyncStatus
 
 type installResourceSyncStatusState struct {
-	install             *app.Install
-	components          []app.InstallComponent
-	targets             map[string]*installhelpers.ComponentTarget
-	enablement          *appconfiggraph.ComponentEnablementResolver
-	appliedDeploys      map[string]*app.InstallDeploy
-	sync                map[string]*componentSync
-	lastDeploys         map[string]*app.InstallDeploy
-	driftChecks         map[string]*app.InstallDeploy
-	sandbox             *app.InstallSandbox
-	lastSandboxRun      *app.InstallSandboxRun
-	sandboxCheck        *app.InstallSandboxRun
-	appliedSandbox      *app.InstallSandboxRun
-	expectedSandbox     *app.AppSandboxConfig
-	stack               *app.InstallStack
-	stackHasVersions    bool
-	appliedStackVer     *app.InstallStackVersion
-	desiredStackVersion *app.InstallStackVersion
-	stackWorkflow       *app.Workflow
-	inputs              *app.InstallInputs
-	appConfigs          map[string]*app.AppConfig
+	install         *app.Install
+	components      []app.InstallComponent
+	targets         map[string]*installhelpers.ComponentTarget
+	enablement      *appconfiggraph.ComponentEnablementResolver
+	appliedDeploys  map[string]*app.InstallDeploy
+	sync            map[string]*componentSync
+	lastDeploys     map[string]*app.InstallDeploy
+	driftChecks     map[string]*app.InstallDeploy
+	sandbox         *app.InstallSandbox
+	lastSandboxRun  *app.InstallSandboxRun
+	sandboxCheck    *app.InstallSandboxRun
+	appliedSandbox  *app.InstallSandboxRun
+	expectedSandbox *app.AppSandboxConfig
+	stack           *app.InstallStack
+	stackSync       stackSync
+	stackWorkflow   *app.Workflow
+	inputs          *app.InstallInputs
+	appConfigs      map[string]*app.AppConfig
 
 	appliedBuilds         map[string]*app.ComponentBuild
 	consumedBuilds        map[string]*app.ComponentBuild
 	consumedSandboxBuilds map[string]*app.AppSandboxBuild
 	appliedSandboxBuild   *app.AppSandboxBuild
 	appliedSandboxConfig  *app.AppSandboxConfig
+	sandboxSync           sandboxSync
+	sandboxPinInvalid     bool
 	sandboxChanged        bool
 	stackChanged          bool
 	stackErr              error
@@ -194,7 +194,7 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 
 	var rows []componentSync
 	if err := s.db.WithContext(ctx).
-		Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 5)).
+		Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 6)).
 		Where("install_id = ? AND org_id = ? AND resource_type = ?", install.ID, install.OrgID, "install_component").
 		Scan(&rows).Error; err != nil {
 		return nil, fmt.Errorf("unable to get component sync state: %w", err)
@@ -202,8 +202,8 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 	st.sync = make(map[string]*componentSync, len(rows))
 	deployIDs := make([]string, 0, 2*len(rows))
 	for i := range rows {
-		st.sync[rows[i].InstallComponentID] = &rows[i]
-		deployIDs = append(deployIDs, rows[i].LastDeployID, rows[i].DriftCheckID)
+		st.sync[rows[i].ResourceID] = &rows[i]
+		deployIDs = append(deployIDs, rows[i].AttemptID, rows[i].DriftCheckID)
 	}
 	var deploys []app.InstallDeploy
 	if err := s.db.WithContext(ctx).
@@ -221,7 +221,7 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 	st.lastDeploys = make(map[string]*app.InstallDeploy, len(rows))
 	st.driftChecks = make(map[string]*app.InstallDeploy, len(rows))
 	for icID, row := range st.sync {
-		if d := deploysByID[row.LastDeployID]; d != nil {
+		if d := deploysByID[row.AttemptID]; d != nil {
 			st.lastDeploys[icID] = d
 		}
 		if d := deploysByID[row.DriftCheckID]; d != nil {
@@ -236,8 +236,8 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 		if row == nil {
 			continue
 		}
-		if st.targets[st.components[i].ComponentID] != nil && row.ExpectedBuildID != "" {
-			buildIDs = append(buildIDs, row.ExpectedBuildID)
+		if st.targets[st.components[i].ComponentID] != nil && row.ExpectedArtifactID != "" {
+			buildIDs = append(buildIDs, row.ExpectedArtifactID)
 		}
 		if row.LiveID != "" {
 			liveIDs = append(liveIDs, row.LiveID)
@@ -249,11 +249,11 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 	}
 	for i := range st.components {
 		row := st.sync[st.components[i].ID]
-		if row == nil || row.ExpectedBuildID == "" {
+		if row == nil || row.ExpectedArtifactID == "" {
 			continue
 		}
 		if target := st.targets[st.components[i].ComponentID]; target != nil {
-			target.Build = builds[row.ExpectedBuildID]
+			target.Build = builds[row.ExpectedArtifactID]
 		}
 	}
 
@@ -316,6 +316,12 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 				st.expectedSandbox = &cfg
 			}
 		}
+		if err := s.db.WithContext(ctx).
+			Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 6)).
+			Where("install_id = ? AND org_id = ? AND resource_type = ? AND resource_id = ?", install.ID, install.OrgID, "install_sandbox", sandbox.ID).
+			Scan(&st.sandboxSync).Error; err != nil {
+			return nil, fmt.Errorf("unable to get sandbox sync state: %w", err)
+		}
 	}
 
 	var stack app.InstallStack
@@ -327,22 +333,16 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 	}
 	if err == nil {
 		st.stack = &stack
-		var count int64
+		var row stackSync
 		if err := s.db.WithContext(ctx).
-			Model(&app.InstallStackVersion{}).
-			Where(app.InstallStackVersion{InstallStackID: stack.ID}).
-			Count(&count).Error; err != nil {
-			return nil, fmt.Errorf("unable to count install stack versions: %w", err)
+			Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 6)).
+			Where("install_id = ? AND org_id = ? AND resource_type = ? AND resource_id = ?", install.ID, install.OrgID, "install_stack", stack.ID).
+			Scan(&row).Error; err != nil {
+			return nil, fmt.Errorf("unable to get stack sync state: %w", err)
 		}
-		st.stackHasVersions = count > 0
-		if st.appliedStackVer, err = s.installs.AppliedInstallStackVersion(ctx, st.stack); err != nil {
-			return nil, err
-		}
-		if st.desiredStackVersion, err = s.desiredStackVersion(ctx, stack.ID, install.AppConfigID); err != nil {
-			return nil, err
-		}
-		if st.desiredStackVersion != nil {
-			if st.stackWorkflow, err = s.stackVersionWorkflow(ctx, st.desiredStackVersion.ID); err != nil {
+		st.stackSync = row
+		if row.AttemptWorkflowID != "" {
+			if st.stackWorkflow, err = s.stackVersionWorkflow(ctx, row.AttemptWorkflowID); err != nil {
 				return nil, err
 			}
 		}
@@ -536,6 +536,9 @@ func (st *installResourceSyncStatusState) sandboxResource() *InstallResourceSync
 	case st.appliedSandbox == nil:
 		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "The sandbox hasn’t been set up yet."
+	case st.sandboxPinInvalid:
+		res.Category = InstallResourceSyncStatusCategoryUnknown
+		res.Reason = "the selected app config pins a sandbox build that isn’t usable"
 	case st.sandboxChanged:
 		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "Sandbox configuration changes haven’t been applied."
@@ -549,13 +552,17 @@ func (st *installResourceSyncStatusState) sandboxResource() *InstallResourceSync
 }
 
 func (st *installResourceSyncStatusState) appliedStackConfigID() string {
-	if st.appliedStackVer != nil && st.appliedStackVer.AppConfigID != "" {
-		return st.appliedStackVer.AppConfigID
+	if st.stackSync.LiveConfigID != "" {
+		return st.stackSync.LiveConfigID
 	}
 	if st.stack == nil {
 		return ""
 	}
 	return st.stack.AppConfigRef.AppliedConfigID
+}
+
+func (st *installResourceSyncStatusState) stackHasVersions() bool {
+	return st.stackSync.LiveID != "" || st.stackSync.ExpectedArtifactID != "" || st.stackSync.LiveState == "unknown"
 }
 
 func (st *installResourceSyncStatusState) stackResource() *InstallResourceSyncStatusResource {
@@ -579,7 +586,7 @@ func (st *installResourceSyncStatusState) stackResource() *InstallResourceSyncSt
 	case res.Stack != nil && res.Stack.DesiredVersionID != "" && res.Stack.DesiredVersionID == res.Stack.AppliedVersionID:
 		res.Category = InstallResourceSyncStatusCategoryInSync
 		res.Reason = "stack state drift is not scanned"
-	case applied == "" && st.stackHasVersions && st.desiredStackVersion == nil:
+	case applied == "" && st.stackHasVersions() && st.stackSync.ExpectedArtifactID == "":
 		res.Category = InstallResourceSyncStatusCategoryUnknown
 		res.Reason = "the applied stack version could not be determined"
 	case applied == "":
@@ -606,17 +613,13 @@ func (st *installResourceSyncStatusState) stackResource() *InstallResourceSyncSt
 
 func (st *installResourceSyncStatusState) stackVersions() *InstallResourceSyncStatusStack {
 	var out InstallResourceSyncStatusStack
-	if d := st.desiredStackVersion; d != nil {
-		out.DesiredVersionID = d.ID
-		out.DesiredVersionStatus = string(d.Status.Status)
+	if st.stackSync.ExpectedArtifactID != "" {
+		out.DesiredVersionID = st.stackSync.ExpectedArtifactID
+		out.DesiredVersionStatus = st.stackSync.ExpectedArtifactStatus
 	}
-	if a := st.appliedStackVer; a != nil {
-		out.AppliedVersionID = a.ID
-		out.AppliedVersionSource = InstallResourceSyncStatusStackVersionSourceInferred
-		ref := st.stack.AppConfigRef
-		if ref.AppliedConfigByType == app.AppConfigRefByTypeInstallStackVersions && ref.AppliedConfigByID == a.ID {
-			out.AppliedVersionSource = InstallResourceSyncStatusStackVersionSourceRecorded
-		}
+	if st.stackSync.LiveID != "" {
+		out.AppliedVersionID = st.stackSync.LiveID
+		out.AppliedVersionSource = InstallResourceSyncStatusStackVersionSource(st.stackSync.LiveSource)
 	}
 	if out == (InstallResourceSyncStatusStack{}) {
 		return nil
@@ -625,10 +628,7 @@ func (st *installResourceSyncStatusState) stackVersions() *InstallResourceSyncSt
 }
 
 func (st *installResourceSyncStatusState) desiredStackPending() bool {
-	if st.desiredStackVersion == nil {
-		return false
-	}
-	switch st.desiredStackVersion.Status.Status {
+	switch app.Status(st.stackSync.ExpectedArtifactStatus) {
 	case app.InstallStackVersionStatusGenerating, app.InstallStackVersionStatusPendingUser, app.InstallStackVersionStatusProvisioning:
 		return true
 	}
@@ -639,10 +639,7 @@ func (st *installResourceSyncStatusState) desiredStackUnapplied() bool {
 	if st.desiredStackPending() {
 		return true
 	}
-	if st.desiredStackVersion == nil {
-		return false
-	}
-	switch st.desiredStackVersion.Status.Status {
+	switch app.Status(st.stackSync.ExpectedArtifactStatus) {
 	case app.InstallStackVersionStatusExpired, app.StatusCancelled:
 		return true
 	}
@@ -650,9 +647,8 @@ func (st *installResourceSyncStatusState) desiredStackUnapplied() bool {
 }
 
 func (st *installResourceSyncStatusState) stackPendingReason(fallback string) string {
-	d := st.desiredStackVersion
-	if d == nil {
-		if st.stackHasVersions {
+	if st.stackSync.ExpectedArtifactID == "" {
+		if st.stackHasVersions() {
 			return "A stack template for the selected config hasn’t been generated yet."
 		}
 		return fallback
@@ -660,7 +656,7 @@ func (st *installResourceSyncStatusState) stackPendingReason(fallback string) st
 	if st.desiredStackPending() {
 		return "The new stack template is waiting to be applied in the customer’s cloud account."
 	}
-	switch d.Status.Status {
+	switch app.Status(st.stackSync.ExpectedArtifactStatus) {
 	case app.InstallStackVersionStatusExpired:
 		return "The stack template for the selected config expired before it was applied."
 	case app.StatusCancelled:
@@ -669,50 +665,11 @@ func (st *installResourceSyncStatusState) stackPendingReason(fallback string) st
 	return fallback
 }
 
-func (s *Helpers) desiredStackVersion(ctx context.Context, stackID, appConfigID string) (*app.InstallStackVersion, error) {
-	if appConfigID == "" {
-		return nil, nil
-	}
-	cols := []string{"id", "app_config_id", "status", "created_at"}
-	var version app.InstallStackVersion
-	err := s.db.WithContext(ctx).
-		Select(cols).
-		Where(app.InstallStackVersion{InstallStackID: stackID, AppConfigID: appConfigID}).
-		Order("created_at DESC").
-		First(&version).Error
-	if isNotFound(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("unable to get desired install stack version: %w", err)
-	}
-	duplicateOf, _ := version.Status.Metadata[app.InstallStackVersionDuplicateOfMetadataKey].(string)
-	if version.Status.Status != app.InstallStackVersionStatusOutdated || duplicateOf == "" {
-		return &version, nil
-	}
-	var active app.InstallStackVersion
-	err = s.db.WithContext(ctx).
-		Select(cols).
-		Where(app.InstallStackVersion{ID: duplicateOf, InstallStackID: stackID}).
-		First(&active).Error
-	if isNotFound(err) {
-		return &version, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("unable to get duplicated install stack version: %w", err)
-	}
-	return &active, nil
-}
-
-func (s *Helpers) stackVersionWorkflow(ctx context.Context, versionID string) (*app.Workflow, error) {
+func (s *Helpers) stackVersionWorkflow(ctx context.Context, workflowID string) (*app.Workflow, error) {
 	var wf app.Workflow
 	err := s.db.WithContext(ctx).
-		Select("install_workflows.id", "install_workflows.type", "install_workflows.status", "install_workflows.created_at").
-		Joins("JOIN install_workflow_steps s ON s.install_workflow_id = install_workflows.id AND s.deleted_at = 0").
-		Where("s.step_target_type = ? AND s.step_target_id = ?", "install_stack_versions", versionID).
-		Where("install_workflows.plan_only IS NOT TRUE").
-		Order("install_workflows.created_at DESC").
-		First(&wf).Error
+		Select("id", "type", "status", "created_at").
+		First(&wf, "id = ?", workflowID).Error
 	if isNotFound(err) {
 		return nil, nil
 	}
@@ -811,7 +768,7 @@ func (s *Helpers) loadAlignmentEvidence(ctx context.Context, st *installResource
 	deployIDs := map[string]string{}
 	driftCheckIDs := map[string]string{}
 	for icID, row := range st.sync {
-		deployIDs[icID], driftCheckIDs[icID] = row.LastDeployID, row.DriftCheckID
+		deployIDs[icID], driftCheckIDs[icID] = row.AttemptID, row.DriftCheckID
 	}
 
 	if st.sandbox != nil {
@@ -936,13 +893,27 @@ func syncStatusPlanFromApproval(aa *syncStatusApproval) *InstallResourceSyncStat
 }
 
 type componentSync struct {
-	InstallComponentID string
-	ExpectedBuildID    string
+	ResourceID         string
+	ExpectedArtifactID string
 	LiveID             string
 	LiveState          string
 	LiveOutdated       bool
-	LastDeployID       string
+	AttemptID          string
 	DriftCheckID       string
+}
+
+type sandboxSync struct {
+	ExpectedArtifactID string
+}
+
+type stackSync struct {
+	ExpectedArtifactID     string
+	ExpectedArtifactStatus string
+	AttemptWorkflowID      string
+	LiveID                 string
+	LiveConfigID           string
+	LiveSource             string
+	LiveState              string
 }
 
 func (s *Helpers) latestSandboxRun(ctx context.Context, sandboxID string, planOnly bool) (*app.InstallSandboxRun, error) {

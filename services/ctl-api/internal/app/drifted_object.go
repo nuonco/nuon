@@ -42,6 +42,11 @@ func (d *DriftedObject) Views(db *gorm.DB) []migrations.View {
 			SQL:           viewsql.DriftsViewV5,
 			AlwaysReapply: true,
 		},
+		{
+			Name:          views.DefaultViewName(db, &DriftedObject{}, 6),
+			SQL:           viewsql.DriftsViewV6,
+			AlwaysReapply: true,
+		},
 	}
 }
 
