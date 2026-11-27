@@ -158,6 +158,8 @@ type installResourceSyncStatusState struct {
 	consumedSandboxBuilds map[string]*app.AppSandboxBuild
 	appliedSandboxBuild   *app.AppSandboxBuild
 	appliedSandboxConfig  *app.AppSandboxConfig
+	sandboxSync           sandboxSync
+	sandboxPinInvalid     bool
 	sandboxChanged        bool
 	stackChanged          bool
 	stackErr              error
@@ -313,6 +315,12 @@ func (s *Helpers) loadInstallResourceSyncStatusState(ctx context.Context, instal
 			if err == nil {
 				st.expectedSandbox = &cfg
 			}
+		}
+		if err := s.db.WithContext(ctx).
+			Table(views.DefaultViewName(s.db, &app.DriftedObject{}, 6)).
+			Where("install_id = ? AND org_id = ? AND resource_type = ? AND resource_id = ?", install.ID, install.OrgID, "install_sandbox", sandbox.ID).
+			Scan(&st.sandboxSync).Error; err != nil {
+			return nil, fmt.Errorf("unable to get sandbox sync state: %w", err)
 		}
 	}
 
@@ -528,6 +536,9 @@ func (st *installResourceSyncStatusState) sandboxResource() *InstallResourceSync
 	case st.appliedSandbox == nil:
 		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "The sandbox hasn’t been set up yet."
+	case st.sandboxPinInvalid:
+		res.Category = InstallResourceSyncStatusCategoryUnknown
+		res.Reason = "the selected app config pins a sandbox build that isn’t usable"
 	case st.sandboxChanged:
 		res.Category = InstallResourceSyncStatusCategoryChangesNotApplied
 		res.Reason = "Sandbox configuration changes haven’t been applied."
@@ -889,6 +900,10 @@ type componentSync struct {
 	LiveOutdated       bool
 	AttemptID          string
 	DriftCheckID       string
+}
+
+type sandboxSync struct {
+	ExpectedArtifactID string
 }
 
 type stackSync struct {

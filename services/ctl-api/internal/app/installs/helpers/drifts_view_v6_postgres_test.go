@@ -15,7 +15,7 @@ import (
 func driftsViewV6Postgres(t *testing.T) (*gorm.DB, string) {
 	t.Helper()
 	db := appliedHistoryPostgres(t)
-	require.NoError(t, db.AutoMigrate(&app.Component{}, &app.WorkflowStep{}))
+	require.NoError(t, db.AutoMigrate(&app.Component{}, &app.WorkflowStep{}, &app.AppSandboxBuild{}))
 	require.NoError(t, db.Exec("CREATE VIEW install_stack_versions_live_view_v1 AS "+viewsql.InstallStackVersionsLiveViewV1).Error)
 	require.NoError(t, db.Exec("CREATE VIEW component_config_connections_selected_build_view_v1 AS "+viewsql.ComponentConfigConnectionsSelectedBuildViewV1).Error)
 	name := views.DefaultViewName(db, &app.DriftedObject{}, 6)

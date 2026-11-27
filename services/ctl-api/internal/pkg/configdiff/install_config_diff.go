@@ -680,7 +680,10 @@ func LatestActiveSandboxBuild(ctx context.Context, db *gorm.DB, appConfigID stri
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("unable to get active sandbox build for app config %s: %w", appConfigID, err)
 	}
+	return ReusableSandboxBuild(ctx, db, appConfigID)
+}
 
+func ReusableSandboxBuild(ctx context.Context, db *gorm.DB, appConfigID string) (*app.AppSandboxBuild, error) {
 	current, err := appSandboxConfigByAppConfigID(ctx, db, appConfigID)
 	if err != nil || current == nil {
 		return nil, err

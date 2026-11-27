@@ -126,14 +126,48 @@ func (s *Helpers) loadSandboxChanged(ctx context.Context, st *installResourceSyn
 	}
 	st.appliedSandboxConfig = applied
 
-	next, err := configdiff.LatestActiveSandboxBuild(ctx, s.db, st.install.AppConfigID)
+	next, err := s.expectedSandboxBuild(ctx, st)
 	if err != nil {
-		return fmt.Errorf("unable to get selected sandbox build: %w", err)
+		return err
+	}
+	if st.sandboxPinInvalid {
+		return nil
 	}
 	configChanged := applied == nil || expected == nil ||
 		(applied.ID != expected.ID && !configdiff.SandboxConfigsEqual(*applied, *expected))
 	st.sandboxChanged = configChanged || !configdiff.SandboxSourcesEqual(st.appliedSandboxBuild, next)
 	return nil
+}
+
+func (s *Helpers) expectedSandboxBuild(ctx context.Context, st *installResourceSyncStatusState) (*app.AppSandboxBuild, error) {
+	if id := st.sandboxSync.ExpectedArtifactID; id != "" {
+		var build app.AppSandboxBuild
+		if err := s.db.WithContext(ctx).
+			Preload("VCSConnectionCommit").
+			Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+			Preload("AppSandboxConfig.PublicGitVCSConfig").
+			Where(app.AppSandboxBuild{ID: id}).
+			First(&build).Error; err != nil {
+			return nil, fmt.Errorf("unable to get selected sandbox build: %w", err)
+		}
+		return &build, nil
+	}
+	var cfg app.AppConfig
+	if err := s.db.WithContext(ctx).
+		Select("id", "builds_pinned").
+		Where(app.AppConfig{ID: st.install.AppConfigID}).
+		First(&cfg).Error; err != nil {
+		return nil, fmt.Errorf("unable to get app config: %w", err)
+	}
+	if cfg.BuildsPinned {
+		st.sandboxPinInvalid = true
+		return nil, nil
+	}
+	build, err := configdiff.ReusableSandboxBuild(ctx, s.db, st.install.AppConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get reusable sandbox build: %w", err)
+	}
+	return build, nil
 }
 
 func (st *installResourceSyncStatusState) dependenciesAppliedSince(componentID string, conn *app.ComponentConfigConnection, deploy *app.InstallDeploy) (changed, verified bool) {

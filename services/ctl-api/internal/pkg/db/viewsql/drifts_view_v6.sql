@@ -3,7 +3,7 @@
    resource_type says which table each id points at:
      resource_id            install_components / install_sandboxes / install_stacks
      expected_config_id     component_config_connections / app_sandbox_configs / app_configs
-     expected_artifact_id   component_builds / (unset) / install_stack_versions
+     expected_artifact_id   component_builds / app_sandbox_builds / install_stack_versions
      live_id                install_deploys / install_sandbox_runs / install_stack_versions
      live_artifact_id       component_builds / (unset) / (unset)
      live_config_id         (unset) / (unset) / app_configs
@@ -157,7 +157,7 @@ FROM (
         sb.id AS resource_id,
         'sandbox' AS resource_name,
         cfg.id AS expected_config_id,
-        NULL AS expected_artifact_id,
+        CASE WHEN a.builds_pinned THEN pin.id ELSE direct.id END AS expected_artifact_id,
         NULL AS expected_artifact_status,
         live.id AS live_id,
         NULL AS live_artifact_id,
@@ -180,6 +180,22 @@ FROM (
     FROM
         install_sandboxes sb
         JOIN installs i ON i.id = sb.install_id AND i.deleted_at = 0
+        LEFT JOIN app_configs a ON a.id = i.app_config_id
+        LEFT JOIN app_sandbox_builds pin ON a.builds_pinned
+            AND pin.id = NULLIF(a.sandbox_build_id, '')
+            AND pin.app_id = a.app_id
+            AND pin.deleted_at = 0
+            AND pin.status = 'active'
+        LEFT JOIN LATERAL (
+            SELECT b.id
+            FROM app_sandbox_builds b
+            WHERE NOT a.builds_pinned
+                AND b.app_config_id = a.id
+                AND b.status = 'active'
+                AND b.deleted_at = 0
+            ORDER BY b.created_at DESC
+            LIMIT 1
+        ) direct ON true
         LEFT JOIN install_sandbox_runs_live_view_v1 live ON live.install_id = sb.install_id
             AND live.install_sandbox_id = sb.id
             AND live.org_id = i.org_id
